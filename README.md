@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.com/facebookincubator/nvdtools.svg?branch=master)](https://travis-ci.com/facebookincubator/nvdtools)
+
 # NVD Tools
 
 A collection of tools for working with [National Vulnerability Database](https://nvd.nist.gov/) feeds.
