@@ -69,7 +69,7 @@ func TestMatchJSON(t *testing.T) {
 			Expect: true,
 		},
 	}
-	items, err := ParseJSON(bytes.NewBufferString(dict))
+	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
 	if err != nil {
 		t.Fatalf("failed to parse the dictionary: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestMatchJSONrequireVersion(t *testing.T) {
 	inventory := []*wfn.Attributes{
 		&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 	}
-	items, err := ParseJSON(bytes.NewBufferString(dict))
+	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
 	if err != nil {
 		t.Fatalf("failed to parse the dictionary: %v", err)
 	}
@@ -105,7 +105,7 @@ func BenchmarkMatchJSON(b *testing.B) {
 		&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 		&wfn.Attributes{Part: "a", Vendor: "facebook", Product: "styx", Version: "0\\.1"},
 	}
-	items, err := ParseJSON(bytes.NewBufferString(dict))
+	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
 	if err != nil {
 		b.Fatalf("failed to parse the dictionary: %v", err)
 	}
@@ -117,7 +117,7 @@ func BenchmarkMatchJSON(b *testing.B) {
 	}
 }
 
-var dict = `{
+var testJSONdict = `{
 "CVE_data_type" : "CVE",
 "CVE_data_format" : "MITRE",
 "CVE_data_version" : "4.0",
