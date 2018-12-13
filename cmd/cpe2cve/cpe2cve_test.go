@@ -74,12 +74,12 @@ func TestProcessInput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't parse XML dictionary: %v", err)
 	}
-	cacheXML := cvefeed.NewCache(testDictXML, false)
+	cacheXML := cvefeed.NewCache(testDictXML)
 	testDictJSON, err := cvefeed.ParseJSON(strings.NewReader(testDictJSONStr))
 	if err != nil {
 		t.Fatalf("couldn't parse JSON dictionary: %v", err)
 	}
-	cacheJSON := cvefeed.NewCache(testDictJSON, false)
+	cacheJSON := cvefeed.NewCache(testDictJSON)
 	cfg := config{
 		nProcessors: 2,
 		cpesAt:      4,
@@ -128,7 +128,7 @@ func TestProcessInputFalsePositives(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't parse JSON dictionary: %v", err)
 	}
-	cache := cvefeed.NewCache(dict, false)
+	cache := cvefeed.NewCache(dict)
 	cfg := config{
 		nProcessors: 2,
 		cpesAt:      1,
@@ -155,7 +155,7 @@ func TestProcessInputRequireVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("couldn't parse JSON dictionary: %v", err)
 	}
-	cache := cvefeed.NewCache(dict, true)
+	cache := cvefeed.NewCache(dict).SetRequireVersion(true)
 	cfg := config{
 		nProcessors:    2,
 		cpesAt:         1,
@@ -186,7 +186,7 @@ func BenchmarkProcessInputXML(t *testing.B) {
 	if err != nil {
 		t.Fatalf("couldn't parse dictionary: %v", err)
 	}
-	cache := cvefeed.NewCache(testDict, false)
+	cache := cvefeed.NewCache(testDict)
 	cfg := config{
 		nProcessors: 1,
 		cpesAt:      4,
@@ -217,7 +217,7 @@ func BenchmarkProcessInputJSON(t *testing.B) {
 	if err != nil {
 		t.Fatalf("couldn't parse dictionary: %v", err)
 	}
-	cache := cvefeed.NewCache(testDict, false)
+	cache := cvefeed.NewCache(testDict)
 	cfg := config{
 		nProcessors: 1,
 		cpesAt:      4,

@@ -125,6 +125,7 @@ type config struct {
 	skip                      fieldsToSkip
 	indexedDict               bool
 	requireVersion            bool
+	cacheSize                 int
 }
 
 func (c *config) addFlags() {
@@ -132,6 +133,7 @@ func (c *config) addFlags() {
 	flag.IntVar(&c.cpesAt, "cpe", 0, "look for CPE names in input at this position (starts with 1)")
 	flag.IntVar(&c.cvesAt, "cve", 0, "output CVEs at this position (starts with 1)")
 	flag.IntVar(&c.matchesAt, "matches", 0, "output CPEs that matches CVE at this position; 0 disables the output")
+	flag.IntVar(&c.cacheSize, "cache_size", 0, "limit the cache size to this amount in bytes; 0 removes the limit, -1 disables caching")
 	flag.StringVar(&c.feedFormat, "feed", "xml", "vulnerability feed format (currently xml and json values are supported")
 	flag.StringVar(&c.inFieldSep, "d", "\t", "input columns delimiter")
 	flag.StringVar(&c.inRecSep, "d2", ",", "inner input columns delimiter: separates elements of list passed into a CSV columns")
@@ -305,7 +307,7 @@ func main() {
 	}
 	glog.V(1).Infof("...done in %v", time.Since(start))
 
-	cache := cvefeed.NewCache(dict, cfg.requireVersion)
+	cache := cvefeed.NewCache(dict).SetRequireVersion(cfg.requireVersion).SetMaxSize(cfg.cacheSize)
 
 	if cfg.indexedDict {
 		start = time.Now()
