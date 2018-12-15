@@ -27,6 +27,7 @@ func TestFromRPMName(t *testing.T) {
 		{"name-1.0.1.rmp", "", true},
 		{"name-1.0-1.noarch.rpm", "cpe:2.3:a:*:name:1.0:1:*:*:*:*:*:*", false},
 		{"NaMe-1.0-1.i386.rpm", "cpe:2.3:a:*:name:1.0:1:*:*:*:*:i386:*", false},
+		{"NaMe-1.0-1.src.rpm", "cpe:2.3:a:*:name:1.0:1:*:*:*:*:*:*", false},
 	}
 	for _, c := range cases {
 		attr, err := FromRPMName(c.pkgName)

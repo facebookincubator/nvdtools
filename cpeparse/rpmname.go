@@ -34,7 +34,7 @@ func FieldsFromRPMName(s string) (name, ver, rel, arch string, err error) {
 			err = fmt.Errorf("couldn't parse architecture from RPM package name %q: %v", s, err)
 			return
 		}
-		if arch == "noarch" {
+		if arch == "noarch" || arch == "src" {
 			arch = wfn.Any
 		}
 		pkg = pkg[:i]
