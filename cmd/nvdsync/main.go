@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cmd/nvdsync/datafeed"
@@ -37,10 +38,12 @@ func main() {
 		timeout time.Duration
 		source  = datafeed.NewSourceConfig()
 	)
+	default_ua := "nvdsync-" + datafeed.Version
 
 	flag.Var(&cvefeed, "cve_feed", cvefeed.Help())
 	flag.Var(&cpefeed, "cpe_feed", cpefeed.Help())
 	flag.DurationVar(&timeout, "timeout", 5*time.Minute, "sync timeout")
+	ua := flag.String("user_agent", default_ua, "HTTP request User-Agent header")
 	source.AddFlags(flag.CommandLine)
 
 	flag.Usage = func() {
@@ -58,6 +61,17 @@ func main() {
 	if localdir == "" {
 		flag.Usage()
 	}
+
+	// determine User-Agent header
+	re := regexp.MustCompile("[[:^ascii:]]")
+	ua_ascii := re.ReplaceAllLiteralString(*ua, "")
+	if ua_ascii != *ua {
+		glog.Warning("User-Agent contains non ascii characters, using default")
+		datafeed.UserAgent = default_ua
+	} else {
+		datafeed.UserAgent = *ua
+	}
+	glog.Infof("Using http User-Agent: %s", datafeed.UserAgent)
 
 	dfs := datafeed.Sync{
 		Feeds:    []datafeed.Syncer{cvefeed, cpefeed},
