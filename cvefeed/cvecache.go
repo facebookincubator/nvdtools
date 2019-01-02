@@ -23,7 +23,7 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-const CacheEvictPercentage = 0.1 // every eviction cycle invalidates this part of cache size at once
+const cacheEvictPercentage = 0.1 // every eviction cycle invalidates this part of cache size at once
 
 // Index maps the CPEs to the entries in the NVD feed they mentioned in
 type Index map[string][]CVEItem
@@ -144,9 +144,8 @@ func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
 	if c.MaxSize < 0 {
 		if c.Idx == nil {
 			return c.match(cpes, c.Dict)
-		} else {
-			return c.match(cpes, c.dictFromIndex(cpes))
 		}
+		return c.match(cpes, c.dictFromIndex(cpes))
 	}
 
 	// otherwise, let's get to the business
@@ -179,7 +178,7 @@ func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
 	c.mu.Lock()
 	c.size += cves.size
 	if c.MaxSize != 0 && c.size > c.MaxSize {
-		c.evict(int(CacheEvictPercentage * float64(c.MaxSize)))
+		c.evict(int(cacheEvictPercentage * float64(c.MaxSize)))
 	}
 	cves.evictionIndex = c.evictionQ.push(key)
 	c.mu.Unlock()
