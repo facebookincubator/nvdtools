@@ -22,6 +22,8 @@ import (
 	"net/http"
 )
 
+var UserAgent string
+
 // http helpers
 
 func httpNewRequestContext(ctx context.Context, method, path string) (*http.Request, error) {
@@ -29,7 +31,7 @@ func httpNewRequestContext(ctx context.Context, method, path string) (*http.Requ
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "nvdsync-"+Version)
+	req.Header.Set("User-Agent", UserAgent)
 	return req.WithContext(ctx), nil
 }
 
