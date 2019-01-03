@@ -63,13 +63,12 @@ func main() {
 	}
 
 	// determine User-Agent header
-	re := regexp.MustCompile("[[:^ascii:]]")
-	ua_ascii := re.ReplaceAllLiteralString(*ua, "")
-	if ua_ascii != *ua {
+	// check if it's only ascii characters
+	if regexp.MustCompile("^[[:ascii:]]+$").MatchString(*ua) {
+		datafeed.UserAgent = *ua
+	} else {
 		glog.Warning("User-Agent contains non ascii characters, using default")
 		datafeed.UserAgent = default_ua
-	} else {
-		datafeed.UserAgent = *ua
 	}
 	glog.Infof("Using http User-Agent: %s", datafeed.UserAgent)
 
