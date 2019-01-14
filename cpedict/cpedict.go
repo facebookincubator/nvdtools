@@ -110,7 +110,7 @@ type CPEItem struct {
 	Notes           TextType     `xml:"notes"`
 	References      []Reference  `xml:"references>reference"`
 	// Calls out a check, such as an OVAL definition, that can confirm or reject
-	// an IT system as an instance of the named platform. 0-n occurances.
+	// an IT system as an instance of the named platform. 0-n occurrences.
 	// TODO: not implemented
 	Check struct{} `xml:"check"`
 }

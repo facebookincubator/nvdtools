@@ -49,7 +49,7 @@ func (mt MatchType) String() string {
 
 // Search determinces how WFN (NamePattern) relates the given dictionary.
 // Deprecated matching names are resolved to their replacements; since item can be deprecated by multiple
-// names, wich might contain wildcards and in general refer to the whole family of products, this resolve isn't
+// names, which might contain wildcards and in general refer to the whole family of products, this resolve isn't
 // performed during exact match.
 // If exact is true and an exact match is found, the function will return the match and match type of Exact.
 // If the needle is a superset of any of the dictionary names, the function  will return that set of names

@@ -36,35 +36,35 @@ func TestMatchJSON(t *testing.T) {
 		},
 		{
 			Inventory: []*wfn.Attributes{
-				&wfn.Attributes{Part: "o", Vendor: "linux", Product: "linux_kernel", Version: "2\\.6\\.1"},
-				&wfn.Attributes{Part: "a", Vendor: "djvulibre_project", Product: "djvulibre", Version: "3\\.5\\.11"},
+				{Part: "o", Vendor: "linux", Product: "linux_kernel", Version: "2\\.6\\.1"},
+				{Part: "a", Vendor: "djvulibre_project", Product: "djvulibre", Version: "3\\.5\\.11"},
 			},
 			Expect: false,
 		},
 		{
 			Rule: 0,
 			Inventory: []*wfn.Attributes{
-				&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
-				&wfn.Attributes{Part: "a", Vendor: "facebook", Product: "styx", Version: "0\\.1"},
+				{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+				{Part: "a", Vendor: "facebook", Product: "styx", Version: "0\\.1"},
 			},
 			Matches: []*wfn.Attributes{
-				&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+				{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 			},
 			Expect: true,
 		},
 		{
 			Rule: 1,
 			Inventory: []*wfn.Attributes{
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "3\\.9"},
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "4\\.0"},
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "5\\.4"},
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "3\\.9"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "4\\.0"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "5\\.4"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 			},
 			Matches: []*wfn.Attributes{
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "4\\.0"},
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "5\\.4"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "4\\.0"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "5\\.4"},
 			},
 			Expect: true,
 		},
@@ -88,7 +88,7 @@ func TestMatchJSON(t *testing.T) {
 
 func TestMatchJSONrequireVersion(t *testing.T) {
 	inventory := []*wfn.Attributes{
-		&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+		{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 	}
 	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
 	if err != nil {
@@ -101,9 +101,9 @@ func TestMatchJSONrequireVersion(t *testing.T) {
 
 func BenchmarkMatchJSON(b *testing.B) {
 	inventory := []*wfn.Attributes{
-		&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
-		&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
-		&wfn.Attributes{Part: "a", Vendor: "facebook", Product: "styx", Version: "0\\.1"},
+		{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+		{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+		{Part: "a", Vendor: "facebook", Product: "styx", Version: "0\\.1"},
 	}
 	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
 	if err != nil {

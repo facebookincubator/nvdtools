@@ -47,8 +47,8 @@ func TestMatchXML(t *testing.T) {
 		},
 		{
 			Inventory: []*wfn.Attributes{
-				&wfn.Attributes{Part: "o", Vendor: "linux", Product: "linux_kernel", Version: "2\\.6\\.1"},
-				&wfn.Attributes{Part: "a", Vendor: "djvulibre_project", Product: "djvulibre", Version: "3\\.5\\.11"},
+				{Part: "o", Vendor: "linux", Product: "linux_kernel", Version: "2\\.6\\.1"},
+				{Part: "a", Vendor: "djvulibre_project", Product: "djvulibre", Version: "3\\.5\\.11"},
 			},
 			Dict: `
 				<vuln:vulnerable-configuration id="http://nvd.nist.gov/">
@@ -65,9 +65,9 @@ func TestMatchXML(t *testing.T) {
 		},
 		{
 			Inventory: []*wfn.Attributes{
-				&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
-				&wfn.Attributes{Part: "a", Vendor: "facebook", Product: "styx", Version: "0\\.1"},
+				{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+				{Part: "a", Vendor: "facebook", Product: "styx", Version: "0\\.1"},
 			},
 			Dict: `
 				<vuln:vulnerable-configuration id="http://nvd.nist.gov/">
@@ -81,16 +81,16 @@ func TestMatchXML(t *testing.T) {
 					</cpe-lang:logical-test>
 				</vuln:vulnerable-configuration>`,
 			Matches: []*wfn.Attributes{
-				&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
-				&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+				{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 			},
 			Expect: true,
 		},
 		{
 			Inventory: []*wfn.Attributes{
-				&wfn.Attributes{Part: "h", Vendor: wfn.NA, Product: wfn.NA},
-				&wfn.Attributes{Part: "o", Vendor: wfn.NA, Product: wfn.NA},
-				&wfn.Attributes{Part: "a", Vendor: wfn.Any, Product: "geoip", Version: "1\\.5\\.0"},
+				{Part: "h", Vendor: wfn.NA, Product: wfn.NA},
+				{Part: "o", Vendor: wfn.NA, Product: wfn.NA},
+				{Part: "a", Vendor: wfn.Any, Product: "geoip", Version: "1\\.5\\.0"},
 			},
 			Dict: `
 		    <vuln:vulnerable-configuration id="http://nvd.nist.gov/">
@@ -138,7 +138,7 @@ func TestMatchXMLRequireVersion(t *testing.T) {
 </vuln:vulnerable-configuration>
 `
 	inventory := []*wfn.Attributes{
-		&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+		{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
 	}
 	var dict nvdxml.PlatformSpecificationType
 	if err := xml.Unmarshal([]byte(benchDict), &dict); err != nil {
@@ -164,8 +164,8 @@ func BenchmarkMatchXMLAny(b *testing.B) {
 </vuln:vulnerable-configuration>
 `
 	inventory := []*wfn.Attributes{
-		&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
-		&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+		{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+		{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 	}
 	var dict nvdxml.PlatformSpecificationType
 	if err := xml.Unmarshal([]byte(benchDict), &dict); err != nil {
@@ -193,8 +193,8 @@ func BenchmarkMatchXMLExact(b *testing.B) {
 </vuln:vulnerable-configuration>
 `
 	inventory := []*wfn.Attributes{
-		&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
-		&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+		{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+		{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 	}
 	var dict nvdxml.PlatformSpecificationType
 	if err := xml.Unmarshal([]byte(benchDict), &dict); err != nil {
@@ -222,8 +222,8 @@ func BenchmarkMatchXMLShortcuts(b *testing.B) {
 </vuln:vulnerable-configuration>
 `
 	inventory := []*wfn.Attributes{
-		&wfn.Attributes{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
-		&wfn.Attributes{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
+		{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
+		{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 	}
 	var dict nvdxml.PlatformSpecificationType
 	if err := xml.Unmarshal([]byte(benchDict), &dict); err != nil {
