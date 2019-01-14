@@ -20,9 +20,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 )
 
-var UserAgent string
+var userAgent = "nvdsync-" + Version
 
 // http helpers
 
@@ -31,7 +32,7 @@ func httpNewRequestContext(ctx context.Context, method, path string) (*http.Requ
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("User-Agent", UserAgent())
 	return req.WithContext(ctx), nil
 }
 
@@ -45,4 +46,18 @@ func httpResponseNotOK(resp *http.Response) error {
 	}
 	return fmt.Errorf("unexpected http response from %q (%q): %q",
 		resp.Request.URL.String(), resp.Status, string(body))
+}
+
+// SetUserAgent sets the value of User-Agent HTTP header for the client
+func SetUserAgent(ua string) error {
+	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(ua) {
+		return fmt.Errorf("non-ascii character in User-Agent header: %q", ua)
+	}
+	userAgent = ua
+	return nil
+}
+
+// UserAgent returns the value of User-Agent HTTP header used by the client
+func UserAgent() string {
+	return userAgent
 }

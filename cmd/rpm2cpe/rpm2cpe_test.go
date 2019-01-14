@@ -32,12 +32,12 @@ func TestSkipFields(t *testing.T) {
 			out: []string{"0", "1", "2", "3", "4", "5"},
 		},
 		{
-			f2s: fieldsToSkip(map[int]struct{}{1: struct{}{}, 3: struct{}{}}),
+			f2s: fieldsToSkip(map[int]struct{}{1: {}, 3: {}}),
 			in:  []string{"0", "1", "2", "3", "4", "5"},
 			out: []string{"0", "2", "4", "5"},
 		},
 		{
-			f2s: fieldsToSkip(map[int]struct{}{0: struct{}{}, 1: struct{}{}, 2: struct{}{}}),
+			f2s: fieldsToSkip(map[int]struct{}{0: {}, 1: {}, 2: {}}),
 			in:  []string{"0", "1", "2"},
 			out: []string{},
 		},
@@ -67,7 +67,7 @@ func TestProcessRecord(t *testing.T) {
 		cpeField:    5,
 		inFieldSep:  ",",
 		outFieldSep: ";",
-		skip:        fieldsToSkip(map[int]struct{}{0: struct{}{}, 3: struct{}{}}),
+		skip:        fieldsToSkip(map[int]struct{}{0: {}, 3: {}}),
 	}
 	for _, c := range cases {
 		record, err := processRecord(strings.Split(c.in, cfg.inFieldSep), cfg)
@@ -78,7 +78,7 @@ func TestProcessRecord(t *testing.T) {
 			continue
 		}
 		if c.fail {
-			t.Errorf("line %q was expected to fail, but succeded", c.in)
+			t.Errorf("line %q was expected to fail, but succeeded", c.in)
 			continue
 		}
 		out := strings.Join(record, cfg.outFieldSep)
