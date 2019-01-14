@@ -1,8 +1,16 @@
 language: go
+dist: xenial
 
 go:
-  - "1.9"
-  - "1.x"
-  - master
+- "1.9"
+- "1.x"
+- master
 
-script: go test -v ./...
+before_install:
+  - sudo apt-get install -y rpm build-essential debhelper dh-make fakeroot 
+
+script: 
+- go get -v -u ./...
+- go test -v ./...
+- make -C rpm/ 
+- dpkg-buildpackage -rfakeroot -uc -us
