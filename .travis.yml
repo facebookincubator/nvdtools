@@ -12,5 +12,16 @@ before_install:
 script: 
 - go get -v -u ./...
 - go test -v ./...
+- chmod +x build_tarballs.sh && ./build_tarballs.sh
 - make -C rpm/ 
-- dpkg-buildpackage -rfakeroot -uc -us
+- dpkg-buildpackage -rfakeroot -uc -us && mv ../*.deb release
+
+deploy:
+  provider: releases
+  api_key:
+    secure: M44EFYSy8kHCgatYZw+zAaeupzONqpEnN8uMhtFQhsHS6rDXJryn2vj1nFB8i5D/VwZyFhiBjCSwJNQnpIDBsUoV159KbedhOANDS9UUSRgrWm1RzryZd1+raMFtxuaXZ4LqMNQa3mhvVwh1jJKO2KOYdYw6lUN7WR2ToVIJpQ2TXTro8v1ezp4Gws7WQCpHfzg1SHr0PfTD3YHzfvGDmw8s+ipOukbLYU1DyEiR6o1DFMauO4HsgzSjAFRAAd+DArs0CwSDkt/F+92Zw3AbiTG03+/QlqSJXRBE+uqLZzGAX1A8vVb9VqKc9iJvAYOu49fssMlCpoZQs1bf1oFsSduIlQRcIoxi1e7IpK4pq70WxByeRnnJWyWB22fUUEi0DCQvos8CAWUiq/Hzjb3nYF9XEnAVVtIrlMCbjnghsMhHWEsa9gfGJP1gdtSVj/cDbfz8sJPn6ewYWjfnNEbDL17/TQ1sQNIIPRlMnOR7SrKpNjSCzjGwPG+HdrrWjUrTRTu+oPO5j5s7DNczXr53BdH2+UEvxuyjZ5drE7SRcSdPFWSCw+NhT/9ljF3mMkT8mnT+LstDpm0ORNN0ZlAoj+vhNQmdFWXgkMDx4c/E2J1A9EhXknFNhN72inX5C2Rdql63GN+KXzPB/Wz4AvwqImtJiWLjcm43zNMJQymAuls=
+  file_glob: true
+  file: release/**/*
+  skip_cleanup: true
+  on:
+    tags: true

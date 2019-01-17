@@ -9,6 +9,8 @@ Source0:	%{name}-%{version}.tar.gz
 
 BuildRoot:	%{_tmpdir}/%{name}-%{version}-%{release}
 
+%define _rpmdir ../release
+
 %description
 A set of tools to work with the feeds (vulnerabilities, CPE dictionary etc.) distributed by National Vulnerability Database (NVD)
 
