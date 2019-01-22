@@ -12,6 +12,8 @@ before_install:
 script: 
 - go get -v -u ./...
 - go test -v ./...
+
+before_deploy:
 - chmod +x build_tarballs.sh && ./build_tarballs.sh
 - make -C rpm/ 
 - dpkg-buildpackage -rfakeroot -uc -us && mv ../*.deb release

@@ -5,7 +5,7 @@ CSV2CPE=csv2cpe
 NVDSYNC=nvdsync
 RPM2CPE=rpm2cpe
 NAME=nvdtools
-VERSION=1.0
+VERSION=i$TRAVIS_TAG
 
 function build_binaries_and_tars(){
     GOOS=$1; shift
