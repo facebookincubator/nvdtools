@@ -8,7 +8,7 @@ CSV2CPE=csv2cpe
 NVDSYNC=nvdsync
 RPM2CPE=rpm2cpe
 
-VERSION=1.0
+VERSION=$(TRAVIS_TAG)
 NAME=nvdtools
 PKG=$(NAME)-$(VERSION)
 TGZ=$(PKG).tar.gz
