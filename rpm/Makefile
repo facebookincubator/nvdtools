@@ -8,4 +8,4 @@ all:
 	mv ../nvdtools-*.gz $(HOME)/rpmbuild/SOURCES
 	cp nvdtools.spec $(HOME)/rpmbuild/SPECS
 	cd $(HOME)/rpmbuild/SPECS
-	rpmbuild -ba nvdtools.spec
+	rpmbuild -ba --define="version $(TRAVIS_TAG)" nvdtools.spec
