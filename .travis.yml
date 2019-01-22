@@ -2,26 +2,26 @@ language: go
 dist: xenial
 
 go:
-- "1.9"
-- "1.x"
+- '1.9'
+- 1.x
 - master
 
 before_install:
-  - sudo apt-get install -y rpm build-essential debhelper dh-make fakeroot 
+- sudo apt-get install -y rpm build-essential debhelper dh-make fakeroot
 
-script: 
+script:
 - go get -v -u ./...
 - go test -v ./...
 
 before_deploy:
 - chmod +x build_tarballs.sh && ./build_tarballs.sh
-- make -C rpm/ 
+- make -C rpm/
 - dpkg-buildpackage -rfakeroot -uc -us && mv ../*.deb release
 
 deploy:
   provider: releases
   api_key:
-    secure: M44EFYSy8kHCgatYZw+zAaeupzONqpEnN8uMhtFQhsHS6rDXJryn2vj1nFB8i5D/VwZyFhiBjCSwJNQnpIDBsUoV159KbedhOANDS9UUSRgrWm1RzryZd1+raMFtxuaXZ4LqMNQa3mhvVwh1jJKO2KOYdYw6lUN7WR2ToVIJpQ2TXTro8v1ezp4Gws7WQCpHfzg1SHr0PfTD3YHzfvGDmw8s+ipOukbLYU1DyEiR6o1DFMauO4HsgzSjAFRAAd+DArs0CwSDkt/F+92Zw3AbiTG03+/QlqSJXRBE+uqLZzGAX1A8vVb9VqKc9iJvAYOu49fssMlCpoZQs1bf1oFsSduIlQRcIoxi1e7IpK4pq70WxByeRnnJWyWB22fUUEi0DCQvos8CAWUiq/Hzjb3nYF9XEnAVVtIrlMCbjnghsMhHWEsa9gfGJP1gdtSVj/cDbfz8sJPn6ewYWjfnNEbDL17/TQ1sQNIIPRlMnOR7SrKpNjSCzjGwPG+HdrrWjUrTRTu+oPO5j5s7DNczXr53BdH2+UEvxuyjZ5drE7SRcSdPFWSCw+NhT/9ljF3mMkT8mnT+LstDpm0ORNN0ZlAoj+vhNQmdFWXgkMDx4c/E2J1A9EhXknFNhN72inX5C2Rdql63GN+KXzPB/Wz4AvwqImtJiWLjcm43zNMJQymAuls=
+    secure: y9Ljnlp5AsPatXaEcvMShbyJDPqjQ6bS+n4DmdhqqSH+Rbdi5ML7ZuuKgoCfPWi6u15JQ1PsyFvkxBA5yJvwk3qGNcBsPihs2zVSTnEDlxyYacITIczq1UcWUt19ERfAZyD4ftO/ZZWq5Pjf75T9k7iEmuZBJ+Wik25XlNQP4gbHo1EyldMTWUwMqCyetTXApXaFzERK9mqhuvzXxghQZ6uujIO9jKMttFM7tBEnzew2Bw052Vpu5vyltKQuESx3GWEcWomhp+31ona4+qRBkuvVP7nkN7XQYl15Hv72ZV8KsUOQl83Vop0/wtvU6P9w6dTCxb4IuIgfvUKDiogvH/LpHNiNn/FuGNKGBBsJimLgljRSgxzrBKUr6RiYIYitrq3u/18ZReGVIeLMiNH55Yy5oa1kNIWRgDxvmGFsUjJZoUr8rBTRol81+nqQIjeXKeNHNTXiVozvP95vc17km/sjrDj2SouSRFJzFuOOgB/FvZx3grBetgfDGOKhNZwTwSsy/6nqEKeoa8CHFu93gNalF8pYHgtq8gr3ZZ9rtoNG62mYsV26Vkp+3c30GsNJVHSpIozmSUEPkmFdB3EF4PMSVf91yr7g6GKrNcicO8K5aA7G1MjqlHd6UrjCgWBLGMSYyUee4o66U39w7USP0PJ+MLdJ1HFcl60/nF2VhgU
   file_glob: true
   file: release/**/*
   skip_cleanup: true
