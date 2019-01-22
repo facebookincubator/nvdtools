@@ -19,7 +19,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 func TestCacheEviction(t *testing.T) {

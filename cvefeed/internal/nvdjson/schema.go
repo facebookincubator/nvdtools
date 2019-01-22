@@ -17,8 +17,8 @@ package nvdjson
 // This file was auto-generated.
 
 import (
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/iface"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // NVDCVEFeedJSON10DefCPEName was auto-generated.

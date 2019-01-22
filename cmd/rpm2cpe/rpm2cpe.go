@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/cpeparse"
+	"github.com/jokLiu/nvdtools/cpeparse"
 )
 
 var progname = path.Base(os.Args[0])

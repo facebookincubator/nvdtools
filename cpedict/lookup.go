@@ -17,7 +17,7 @@ package cpedict
 import (
 	"fmt"
 
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // MatchType represents the type of match in dictionary lookup

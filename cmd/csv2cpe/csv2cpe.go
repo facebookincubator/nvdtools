@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 func main() {

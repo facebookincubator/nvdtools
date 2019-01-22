@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/iface"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // TextType represents multi-language text

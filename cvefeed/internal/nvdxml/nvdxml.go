@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/iface"
 )
 
 // Parse parses dictionary from NVD vulnerability feed XML

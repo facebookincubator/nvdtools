@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/nvdxml"
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/nvdxml"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 func TestMatchXML(t *testing.T) {

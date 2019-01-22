@@ -15,8 +15,8 @@
 package nvdxml
 
 import (
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/iface"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // CVEID implements part of cvefeed.CVEItem interface

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // FieldsFromRPMName returns name, version, release and acrhitecture parsed from RPM package name

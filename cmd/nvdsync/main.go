@@ -22,7 +22,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cmd/nvdsync/datafeed"
+	"github.com/jokLiu/nvdtools/cmd/nvdsync/datafeed"
 	"github.com/golang/glog"
 )
 

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 func TestMatchJSON(t *testing.T) {

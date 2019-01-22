@@ -30,8 +30,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cvefeed"
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/cvefeed"
+	"github.com/jokLiu/nvdtools/wfn"
 	"github.com/golang/glog"
 )
 

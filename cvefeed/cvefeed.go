@@ -24,10 +24,10 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/nvdjson"
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/nvdxml"
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/iface"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/nvdjson"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/nvdxml"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // CVEItem is an interface that provides access to CVE data from vulnerability feed

@@ -16,7 +16,7 @@
 package iface
 
 import (
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // LogicalTest describes logical test performed during matching

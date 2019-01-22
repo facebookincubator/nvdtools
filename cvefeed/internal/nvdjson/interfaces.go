@@ -17,8 +17,8 @@ package nvdjson
 import (
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/cvefeed/internal/iface"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // NVDCVEFeedJSON10DefCVEItem is a CVEItem

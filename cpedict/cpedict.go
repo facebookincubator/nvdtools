@@ -22,7 +22,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/jokLiu/nvdtools/wfn"
 )
 
 // TextType represents multi-language text
