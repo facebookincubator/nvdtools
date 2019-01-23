@@ -14,6 +14,7 @@ script:
 - go test -v ./...
 
 before_deploy:
+- export VERSION=${TRAVIS_TAG:1}
 - chmod +x build_tarballs.sh && ./build_tarballs.sh
 - make -C rpm/
 - dpkg-buildpackage -rfakeroot -uc -us && mv ../*.deb release
