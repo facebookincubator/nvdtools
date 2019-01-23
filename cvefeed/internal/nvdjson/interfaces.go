@@ -108,16 +108,16 @@ func (n *NVDCVEFeedJSON10DefNode) MatchPlatform(platform *wfn.Attributes, requir
 				return true
 			}
 			ver := wfn.StripSlashes(platform.Version)
-			if cpeNode.VersionStartIncluding != "" && strings.Compare(ver, cpeNode.VersionStartIncluding) < 0 {
+			if cpeNode.VersionStartIncluding != "" && smartVerCmp(ver, cpeNode.VersionStartIncluding) < 0 {
 				continue
 			}
-			if cpeNode.VersionStartExcluding != "" && strings.Compare(ver, cpeNode.VersionStartExcluding) <= 0 {
+			if cpeNode.VersionStartExcluding != "" && smartVerCmp(ver, cpeNode.VersionStartExcluding) <= 0 {
 				continue
 			}
-			if cpeNode.VersionEndIncluding != "" && strings.Compare(ver, cpeNode.VersionEndIncluding) > 0 {
+			if cpeNode.VersionEndIncluding != "" && smartVerCmp(ver, cpeNode.VersionEndIncluding) > 0 {
 				continue
 			}
-			if cpeNode.VersionEndExcluding != "" && strings.Compare(ver, cpeNode.VersionEndExcluding) >= 0 {
+			if cpeNode.VersionEndExcluding != "" && smartVerCmp(ver, cpeNode.VersionEndExcluding) >= 0 {
 				continue
 			}
 			return true
@@ -137,4 +137,53 @@ func node2CPE(node *NVDCVEFeedJSON10DefCPEMatch) (*wfn.Attributes, error) {
 	}
 	node.wfname, err = wfn.Parse(uri)
 	return node.wfname, err
+}
+
+// smartVerCmp compares stringified versions of software.
+// It tries to do the right thing for any type of versioning,
+// assuming v1 and v2 have the same version convension.
+// It will return meaningful result for "95SE" vs "98SP1" or for "16.3.2" vs. "3.7.0",
+// but not for "2000" vs "11.7".
+// Returns -1 if v1 < v2, 1 if v1 > v2 and 0 if v1 == v2.
+func smartVerCmp(v1, v2 string) int {
+	for s1, s2 := v1, v2; len(s1) > 0 && len(s2) > 0; {
+		num1, alpha1, skip1 := parseVerParts(v1)
+		num2, alpha2, skip2 := parseVerParts(v2)
+		if num1 > num2 {
+			return 1
+		}
+		if num2 > num1 {
+			return -1
+		}
+		if cmp := strings.Compare(alpha1, alpha2); cmp != 0 {
+			return cmp
+		}
+		s1 = s1[skip1:]
+		s2 = s2[skip2:]
+	}
+	// everything is equal so far, the longest wins
+	if len(v1) > len(v2) {
+		return 1
+	}
+	if len(v2) > len(v1) {
+		return -1
+	}
+	return 0
+}
+
+// parseVerParts returns the next comparable chunk of the version string v and
+// how far it read into v to parse them. It tries to interpret the start of the string as a number.
+// E.g. parseVerParts("11b.4.16-New_Year_Edition") will return (11, "b", 4)
+func parseVerParts(v string) (num int, alpha string, skip int) {
+	for skip = 0; skip < len(v) && v[skip] >= '0' && v[skip] <= '9'; skip++ {
+		num = num*10 + int(v[skip]-'0')
+	}
+	alphaAt := skip
+	if skip < len(v) {
+		skip = strings.IndexRune(v, '.')
+		if skip == -1 {
+			skip = len(v)
+		}
+	}
+	return num, v[alphaAt:skip], skip
 }
