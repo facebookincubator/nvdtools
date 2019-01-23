@@ -99,6 +99,19 @@ func TestMatchJSONrequireVersion(t *testing.T) {
 	}
 }
 
+func TestMatchJSONsmartVersionMatching(t *testing.T) {
+	inventory := []*wfn.Attributes{
+		{Part: "a", Vendor: "microsoft", Product: "ie", Version: "52\\.0"},
+	}
+	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
+	if err != nil {
+		t.Fatalf("failed to parse the dictionary: %v", err)
+	}
+	if _, ok := Match(inventory, items[1].Config(), true); ok {
+		t.Errorf("version %q unexpectedly matched", inventory[0].Version)
+	}
+}
+
 func BenchmarkMatchJSON(b *testing.B) {
 	inventory := []*wfn.Attributes{
 		{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
