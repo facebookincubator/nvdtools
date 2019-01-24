@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -74,37 +75,59 @@ func TestRemoveColumns(t *testing.T) {
 }
 
 func TestProcessor(t *testing.T) {
-	fs := flag.NewFlagSet("test", flag.ContinueOnError)
-
-	acm := &AttributeColumnMap{}
-	acm.AddFlags(fs)
-
-	err := fs.Parse([]string{"-cpe_product=1", "-cpe_version=2"})
-	if err != nil {
-		t.Fatal(err)
+	cases := []struct {
+		flags []string
+		skips IntSet
+		in    string
+		out   string
+	}{
+		{
+			[]string{"-cpe_product=1", "-cpe_version=2"},
+			NewIntSet(1, 2, 3),
+			"Foo\t1.0...\tdelet\ta\nbar\t2.0\tdelet\tb",
+			"a,cpe:/::foo:1.0\nb,cpe:/::bar:2.0\n",
+		},
+		{
+			[]string{"-cpe_part=1", "-cpe_product=2", "-cpe_product=4"},
+			NewIntSet(1, 2, 3),
+			"a\tb\tc\n",
+			"cpe:/a\n",
+		},
 	}
 
-	var stdin, stdout bytes.Buffer
+	for n, c := range cases {
+		t.Run(fmt.Sprintf("case_%d", n), func(t *testing.T) {
+			fs := flag.NewFlagSet("test", flag.ContinueOnError)
 
-	p := &Processor{
-		InputComma:        rune('\t'),
-		OutputComma:       rune(','),
-		CPEToLower:        true,
-		CPEOutputColumn:   2,
-		EraseInputColumns: NewIntSet(1, 2, 3),
+			acm := &AttributeColumnMap{}
+			acm.AddFlags(fs)
+
+			err := fs.Parse(c.flags)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var stdin, stdout bytes.Buffer
+
+			p := &Processor{
+				InputComma:        rune('\t'),
+				OutputComma:       rune(','),
+				CPEToLower:        true,
+				CPEOutputColumn:   2,
+				EraseInputColumns: c.skips,
+			}
+
+			stdin.Write([]byte(c.in))
+
+			err = p.Process(acm, &stdin, &stdout)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if out := stdout.String(); out != c.out {
+				t.Fatalf("unexpected output:\nwant: %q\nhave: %q\n", c.out, out)
+			}
+		})
 	}
 
-	stdin.Write([]byte("Foo\t1.0...\tdelet\ta\nbar\t2.0\tdelet\tb"))
-
-	err = p.Process(acm, &stdin, &stdout)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	have := stdout.String()
-	want := "a,cpe:/::foo:1.0\nb,cpe:/::bar:2.0\n"
-
-	if have != want {
-		t.Fatalf("unexpected output:\nwant: %q\nhave: %q\n", want, have)
-	}
 }

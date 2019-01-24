@@ -180,7 +180,7 @@ func (acm *AttributeColumnMap) CPE(cols []string, lower bool) (string, error) {
 	for i, v := range m {
 		j := i - 1
 
-		if len(cols) < j {
+		if j >= len(cols) {
 			continue
 		}
 
