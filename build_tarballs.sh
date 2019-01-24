@@ -5,17 +5,17 @@ CSV2CPE=csv2cpe
 NVDSYNC=nvdsync
 RPM2CPE=rpm2cpe
 NAME=nvdtools
-VERSION=$TRAVIS_TAG
 
 function build_binaries_and_tars(){
     GOOS=$1; shift
     ARCHS=("$@")
     for GOARCH in ${ARCHS[@]}; do
         for BINARY in $CPE2CVE $CSV2CPE $NVDSYNC $RPM2CPE; do
-            env GOOS=$GOOS GOARCH=$GOARCH go build -o binaries/$BINARY-$VERSION-$GOOS-$GOARCH ./cmd/$BINARY
+            env GOOS=$GOOS GOARCH=$GOARCH go build -o $BINARY ./cmd/$BINARY
         done
 	tar -zcvf release/$NAME-$VERSION-$GOOS-$GOARCH.tar.gz \
-            binaries/{$CPE2CVE,$CSV2CPE,$NVDSYNC,$RPM2CPE}-$VERSION-$GOOS-$GOARCH
+            {$CPE2CVE,$CSV2CPE,$NVDSYNC,$RPM2CPE}
+	make clean
     done
 }
 
