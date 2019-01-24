@@ -147,8 +147,8 @@ func node2CPE(node *NVDCVEFeedJSON10DefCPEMatch) (*wfn.Attributes, error) {
 // Returns -1 if v1 < v2, 1 if v1 > v2 and 0 if v1 == v2.
 func smartVerCmp(v1, v2 string) int {
 	for s1, s2 := v1, v2; len(s1) > 0 && len(s2) > 0; {
-		num1, alpha1, skip1 := parseVerParts(v1)
-		num2, alpha2, skip2 := parseVerParts(v2)
+		num1, alpha1, skip1 := parseVerParts(s1)
+		num2, alpha2, skip2 := parseVerParts(s2)
 		if num1 > num2 {
 			return 1
 		}
@@ -183,6 +183,8 @@ func parseVerParts(v string) (num int, alpha string, skip int) {
 		skip = strings.IndexRune(v, '.')
 		if skip == -1 {
 			skip = len(v)
+		} else {
+			skip++
 		}
 	}
 	return num, v[alphaAt:skip], skip
