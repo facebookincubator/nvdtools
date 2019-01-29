@@ -39,3 +39,22 @@ func TestSmartVerCmp(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkSmartVerCmp(b *testing.B) {
+	cases := []struct {
+		v1, v2 string
+	}{
+		{"1.0", "1.0"},
+		{"1.0.1", "1.0"},
+		{"1.0.14", "1.0.4"},
+		{"95SE", "98SP1"},
+		{"16.0.0", "3.2.7"},
+		{"10.23", "10.21"},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, c := range cases {
+			smartVerCmp(c.v1, c.v2)
+		}
+	}
+}

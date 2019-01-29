@@ -147,15 +147,15 @@ func node2CPE(node *NVDCVEFeedJSON10DefCPEMatch) (*wfn.Attributes, error) {
 // Returns -1 if v1 < v2, 1 if v1 > v2 and 0 if v1 == v2.
 func smartVerCmp(v1, v2 string) int {
 	for s1, s2 := v1, v2; len(s1) > 0 && len(s2) > 0; {
-		num1, alpha1, skip1 := parseVerParts(s1)
-		num2, alpha2, skip2 := parseVerParts(s2)
+		num1, skip1 := parseVerParts(s1)
+		num2, skip2 := parseVerParts(s2)
 		if num1 > num2 {
 			return 1
 		}
 		if num2 > num1 {
 			return -1
 		}
-		if cmp := strings.Compare(alpha1, alpha2); cmp != 0 {
+		if cmp := strings.Compare(s1[:skip1], s2[:skip2]); cmp != 0 {
 			return cmp
 		}
 		s1 = s1[skip1:]
@@ -171,14 +171,16 @@ func smartVerCmp(v1, v2 string) int {
 	return 0
 }
 
-// parseVerParts returns the next comparable chunk of the version string v and
-// how far it read into v to parse them. It tries to interpret the start of the string as a number.
-// E.g. parseVerParts("11b.4.16-New_Year_Edition") will return (11, "b", 4)
-func parseVerParts(v string) (num int, alpha string, skip int) {
-	for skip = 0; skip < len(v) && v[skip] >= '0' && v[skip] <= '9'; skip++ {
-		num = num*10 + int(v[skip]-'0')
+// parseVerParts returns the length of consecutive run of digits in the beginning of the string
+// and when the version part (major, minor etc.) ends, i.e. the position of the dot or end of the line.
+// E.g. parseVerParts("11b.4.16-New_Year_Edition") will return (2, 4)
+func parseVerParts(v string) (num, skip int) {
+	for skip = 0; skip < len(v); skip++ {
+		if v[skip] < 0 || v[skip] > '9' {
+			break
+		}
 	}
-	alphaAt := skip
+	num = skip
 	if skip < len(v) {
 		skip = strings.IndexRune(v, '.')
 		if skip == -1 {
@@ -187,5 +189,5 @@ func parseVerParts(v string) (num int, alpha string, skip int) {
 			skip++
 		}
 	}
-	return num, v[alphaAt:skip], skip
+	return num, skip
 }
