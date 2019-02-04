@@ -23,8 +23,6 @@ import (
 	"path"
 	"runtime"
 	"runtime/pprof"
-	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -34,86 +32,6 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 	"github.com/golang/glog"
 )
-
-// custom type to be recognized by flag.Parse()
-type fieldsToSkip map[int]struct{}
-
-// skipFields removes elements from  fields slice as per config
-// NB!: modifies the underlying array of fields slice
-func (fs fieldsToSkip) skipFields(fields []string) []string {
-	j := 0
-	for i := 0; i < len(fields); i++ {
-		if _, ok := fs[i]; ok {
-			continue
-		}
-		fields[j] = fields[i]
-		j++
-	}
-	return fields[:j]
-}
-
-// appendAt appends and element to a slice at position at after skipping configured fields
-// NB!: modifies the underlying array of to slice
-func (fs fieldsToSkip) appendAt(to []string, args ...interface{}) []string {
-	to = fs.skipFields(to)
-	fields := map[int]string{}
-	keys := make([]int, 0, len(args)/2)
-	pos := -1
-	for _, arg := range args {
-		switch arg.(type) {
-		case int:
-			pos = arg.(int)
-			keys = append(keys, pos)
-		case string:
-			if pos == -1 {
-				panic("appendAt: string field was not prepended by position")
-			}
-			fields[pos] = arg.(string)
-			pos = -1
-		default:
-			panic(fmt.Sprintf("appendAt: unsupported type %T", arg))
-		}
-	}
-	sort.Ints(keys)
-	for _, at := range keys {
-		if at > len(to) {
-			at = len(to)
-		}
-		out := make([]string, 0, len(to)+1)
-		out = append(out, to[:at]...)
-		out = append(out, fields[at])
-		out = append(out, to[at:]...)
-		to = out
-	}
-	return to
-}
-
-// part of flag.Value interface implementation
-func (fs fieldsToSkip) String() string {
-	fss := make([]string, 0, len(fs))
-	for i := range fs {
-		fss = append(fss, fmt.Sprintf("%d", i+1))
-	}
-	return strings.Join(fss, ",")
-}
-
-// part of flag.Value interface implementation
-func (fs *fieldsToSkip) Set(val string) error {
-	if *fs == nil {
-		*fs = fieldsToSkip{}
-	}
-	for _, v := range strings.Split(val, ",") {
-		n, err := strconv.Atoi(v)
-		if err != nil {
-			return err
-		}
-		if n < 1 {
-			return fmt.Errorf("illegal field index %d", n)
-		}
-		(*fs)[n-1] = struct{}{}
-	}
-	return nil
-}
 
 type config struct {
 	nProcessors               int
@@ -126,6 +44,7 @@ type config struct {
 	indexedDict               bool
 	requireVersion            bool
 	cacheSize                 int
+	overrides                 multiString
 }
 
 func (c *config) addFlags() {
@@ -141,9 +60,10 @@ func (c *config) addFlags() {
 	flag.StringVar(&c.outRecSep, "o2", ",", "inner output columns delimiter: separates elements of lists in output CSV columns")
 	flag.StringVar(&c.cpuProfile, "cpuprofile", "", "file to store CPU profile data to; empty value disables CPU profiling")
 	flag.StringVar(&c.memProfile, "memprofile", "", "file to store memory profile data to; empty value disables memory profiling")
-	flag.Var(&c.skip, "e", "comma separated list of fields to erase from output; starts at 1; processed before the vulnerablitie field added")
+	flag.Var(&c.skip, "e", "comma separated list of fields to erase from output; starts at 1, supports ranges (e.g. 1-3); processed before the vulnerablitie field added")
 	flag.BoolVar(&c.indexedDict, "idxd", false, "build and use an index for CVE dictionary: increases the processing speed, but might miss some matches")
 	flag.BoolVar(&c.requireVersion, "require_version", false, "ignore matches of CPEs with version ANY")
+	flag.Var(&c.overrides, "r", "overRide: path to override feed, can be specified multiple times")
 }
 
 func (c *config) mustBeValid() {
@@ -288,13 +208,17 @@ func main() {
 
 	glog.V(1).Info("loading NVD feeds...")
 	start := time.Now()
-	var dict cvefeed.Dictionary
+	var dict, overrides cvefeed.Dictionary
 	var err error
 	switch cfg.feedFormat {
 	case "xml":
-		dict, err = cvefeed.LoadXMLDictionary(flag.Args()...)
+		if dict, err = cvefeed.LoadXMLDictionary(flag.Args()...); err == nil {
+			overrides, err = cvefeed.LoadXMLDictionary(cfg.overrides...)
+		}
 	case "json":
-		dict, err = cvefeed.LoadJSONDictionary(flag.Args()...)
+		if dict, err = cvefeed.LoadJSONDictionary(flag.Args()...); err == nil {
+			overrides, err = cvefeed.LoadJSONDictionary(cfg.overrides...)
+		}
 	default:
 		glog.Fatalf("unknown vulnerability feed format %q", cfg.feedFormat)
 	}
@@ -306,6 +230,13 @@ func main() {
 		}
 	}
 	glog.V(1).Infof("...done in %v", time.Since(start))
+
+	if len(overrides) != 0 {
+		start = time.Now()
+		glog.V(1).Info("applying overrides...")
+		dict.Override(overrides)
+		glog.V(1).Infof("...done in %v", time.Since(start))
+	}
 
 	cache := cvefeed.NewCache(dict).SetRequireVersion(cfg.requireVersion).SetMaxSize(cfg.cacheSize)
 

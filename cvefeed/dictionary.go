@@ -20,27 +20,46 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
 )
 
 // Dictionary is a slice of entries
-type Dictionary = []CVEItem
+type Dictionary map[string]CVEItem
+
+// Override amends entries in Dictionary with configurations from Dictionary d2;
+// CVE will be matched if it matches the original config of d and does not match the config of d2.
+func (d *Dictionary) Override(d2 Dictionary) {
+	if d == nil {
+		return
+	}
+	if *d == nil {
+		*d = make(Dictionary)
+	}
+	for k, cve := range d2 {
+		if _, ok := (*d)[k]; ok {
+			(*d)[k] = iface.MergeCVEItems((*d)[k], cve)
+		}
+	}
+}
 
 // LoadXMLDictionary parses dictionary from multiple NVD vulenrability feed XML files
 func LoadXMLDictionary(paths ...string) (Dictionary, error) {
-	return loadDictionary(loadXMLFile, paths...)
+	return LoadFeed(loadXMLFile, paths...)
 }
 
 // LoadJSONDictionary parses dictionary from multiple NVD vulenrability feed JSON files
 func LoadJSONDictionary(paths ...string) (Dictionary, error) {
-	return loadDictionary(loadJSONFile, paths...)
+	return LoadFeed(loadJSONFile, paths...)
 }
 
-func loadDictionary(loadFunc func(string) (Dictionary, error), paths ...string) (Dictionary, error) {
-	var dict Dictionary
+// LoadFeed calls loadFunc for each file in paths and returns the combined outputs in a Dictionary.
+func LoadFeed(loadFunc func(string) ([]CVEItem, error), paths ...string) (Dictionary, error) {
+	dict := make(Dictionary)
 	var wg sync.WaitGroup
 	done := make(chan struct{})
 	errDone := make(chan struct{})
-	dictChan := make(chan Dictionary, 1)
+	dictChan := make(chan []CVEItem, 1)
 	errChan := make(chan error, 1)
 	for _, path := range paths {
 		wg.Add(1)
@@ -56,7 +75,9 @@ func loadDictionary(loadFunc func(string) (Dictionary, error), paths ...string) 
 	}
 	go func() {
 		for d := range dictChan {
-			dict = append(dict, d...)
+			for _, cve := range d {
+				dict[cve.CVEID()] = cve
+			}
 		}
 		close(done)
 	}()
@@ -79,7 +100,7 @@ func loadDictionary(loadFunc func(string) (Dictionary, error), paths ...string) 
 }
 
 // loadXMLFile parses dictionary from NVD vulnerability feed XML file
-func loadXMLFile(path string) (Dictionary, error) {
+func loadXMLFile(path string) ([]CVEItem, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("dictionary: failed to load feed %q: %v", path, err)
@@ -89,7 +110,7 @@ func loadXMLFile(path string) (Dictionary, error) {
 }
 
 // loadJSONFile parses dictionary from NVD vulnerability feed XML file
-func loadJSONFile(path string) (Dictionary, error) {
+func loadJSONFile(path string) ([]CVEItem, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("dictionary: failed to load feed %q: %v", path, err)

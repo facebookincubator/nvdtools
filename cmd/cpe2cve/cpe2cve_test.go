@@ -70,12 +70,16 @@ func TestProcessInput(t *testing.T) {
 		},
 		// TODO: add more test cases
 	}
-	testDictXML, err := cvefeed.ParseXML(strings.NewReader(testDictXMLStr))
+	testDictXML, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+		return cvefeed.ParseXML(bytes.NewBufferString(testDictXMLStr))
+	}, "")
 	if err != nil {
 		t.Fatalf("couldn't parse XML dictionary: %v", err)
 	}
 	cacheXML := cvefeed.NewCache(testDictXML)
-	testDictJSON, err := cvefeed.ParseJSON(strings.NewReader(testDictJSONStr))
+	testDictJSON, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr))
+	}, "")
 	if err != nil {
 		t.Fatalf("couldn't parse JSON dictionary: %v", err)
 	}
@@ -124,7 +128,9 @@ func TestProcessInput(t *testing.T) {
 // This used to cause false postives, added this test during the debug session
 func TestProcessInputFalsePositives(t *testing.T) {
 	in := "cpe:/a::glibc:2.27-1"
-	dict, err := cvefeed.ParseJSON(strings.NewReader(testDictJSONStr2))
+	dict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr2))
+	}, "")
 	if err != nil {
 		t.Fatalf("couldn't parse JSON dictionary: %v", err)
 	}
@@ -151,7 +157,9 @@ func TestProcessInputFalsePositives(t *testing.T) {
 
 func TestProcessInputRequireVersion(t *testing.T) {
 	in := "cpe:/h:huaweidevice:d100:1.33.7"
-	dict, err := cvefeed.ParseJSON(strings.NewReader(testDictJSONStr2))
+	dict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr2))
+	}, "")
 	if err != nil {
 		t.Fatalf("couldn't parse JSON dictionary: %v", err)
 	}
@@ -182,7 +190,9 @@ func BenchmarkProcessInputXML(t *testing.B) {
 1;2;3;cpe:/o::centos_linux:7.5.1804,cpe:/a::chardet:2.2.1,cpe:/a::javapackages:1.0.0,cpe:/a::kitchen:1.1.1,cpe:/a::nose:1.3.7,cpe:/a::python-dateutil:1.5,cpe:/a::pytz:2016.10,cpe:/a::setuptools:0.9.8,cpe:/a::chardet:2.2.1,cpe:/a::javapackages:1.0.0,cpe:/a::kitchen:1.1.1,cpe:/a::nose:1.3.7,cpe:/a::python-dateutil:1.5,cpe:/a::pytz:2016.10,cpe:/a::setuptools:0.9.8
 1;2;3;cpe:/o::centos_linux:7.5.1804,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1
 `
-	testDict, err := cvefeed.ParseXML(strings.NewReader(testDictXMLStr))
+	testDict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+		return cvefeed.ParseXML(bytes.NewBufferString(testDictXMLStr))
+	}, "")
 	if err != nil {
 		t.Fatalf("couldn't parse dictionary: %v", err)
 	}
@@ -213,7 +223,9 @@ func BenchmarkProcessInputJSON(t *testing.B) {
 1;2;3;cpe:/o::centos_linux:7.5.1804,cpe:/a::chardet:2.2.1,cpe:/a::javapackages:1.0.0,cpe:/a::kitchen:1.1.1,cpe:/a::nose:1.3.7,cpe:/a::python-dateutil:1.5,cpe:/a::pytz:2016.10,cpe:/a::setuptools:0.9.8,cpe:/a::chardet:2.2.1,cpe:/a::javapackages:1.0.0,cpe:/a::kitchen:1.1.1,cpe:/a::nose:1.3.7,cpe:/a::python-dateutil:1.5,cpe:/a::pytz:2016.10,cpe:/a::setuptools:0.9.8
 1;2;3;cpe:/o::centos_linux:7.5.1804,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1
 `
-	testDict, err := cvefeed.ParseJSON(strings.NewReader(testDictJSONStr))
+	testDict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr))
+	}, "")
 	if err != nil {
 		t.Fatalf("couldn't parse dictionary: %v", err)
 	}
