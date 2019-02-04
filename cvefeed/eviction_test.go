@@ -23,7 +23,9 @@ import (
 )
 
 func TestCacheEviction(t *testing.T) {
-	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
+	items, err := LoadFeed(func(_ string) ([]CVEItem, error) {
+		return ParseJSON(bytes.NewBufferString(testJSONdict))
+	}, "")
 	if err != nil {
 		t.Fatalf("failed to parse the dictionary: %v", err)
 	}
@@ -44,7 +46,7 @@ func TestCacheEviction(t *testing.T) {
 			}
 			matches := cache.Get(inventory)
 			if len(matches) != 1 {
-				t.Errorf("variant %d: cache.Get() returned wrong amount of matches (%d, 1 was expected)", variant, len(matches))
+				t.Fatalf("variant %d: cache.Get() returned wrong amount of matches (%d, 1 was expected)", variant, len(matches))
 			}
 			if len(matches[0].CPEs) != 1 {
 				t.Errorf("variant %d: cache.Get() returned wrong a match with wrong number of CPEs (%d, 1 was expected)", variant, len(matches[0].CPEs))
@@ -71,7 +73,7 @@ func TestCacheEviction(t *testing.T) {
 		}
 		matches := cache.Get(inventory)
 		if len(matches) != 1 {
-			t.Errorf("variant %d: cache.Get() returned wrong amount of matches (%d, 1 was expected)", variant, len(matches))
+			t.Fatalf("variant %d: cache.Get() returned wrong amount of matches (%d, 1 was expected)", variant, len(matches))
 		}
 		if len(matches[0].CPEs) != 1 {
 			t.Errorf("variant %d: cache.Get() returned wrong a match with wrong number of CPEs (%d, 1 was expected)", variant, len(matches[0].CPEs))

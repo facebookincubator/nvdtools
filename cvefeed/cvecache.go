@@ -209,7 +209,7 @@ func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
 				continue
 			}
 			knownEntries[e] = true
-			d = append(d, e)
+			d[e.CVEID()] = e
 		}
 	}
 	for _, e := range c.Idx[wfn.Any] {
@@ -217,7 +217,7 @@ func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
 			continue
 		}
 		knownEntries[e] = true
-		d = append(d, e)
+		d[e.CVEID()] = e
 	}
 	return d
 }
