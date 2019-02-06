@@ -68,6 +68,13 @@ func TestMatchJSON(t *testing.T) {
 			},
 			Expect: true,
 		},
+		{
+			Rule: 2,
+			Inventory: []*wfn.Attributes{
+				{Part: "a", Vendor: "mozilla", Product: "firefox", Version: "64\\.0"},
+			},
+			Expect: false,
+		},
 	}
 	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
 	if err != nil {
@@ -204,6 +211,31 @@ var testJSONdict = `{
         }
       ]
     }
+  },
+	{
+    "cve": {
+      "data_format": "MITRE",
+      "data_type": "CVE",
+      "data_version": "4.0",
+      "CVE_data_meta": {
+        "ASSIGNER": "cve@mitre.org",
+        "ID": "CVE-2002-2436"
+      }
+    },
+    "configurations": {
+      "CVE_data_version": "4.0",
+      "nodes": [
+        {
+          "cpe_match": [
+            {
+              "cpe23Uri": "cpe:2.3:a:mozilla:firefox:*:*:*:*:*:*:*:*",
+              "versionEndIncluding": "3.6.24",
+              "vulnerable": true
+            }
+          ],
+          "operator": "OR"
+        }
+      ]
+    }
   }
-]
-}`
+] }`
