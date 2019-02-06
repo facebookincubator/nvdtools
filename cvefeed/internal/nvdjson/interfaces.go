@@ -176,7 +176,7 @@ func smartVerCmp(v1, v2 string) int {
 // E.g. parseVerParts("11b.4.16-New_Year_Edition") will return (2, 4)
 func parseVerParts(v string) (num, skip int) {
 	for skip = 0; skip < len(v); skip++ {
-		if v[skip] < 0 || v[skip] > '9' {
+		if v[skip] < '0' || v[skip] > '9' {
 			break
 		}
 	}
