@@ -21,6 +21,7 @@ import (
 	"unsafe"
 
 	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/golang/glog"
 )
 
 const cacheEvictPercentage = 0.1 // every eviction cycle invalidates this part of cache size at once
@@ -195,7 +196,8 @@ func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
 	knownEntries := map[CVEItem]bool{}
 	for _, cpe := range cpes {
 		if cpe == nil { // should never happen
-			panic("nil CPE in dictionary")
+			glog.Warning("nil CPE in list")
+			continue
 		}
 		product := cpe.Product
 		if product == wfn.Any {
