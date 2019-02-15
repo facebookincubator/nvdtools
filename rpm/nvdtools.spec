@@ -1,3 +1,5 @@
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+
 Name:           nvdtools
 Summary:        A collection of tools for working with National Vulnerability Database feeds.
 
