@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
 CPE2CVE=cpe2cve
 CSV2CPE=csv2cpe
