@@ -23,14 +23,49 @@ import (
 
 // NVDCVEFeedJSON10DefCVEItem is a CVEItem
 
-// CVEID implements part of cvefeed.CVEItem interface
+// CVEID returns the identifier of the vulnerability (e.g. CVE).
 func (i *NVDCVEFeedJSON10DefCVEItem) CVEID() string {
 	return i.CVE.CVEDataMeta.ID
 }
 
-// Config implements part of cvefeed.CVEItem interface
+// Config returns a set of tests that identify vulnerable platform.
 func (i *NVDCVEFeedJSON10DefCVEItem) Config() []iface.LogicalTest {
 	return i.Configurations.ifaceNodes
+}
+
+// ProblemTypes returns weakness types associated with vulnerability (e.g. CWE)
+func (i *NVDCVEFeedJSON10DefCVEItem) ProblemTypes() []string {
+	var cwes []string
+	if i.CVE == nil || i.CVE.CVEDataMeta == nil || i.CVE.CVEDataMeta.ID == "" {
+		return nil
+	}
+
+	if i.CVE.Problemtype != nil {
+		for _, pt := range i.CVE.Problemtype.ProblemtypeData {
+			if pt != nil {
+				cwe := getLangStr(pt.Description)
+				cwes = append(cwes, cwe)
+			}
+		}
+	}
+	return cwes
+}
+
+// CVSS20base returns CVSS 2.0 base score of vulnerability
+func (i *NVDCVEFeedJSON10DefCVEItem) CVSS20base() float64 {
+	if i.Impact != nil && i.Impact.BaseMetricV2 != nil && i.Impact.BaseMetricV2.CVSSV2 != nil {
+		return i.Impact.BaseMetricV2.CVSSV2.BaseScore
+	}
+	return 0.0
+}
+
+// CVSS30base returns CVSS 3.0 base score of vulnerability
+func (i *NVDCVEFeedJSON10DefCVEItem) CVSS30base() float64 {
+	// find CVSSv3 base score
+	if i.Impact != nil && i.Impact.BaseMetricV3 != nil && i.Impact.BaseMetricV3.CVSSV3 != nil {
+		return i.Impact.BaseMetricV3.CVSSV3.BaseScore
+	}
+	return 0.0
 }
 
 // NVDCVEFeedJSON10DefNode is a LogicalTest
@@ -190,4 +225,18 @@ func parseVerParts(v string) (num, skip int) {
 		}
 	}
 	return num, skip
+}
+
+func getLangStr(lss []*CVEJSON40LangString) string {
+	var s string
+	for _, ls := range lss {
+		if ls == nil {
+			continue
+		}
+		s = ls.Value
+		if ls.Lang == "en" {
+			break
+		}
+	}
+	return s
 }

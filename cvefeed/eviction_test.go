@@ -34,8 +34,8 @@ func TestCacheEviction(t *testing.T) {
 
 	// first, run concurrently and enjoy different sizes of cache logged on each run
 	var wg sync.WaitGroup
-	wg.Add(40)
-	for i := 0; i < 40; i++ {
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
 		go func(variant int) {
 			defer wg.Done()
 			inventory := []*wfn.Attributes{
@@ -63,7 +63,7 @@ func TestCacheEviction(t *testing.T) {
 	t.Logf("concurrent run: cache size %d/%d; %d records cached", cache.size, cache.MaxSize, len(cache.data))
 
 	// now let's get serious and get some deterministic resutls
-	for i := 0; i < 40; i++ {
+	for i := 0; i < 50; i++ {
 		variant := i
 		inventory := []*wfn.Attributes{
 			matchingItem,

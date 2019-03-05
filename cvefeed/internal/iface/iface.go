@@ -32,6 +32,9 @@ type LogicalTest interface {
 type CVEItem interface {
 	CVEID() string
 	Config() []LogicalTest
+	ProblemTypes() []string
+	CVSS20base() float64
+	CVSS30base() float64
 }
 
 // MergeCVEItems combines two CVEItems:
@@ -50,17 +53,46 @@ func MergeCVEItems(x, y CVEItem) CVEItem {
 		inners:   []LogicalTest{&xOp, &yOp},
 	}
 
+	// CWE merging: append + unique
+	var cwes []string
+	var set map[string]bool
+	for _, cwe := range x.ProblemTypes() {
+		set[cwe] = true
+	}
+	for cwe := range set {
+		cwes = append(cwes, cwe)
+	}
+	for _, cwe := range y.ProblemTypes() {
+		if _, ok := set[cwe]; !ok {
+			cwes = append(cwes, cwe)
+		}
+	}
+
+	// CVSS score merging: larger wins
+	cvss20, cvss30 := x.CVSS20base(), x.CVSS30base()
+	if cvss20 < y.CVSS20base() {
+		cvss20 = y.CVSS20base()
+	}
+	if cvss30 < y.CVSS30base() {
+		cvss30 = y.CVSS30base()
+	}
+
 	z := mergeCVEItem{
-		id:     x.CVEID(),
-		config: []LogicalTest{mergeOp},
+		id:           x.CVEID(),
+		problemTypes: cwes,
+		cvss20base:   cvss20,
+		cvss30base:   cvss30,
+		config:       []LogicalTest{mergeOp},
 	}
 
 	return z
 }
 
 type mergeCVEItem struct {
-	id     string
-	config []LogicalTest
+	id                     string
+	config                 []LogicalTest
+	problemTypes           []string
+	cvss20base, cvss30base float64
 }
 
 func (i mergeCVEItem) CVEID() string {
@@ -69,6 +101,18 @@ func (i mergeCVEItem) CVEID() string {
 
 func (i mergeCVEItem) Config() []LogicalTest {
 	return i.config
+}
+
+func (i mergeCVEItem) ProblemTypes() []string {
+	return i.problemTypes
+}
+
+func (i mergeCVEItem) CVSS20base() float64 {
+	return i.cvss20base
+}
+
+func (i mergeCVEItem) CVSS30base() float64 {
+	return i.cvss30base
 }
 
 type mergeOperator struct {

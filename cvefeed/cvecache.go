@@ -68,7 +68,7 @@ func collectCPEs(dict []LogicalTest) (cpes []*wfn.Attributes) {
 
 // MatchResult stores CVE and a slice of CPEs that matched it
 type MatchResult struct {
-	CVE  string
+	CVE  CVEItem
 	CPEs []*wfn.Attributes
 }
 
@@ -88,7 +88,7 @@ func (cves *cachedCVEs) updateResSize(key string) {
 	}
 	cves.size += int(unsafe.Sizeof(cves.res))
 	for i := range cves.res {
-		cves.size += int(unsafe.Sizeof(cves.res[i].CVE)) + len(cves.res[i].CVE)
+		cves.size += int(unsafe.Sizeof(cves.res[i].CVE))
 		for _, attr := range cves.res[i].CPEs {
 			cves.size += len(attr.Part) + int(unsafe.Sizeof(attr.Part))
 			cves.size += len(attr.Vendor) + int(unsafe.Sizeof(attr.Vendor))
@@ -229,7 +229,7 @@ func (c *Cache) match(cpes []*wfn.Attributes, dict Dictionary) (result []MatchRe
 	for _, v := range dict {
 		if mm, ok := Match(cpes, v.Config(), c.RequireVersion); ok {
 			mm = uniq(mm)
-			result = append(result, MatchResult{v.CVEID(), mm})
+			result = append(result, MatchResult{v, mm})
 		}
 	}
 	return result

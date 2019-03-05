@@ -135,12 +135,19 @@ type PlatformSpecificationType struct {
 	// CheckFactRef          *CheckFactRefType `xml:"check-fact-ref"`
 }
 
+// CWEType represents CWE
+type CWEType struct {
+	CWE string `xml:"id,attr"`
+}
+
 // Entry represents a CVE entry
 type Entry struct {
 	ID            string                       `xml:"id,attr"`
 	Configuration []*PlatformSpecificationType `xml:"vulnerable-configuration"`
 	ifaceConfig   []iface.LogicalTest          // for reparsing Config field as []iface.LogicalTest
 	CVE           string                       `xml:"cve-id"`
+	CWEs          []*CWEType                   `xml:"cwe"`
+	CVSSscore     float64                      `xml:"cvss>base_metrics>score"`
 }
 
 // NVDFeed represents the root element of NVD CVE feed

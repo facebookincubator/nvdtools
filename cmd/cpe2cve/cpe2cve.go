@@ -34,23 +34,28 @@ import (
 )
 
 type config struct {
-	nProcessors               int
-	cpesAt, cvesAt, matchesAt int
-	feedFormat                string
-	inFieldSep, inRecSep      string
-	outFieldSep, outRecSep    string
-	cpuProfile, memProfile    string
-	skip                      fieldsToSkip
-	indexedDict               bool
-	requireVersion            bool
-	cacheSize                 int
-	overrides                 multiString
+	nProcessors                      int
+	cpesAt, cvesAt, matchesAt        int
+	cwesAt, cvss2at, cvss3at, cvssAt int
+	feedFormat                       string
+	inFieldSep, inRecSep             string
+	outFieldSep, outRecSep           string
+	cpuProfile, memProfile           string
+	skip                             fieldsToSkip
+	indexedDict                      bool
+	requireVersion                   bool
+	cacheSize                        int
+	overrides                        multiString
 }
 
 func (c *config) addFlags() {
 	flag.IntVar(&c.nProcessors, "nproc", 1, "number of concurrent goroutines that perform CVE lookup")
 	flag.IntVar(&c.cpesAt, "cpe", 0, "look for CPE names in input at this position (starts with 1)")
 	flag.IntVar(&c.cvesAt, "cve", 0, "output CVEs at this position (starts with 1)")
+	flag.IntVar(&c.cwesAt, "cwe", 0, "output problem types (CWEs) at this position (starts with 1)")
+	flag.IntVar(&c.cvssAt, "cvss", 0, "output CVSS base score (v3 if available, v2 otherwise) at this position (starts with 1)")
+	flag.IntVar(&c.cvss2at, "cvss2", 0, "output CVSS 2.0 base score at this position (starts with 1)")
+	flag.IntVar(&c.cvss3at, "cvss3", 0, "output CVSS 3.0 base score at this position (starts with 1)")
 	flag.IntVar(&c.matchesAt, "matches", 0, "output CPEs that matches CVE at this position; 0 disables the output")
 	flag.IntVar(&c.cacheSize, "cache_size", 0, "limit the cache size to this amount in bytes; 0 removes the limit, -1 disables caching")
 	flag.StringVar(&c.feedFormat, "feed", "xml", "vulnerability feed format (currently xml and json values are supported")
@@ -83,6 +88,22 @@ func (c *config) mustBeValid() {
 		glog.Errorf("-matches value is invalid %d", c.matchesAt)
 		flag.Usage()
 	}
+	if c.cwesAt < 0 {
+		glog.Errorf("-cwe value is invalid %d", c.cwesAt)
+		flag.Usage()
+	}
+	if c.cvss2at < 0 {
+		glog.Errorf("-cvss2 value is invalid %d", c.cvss2at)
+		flag.Usage()
+	}
+	if c.cvss3at < 0 {
+		glog.Errorf("-cvss2 value is invalid %d", c.cvss3at)
+		flag.Usage()
+	}
+	if c.cvssAt < 0 {
+		glog.Errorf("-cvss value is invalid %d", c.cvssAt)
+		flag.Usage()
+	}
 }
 
 func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg config, nlines *uint64) {
@@ -107,18 +128,26 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 			matchingCPEs := make([]string, len(matches.CPEs))
 			for i, attr := range matches.CPEs {
 				if attr == nil {
-					glog.Errorf("%s matches nil CPE", matches.CVE)
+					glog.Errorf("%s matches nil CPE", matches.CVE.CVEID())
 					continue
 				}
 				matchingCPEs[i] = (*wfn.Attributes)(attr).BindToURI()
 			}
 			rec2 := make([]string, len(rec))
 			copy(rec2, rec)
-			if cfg.matchesAt != 0 {
-				rec2 = cfg.skip.appendAt(rec2, cfg.cvesAt-1, matches.CVE, cfg.matchesAt-1, strings.Join(matchingCPEs, cfg.outRecSep))
-			} else {
-				rec2 = cfg.skip.appendAt(rec2, cfg.cvesAt-1, matches.CVE)
+			cvss := matches.CVE.CVSS30base()
+			if cvss == 0 {
+				cvss = matches.CVE.CVSS20base()
 			}
+			rec2 = cfg.skip.appendAt(
+				rec2,
+				cfg.cvesAt-1, matches.CVE.CVEID(),
+				cfg.matchesAt-1, strings.Join(matchingCPEs, cfg.outRecSep),
+				cfg.cwesAt-1, strings.Join(matches.CVE.ProblemTypes(), cfg.outRecSep),
+				cfg.cvss2at-1, fmt.Sprintf("%.1f", matches.CVE.CVSS20base()),
+				cfg.cvss3at-1, fmt.Sprintf("%.1f", matches.CVE.CVSS30base()),
+				cfg.cvssAt-1, fmt.Sprintf("%.1f", cvss),
+			)
 			out <- rec2
 		}
 		n := atomic.AddUint64(nlines, 1)

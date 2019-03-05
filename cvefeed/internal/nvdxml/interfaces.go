@@ -19,14 +19,30 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-// CVEID implements part of cvefeed.CVEItem interface
+// CVEID returns the identifier of the vulnerability (e.g. CVE).
 func (e *Entry) CVEID() string {
 	return e.ID
 }
 
-// Config implemens part of cvefeed.CVEItem interface
+// Config returns a set of tests that identify vulnerable platform.
 func (e *Entry) Config() []iface.LogicalTest {
 	return e.ifaceConfig
+}
+
+// ProblemTypes returns weakness types associated with vulnerability (e.g. CWE)
+func (e *Entry) ProblemTypes() []string {
+	return nil
+}
+
+// CVSS20base returns CVSS 2.0 base score of vulnerability
+func (e *Entry) CVSS20base() float64 {
+	return e.CVSSscore
+}
+
+// CVSS30base returns CVSS 3.0 base score of vulnerability
+func (e *Entry) CVSS30base() float64 {
+	// XML feed only reports CVSS20
+	return 0.0
 }
 
 // PlatformSpecificationType is a cvefeed.LogicalTest
