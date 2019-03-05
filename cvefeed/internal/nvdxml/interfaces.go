@@ -31,7 +31,11 @@ func (e *Entry) Config() []iface.LogicalTest {
 
 // ProblemTypes returns weakness types associated with vulnerability (e.g. CWE)
 func (e *Entry) ProblemTypes() []string {
-	return nil
+	var cwes []string
+	for _, cwe := range e.CWEs {
+		cwes = append(cwes, cwe.CWE)
+	}
+	return cwes
 }
 
 // CVSS20base returns CVSS 2.0 base score of vulnerability
