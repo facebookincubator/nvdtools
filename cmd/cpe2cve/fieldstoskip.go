@@ -39,7 +39,8 @@ func (fs fieldsToSkip) skipFields(fields []string) []string {
 	return fields[:j]
 }
 
-// appendAt appends and element to a slice at position at after skipping configured fields
+// appendAt appends and element to a slice at position at after skipping configured fields.
+// Negative pos skips the next element.
 func (fs fieldsToSkip) appendAt(to []string, args ...interface{}) []string {
 	to = fs.skipFields(to)
 	fields := map[int]string{}
@@ -49,10 +50,12 @@ func (fs fieldsToSkip) appendAt(to []string, args ...interface{}) []string {
 		switch arg.(type) {
 		case int:
 			pos = arg.(int)
-			keys = append(keys, pos)
+			if pos >= 0 {
+				keys = append(keys, pos)
+			}
 		case string:
-			if pos == -1 {
-				panic("appendAt: string field was not prepended by position")
+			if pos < 0 {
+				break
 			}
 			fields[pos] = arg.(string)
 			pos = -1
