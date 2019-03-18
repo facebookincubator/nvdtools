@@ -182,15 +182,15 @@ func node2CPE(node *NVDCVEFeedJSON10DefCPEMatch) (*wfn.Attributes, error) {
 // Returns -1 if v1 < v2, 1 if v1 > v2 and 0 if v1 == v2.
 func smartVerCmp(v1, v2 string) int {
 	for s1, s2 := v1, v2; len(s1) > 0 && len(s2) > 0; {
-		num1, skip1 := parseVerParts(s1)
-		num2, skip2 := parseVerParts(s2)
+		num1, cmpTo1, skip1 := parseVerParts(s1)
+		num2, cmpTo2, skip2 := parseVerParts(s2)
 		if num1 > num2 {
 			return 1
 		}
 		if num2 > num1 {
 			return -1
 		}
-		if cmp := strings.Compare(s1[:skip1], s2[:skip2]); cmp != 0 {
+		if cmp := strings.Compare(s1[:cmpTo1], s2[:cmpTo2]); cmp != 0 {
 			return cmp
 		}
 		s1 = s1[skip1:]
@@ -206,10 +206,11 @@ func smartVerCmp(v1, v2 string) int {
 	return 0
 }
 
-// parseVerParts returns the length of consecutive run of digits in the beginning of the string
-// and when the version part (major, minor etc.) ends, i.e. the position of the dot or end of the line.
-// E.g. parseVerParts("11b.4.16-New_Year_Edition") will return (2, 4)
-func parseVerParts(v string) (num, skip int) {
+// parseVerParts returns the length of consecutive run of digits in the beginning of the string,
+// the last non-separator chararcted (which should be compared), and index at which the version part (major, minor etc.) ends,
+// i.e. the position of the dot or end of the line.
+// E.g. parseVerParts("11b.4.16-New_Year_Edition") will return (2, 3, 4)
+func parseVerParts(v string) (num, cmpTo, skip int) {
 	for skip = 0; skip < len(v); skip++ {
 		if v[skip] < '0' || v[skip] > '9' {
 			break
@@ -217,14 +218,29 @@ func parseVerParts(v string) (num, skip int) {
 	}
 	num = skip
 	if skip < len(v) {
-		skip = strings.IndexRune(v, '.')
+		// any punctuation separates the parts
+		skip = strings.IndexFunc(v, func(b rune) bool {
+			// !"#$%&'()*+,-./ are dec 33 to 47
+			// :;<=>?@ are dec 58 to 64
+			// [\]^_` are dec 91 to 96
+			// {|}~ are dec 123 to 126
+			// so punctuation is in dec 33-126 range except 48-57, 65-90 and 97-122 gaps.
+			// this inverse logic allows for early short-circuting for most of the chars and shaves ~20ns in benchmarks
+			return b >= '!' && b <= '~' &&
+				!(b > '/' && b < ':' ||
+					b > '@' && b < '[' ||
+					b > '`' && b < '{')
+		})
+		cmpTo = skip
 		if skip == -1 {
 			skip = len(v)
+			cmpTo = len(v)
 		} else {
 			skip++
 		}
+		return num, cmpTo, skip
 	}
-	return num, skip
+	return num, skip, skip
 }
 
 func getLangStr(lss []*CVEJSON40LangString) string {

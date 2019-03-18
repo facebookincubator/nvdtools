@@ -24,6 +24,9 @@ func TestSmartVerCmp(t *testing.T) {
 		v1, v2 string
 		ret    int
 	}{
+		{"5", "8", -1},
+		{"15", "3", 1},
+		{"4a", "4c", -1},
 		{"1.0", "1.0", 0},
 		{"1.0.1", "1.0", 1},
 		{"1.0.14", "1.0.4", 1},
@@ -31,11 +34,17 @@ func TestSmartVerCmp(t *testing.T) {
 		{"16.0.0", "3.2.7", 1},
 		{"10.23", "10.21", 1},
 		{"64.0", "3.6.24", 1},
+		{"5-1.15.2", "5-1.16", -1},
+		{"5-appl_1.16.1", "5-1.0.1", -1}, // this is wrong, but seems to be impossible to account for
+		{"5-1.16", "5_1.0.6", 1},
+		{"5-6", "5-16", -1},
+		{"5-a1", "5a1", -1}, // meh, kind of makes sense
+		{"5-a1", "5.a1", 0},
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%q vs %q", c.v1, c.v2), func(t *testing.T) {
 			if ret := smartVerCmp(c.v1, c.v2); ret != c.ret {
-				t.Fatalf("expected %d, got %d", ret, c.ret)
+				t.Fatalf("expected %d, got %d", c.ret, ret)
 			}
 		})
 	}
