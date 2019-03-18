@@ -210,37 +210,30 @@ func smartVerCmp(v1, v2 string) int {
 // the last non-separator chararcted (which should be compared), and index at which the version part (major, minor etc.) ends,
 // i.e. the position of the dot or end of the line.
 // E.g. parseVerParts("11b.4.16-New_Year_Edition") will return (2, 3, 4)
-func parseVerParts(v string) (num, cmpTo, skip int) {
-	for skip = 0; skip < len(v); skip++ {
-		if v[skip] < '0' || v[skip] > '9' {
+func parseVerParts(v string) (int, int, int) {
+	var num int
+	for num = 0; num < len(v); num++ {
+		if v[num] < '0' || v[num] > '9' {
 			break
 		}
 	}
-	num = skip
-	if skip < len(v) {
-		// any punctuation separates the parts
-		skip = strings.IndexFunc(v, func(b rune) bool {
-			// !"#$%&'()*+,-./ are dec 33 to 47
-			// :;<=>?@ are dec 58 to 64
-			// [\]^_` are dec 91 to 96
-			// {|}~ are dec 123 to 126
-			// so punctuation is in dec 33-126 range except 48-57, 65-90 and 97-122 gaps.
-			// this inverse logic allows for early short-circuting for most of the chars and shaves ~20ns in benchmarks
-			return b >= '!' && b <= '~' &&
-				!(b > '/' && b < ':' ||
-					b > '@' && b < '[' ||
-					b > '`' && b < '{')
-		})
-		cmpTo = skip
-		if skip == -1 {
-			skip = len(v)
-			cmpTo = len(v)
-		} else {
-			skip++
-		}
-		return num, cmpTo, skip
+	if num == len(v) {
+		return num, num, num
 	}
-	return num, skip, skip
+	// Any punctuation separates the parts.
+	skip := strings.IndexFunc(v, func(b rune) bool {
+		// !"#$%&'()*+,-./ are dec 33 to 47, :;<=>?@ are dec 58 to 64, [\]^_` are dec 91 to 96 and {|}~ are dec 123 to 126.
+		// So, punctuation is in dec 33-126 range except 48-57, 65-90 and 97-122 gaps.
+		// This inverse logic allows for early short-circuting for most of the chars and shaves ~20ns in benchmarks.
+		return b >= '!' && b <= '~' &&
+			!(b > '/' && b < ':' ||
+				b > '@' && b < '[' ||
+				b > '`' && b < '{')
+	})
+	if skip == -1 {
+		return num, len(v), len(v)
+	}
+	return num, skip, skip + 1
 }
 
 func getLangStr(lss []*CVEJSON40LangString) string {
