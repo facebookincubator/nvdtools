@@ -4,6 +4,8 @@
 
 A collection of tools for working with [National Vulnerability Database](https://nvd.nist.gov/) feeds.
 
+The [HOWTO](HOWTO.md) provides a broader view on how to effectively use these tools.
+
 ---
 * [Requirements](#requirements)
 * [Installation](#installation)
