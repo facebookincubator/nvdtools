@@ -2,7 +2,7 @@
 
 The command line tools provided by nvdtools were designed for processing inventory data in pipelines.
 
-To start, you will need a vulnerability database. In this toolkit you'll find the nvdsync command, which can download the public NVD database to local disk:
+To start, you will need a vulnerability database. In this toolkit you'll find the [nvdsync](https://github.com/facebookincubator/nvdtools/tree/master/cmd/nvdsync) command, which can download the public NVD database to local disk:
 
 ```bash
 nvdsync -v=1 -cve_feed=cve-1.0.json.gz /tmp/nvd
@@ -16,9 +16,9 @@ Think of the simplest data collector as an execution of rpm (or repoquery):
 rpm -qa | rpm2cpe -rpm=1 -cpe=2
 ```
 
-This collector will use the name of the rpm files in column 1 of the input, produce a CPE in column 2, and print both to standard output.
+This collector [rpm2cpe](https://github.com/facebookincubator/nvdtools/tree/master/cmd/rpm2cpe) will use the name of the rpm files in column 1 of the input, produce a CPE in column 2, and print both to standard output.
 
-Finally, use the cpe2cve processor to consume the CPE inventory from standard input and print CVEs affecting which CPEs to standard output:
+Finally, use the [cpe2cve](https://github.com/facebookincubator/nvdtools/tree/master/cmd/cpe2cve) processor to consume the CPE inventory from standard input and print CVEs affecting which CPEs to standard output:
 
 ```bash
 rpm -qa | \
@@ -30,7 +30,9 @@ The command above process each CPE individually and prints their respective CVEs
 
 ```bash
 set -o pipefail
-(hostname; rpm -qa | rpm2cpe -rpm=1 -cpe=2 -e=1 | sort -u | paste -s -d',' - | cpe2cve -cpe=1 -cve=2 -feed=json /tmp/nvd/*.json.gz | cut -f2 | paste -s -d',' -) | paste -s -d'\t' -
+(hostname
+rpm -qa | rpm2cpe -rpm=1 -cpe=2 -e=1 | sort -u | paste -s -d, | \
+cpe2cve -cpe=1 -cve=2 -e=1 -feed=json /tmp/nvd/*.json.gz | paste -s -d,) | paste -s -d'\t'
 ```
 
 The command above prints a single line containing `<hostname> <tab> <comma-separated list of CVEs>` for your machine. Great, but is unrealistic to use in each machine in production systems. That's when things start to get more interesting. See the next section for how to decouple this pipeline from collection to processing and reporting.
@@ -97,7 +99,7 @@ csv2cpe \
     -o=$'\t'
 ```
 
-The `-e=1` flag erases the injected "a" part from jq, and the `-i=1` flag tells csv2cpe to add the cpe in column 1 of its output.
+The `-e=1` flag erases the injected "a" part from jq, and the `-i=1` flag tells [csv2cpe](https://github.com/facebookincubator/nvdtools/tree/master/cmd/csv2cpe) to add the cpe in column 1 of its output.
 
 The tab-separated output constains the following columns:
 
@@ -113,7 +115,7 @@ Notice the metadata field: that information may be helpful much later on the pro
 
 ### Installed software collectors
 
-There are several ways of collecting information about packages installed on a system. We mostly use osquery for this, taking periodic snapshots of what is installed on a machine and shipping the data to the data warehouse.
+There are several ways of collecting information about packages installed on a system. We mostly use [osquery](https://osquery.io/) for this, taking periodic snapshots of what is installed on a machine and shipping the data to the data warehouse.
 
 The main advantage of using osquery is to support all major operating systems with a SQL-like interface for collecting information.
 
@@ -309,7 +311,7 @@ Following are some methods that can help improve the data quality and end-user e
 * Snoozes: let users snooze certain CVEs, in the sense of not reporting them for a period of time or indefinitely; this can avoid reporting false positives consecutively
 * Edits: some times the quality of the vulnerability database is subpar, missing information, or containing incorrect information; allowing edits to existing CVEs or creating new CVEs can improve the quality of matching and reports
 
-### The cpe2cve vulnerability processor
+### The [cpe2cve](https://github.com/facebookincubator/nvdtools/blob/master/cmd/cpe2cve) vulnerability processor
 
 Using the cpe2cve vulnerability processor is pretty straightforward, but it's worth highlighting a few things:
 
@@ -327,8 +329,7 @@ All the collector examples in previous sections put their generated CPE (or comm
 With the examples above, an execution of the CVE processor could take CPE(s) from column 1 of the input, and insert CVE in the same column, pushing the original input one column forward:
 
 ```bash
-cat inventory.csv | \
-cpe2cve -cpe=1 -cve=1 -feed=json ~/tmp/nvd/*.json.gz
+cat inventory.csv | cpe2cve -cpe=1 -cve=1 -feed=json /tmp/nvd/*.json.gz
 ```
 
-Check out the --help flag for all options related to input and output delimiters, lists, caching, and extra columns you may want to add to the output, such as CVSS score and CWE of each CVE.
+Check out the [--help](https://github.com/facebookincubator/nvdtools/blob/master/cmd/cpe2cve/cpe2cve.go#L51) flag for all options related to input and output delimiters, lists, caching, and extra columns you may want to add to the output, such as CVSS score and CWE of each CVE.
