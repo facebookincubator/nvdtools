@@ -44,7 +44,7 @@ type config struct {
 	skip                             fieldsToSkip
 	indexedDict                      bool
 	requireVersion                   bool
-	cacheSize                        int
+	cacheSize                        int64
 	overrides                        multiString
 }
 
@@ -57,7 +57,7 @@ func (c *config) addFlags() {
 	flag.IntVar(&c.cvss2at, "cvss2", 0, "output CVSS 2.0 base score at this position (starts with 1)")
 	flag.IntVar(&c.cvss3at, "cvss3", 0, "output CVSS 3.0 base score at this position (starts with 1)")
 	flag.IntVar(&c.matchesAt, "matches", 0, "output CPEs that matches CVE at this position; 0 disables the output")
-	flag.IntVar(&c.cacheSize, "cache_size", 0, "limit the cache size to this amount in bytes; 0 removes the limit, -1 disables caching")
+	flag.Int64Var(&c.cacheSize, "cache_size", 0, "limit the cache size to this amount in bytes; 0 removes the limit, -1 disables caching")
 	flag.StringVar(&c.feedFormat, "feed", "xml", "vulnerability feed format (currently xml and json values are supported")
 	flag.StringVar(&c.inFieldSep, "d", "\t", "input columns delimiter")
 	flag.StringVar(&c.inRecSep, "d2", ",", "inner input columns delimiter: separates elements of list passed into a CSV columns")
