@@ -76,30 +76,30 @@ type MatchResult struct {
 type cachedCVEs struct {
 	res           []MatchResult
 	ready         chan struct{}
-	size          int
+	size          int64
 	evictionIndex int // position in eviction queue
 }
 
 // updateResSize calculates the size of cached MatchResult and assigns it to cves.size
 func (cves *cachedCVEs) updateResSize(key string) {
-	cves.size = int(unsafe.Sizeof(key)) + len(key)
+	cves.size = int64(int(unsafe.Sizeof(key)) + len(key))
 	if cves == nil {
 		return
 	}
-	cves.size += int(unsafe.Sizeof(cves.res))
+	cves.size += int64(unsafe.Sizeof(cves.res))
 	for i := range cves.res {
-		cves.size += int(unsafe.Sizeof(cves.res[i].CVE))
+		cves.size += int64(unsafe.Sizeof(cves.res[i].CVE))
 		for _, attr := range cves.res[i].CPEs {
-			cves.size += len(attr.Part) + int(unsafe.Sizeof(attr.Part))
-			cves.size += len(attr.Vendor) + int(unsafe.Sizeof(attr.Vendor))
-			cves.size += len(attr.Product) + int(unsafe.Sizeof(attr.Product))
-			cves.size += len(attr.Version) + int(unsafe.Sizeof(attr.Version))
-			cves.size += len(attr.Update) + int(unsafe.Sizeof(attr.Update))
-			cves.size += len(attr.Edition) + int(unsafe.Sizeof(attr.Edition))
-			cves.size += len(attr.SWEdition) + int(unsafe.Sizeof(attr.SWEdition))
-			cves.size += len(attr.TargetHW) + int(unsafe.Sizeof(attr.TargetHW))
-			cves.size += len(attr.Other) + int(unsafe.Sizeof(attr.Other))
-			cves.size += len(attr.Language) + int(unsafe.Sizeof(attr.Language))
+			cves.size += int64(len(attr.Part)) + int64(unsafe.Sizeof(attr.Part))
+			cves.size += int64(len(attr.Vendor)) + int64(unsafe.Sizeof(attr.Vendor))
+			cves.size += int64(len(attr.Product)) + int64(unsafe.Sizeof(attr.Product))
+			cves.size += int64(len(attr.Version)) + int64(unsafe.Sizeof(attr.Version))
+			cves.size += int64(len(attr.Update)) + int64(unsafe.Sizeof(attr.Update))
+			cves.size += int64(len(attr.Edition)) + int64(unsafe.Sizeof(attr.Edition))
+			cves.size += int64(len(attr.SWEdition)) + int64(unsafe.Sizeof(attr.SWEdition))
+			cves.size += int64(len(attr.TargetHW)) + int64(unsafe.Sizeof(attr.TargetHW))
+			cves.size += int64(len(attr.Other)) + int64(unsafe.Sizeof(attr.Other))
+			cves.size += int64(len(attr.Language)) + int64(unsafe.Sizeof(attr.Language))
 		}
 	}
 }
@@ -111,9 +111,9 @@ type Cache struct {
 	mu             sync.Mutex
 	Dict           Dictionary
 	Idx            Index
-	RequireVersion bool // ignore matching specifications that have Version == ANY
-	MaxSize        int  // maximum size of the cache, 0 -- unlimited, -1 -- no caching
-	size           int  // current size of the cache
+	RequireVersion bool  // ignore matching specifications that have Version == ANY
+	MaxSize        int64 // maximum size of the cache, 0 -- unlimited, -1 -- no caching
+	size           int64 // current size of the cache
 }
 
 // NewCache creates new Cache instance with dictionary dict.
@@ -133,7 +133,7 @@ func (c *Cache) SetRequireVersion(requireVersion bool) *Cache {
 // size of 0 disables eviction (makes the cache grow indefinitely),
 // negative size disables caching.
 // Returns a pointer to the instance of Cache, for easy chaining.
-func (c *Cache) SetMaxSize(size int) *Cache {
+func (c *Cache) SetMaxSize(size int64) *Cache {
 	c.MaxSize = size
 	return c
 }
@@ -179,7 +179,7 @@ func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
 	c.mu.Lock()
 	c.size += cves.size
 	if c.MaxSize != 0 && c.size > c.MaxSize {
-		c.evict(int(cacheEvictPercentage * float64(c.MaxSize)))
+		c.evict(int64(cacheEvictPercentage * float64(c.MaxSize)))
 	}
 	cves.evictionIndex = c.evictionQ.push(key)
 	c.mu.Unlock()
@@ -237,7 +237,7 @@ func (c *Cache) match(cpes []*wfn.Attributes, dict Dictionary) (result []MatchRe
 
 // evict the least recently used records untile nbytes of capacity is achieved or no more records left.
 // It is not concurrency-safe, c.mu should be locked before calling it.
-func (c *Cache) evict(nbytes int) {
+func (c *Cache) evict(nbytes int64) {
 	for c.size+nbytes > c.MaxSize {
 		key := c.evictionQ.pop()
 		cd, ok := c.data[key]
