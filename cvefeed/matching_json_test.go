@@ -22,6 +22,16 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
+func TestBadJSONfeed(t *testing.T) {
+	items, err := ParseJSON(bytes.NewBufferString(testJSONdictBroken))
+	if err != nil {
+		t.Fatalf("failed to parse the dictionary: %v", err)
+	}
+	if len(items) > 0 {
+		t.Fatalf("expected the broken feed to be ignored, got %d items", len(items))
+	}
+}
+
 func TestMatchJSON(t *testing.T) {
 	cases := []struct {
 		Rule      int
@@ -136,6 +146,29 @@ func BenchmarkMatchJSON(b *testing.B) {
 		}
 	}
 }
+
+var testJSONdictBroken = `{
+  "CVE_data_format":"",
+  "CVE_data_type":"",
+  "CVE_data_version":"",
+  "CVE_Items":[
+    {},
+    {"cve":null},
+    {
+      "cve": {
+        "data_type" : "CVE",
+        "data_format" : "MITRE",
+        "data_version" : "4.0",
+        "CVE_data_meta" : {
+          "ID" : "TESTVE-2018-0001",
+          "ASSIGNER" : "cve@mitre.org"
+        }
+      },
+      "configurations": null
+    }
+  ]
+}
+`
 
 var testJSONdict = `{
 "CVE_data_type" : "CVE",

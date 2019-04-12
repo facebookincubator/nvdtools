@@ -76,7 +76,9 @@ func LoadFeed(loadFunc func(string) ([]CVEItem, error), paths ...string) (Dictio
 	go func() {
 		for d := range dictChan {
 			for _, cve := range d {
-				dict[cve.CVEID()] = cve
+				if cveid := cve.CVEID(); cveid != "" {
+					dict[cveid] = cve
+				}
 			}
 		}
 		close(done)
