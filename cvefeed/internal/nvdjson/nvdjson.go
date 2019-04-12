@@ -39,18 +39,24 @@ func reparse(root *NVDCVEFeedJSON10) ([]iface.CVEItem, error) {
 	if len(srcItems) == 0 {
 		return nil, fmt.Errorf("NVD CVE JSON feed had no CVE_Items element")
 	}
-	items := make([]iface.CVEItem, len(srcItems))
-	for i, item := range srcItems {
+	items := make([]iface.CVEItem, 0, len(srcItems))
+	for _, item := range srcItems {
+		if item == nil || item.Configurations == nil {
+			continue
+		}
 		for _, node := range item.Configurations.Nodes {
 			reparseLogicalTest(node)
 			item.Configurations.ifaceNodes = append(item.Configurations.ifaceNodes, iface.LogicalTest(node))
 		}
-		items[i] = iface.CVEItem(item)
+		items = append(items, iface.CVEItem(item))
 	}
 	return items, nil
 }
 
 func reparseLogicalTest(node *NVDCVEFeedJSON10DefNode) {
+	if node == nil {
+		return
+	}
 	for _, innerNode := range node.Children {
 		reparseLogicalTest(innerNode)
 	}

@@ -15,6 +15,7 @@
 package nvdjson
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
@@ -25,11 +26,17 @@ import (
 
 // CVEID returns the identifier of the vulnerability (e.g. CVE).
 func (i *NVDCVEFeedJSON10DefCVEItem) CVEID() string {
+	if i == nil {
+		return ""
+	}
 	return i.CVE.CVEDataMeta.ID
 }
 
 // Config returns a set of tests that identify vulnerable platform.
 func (i *NVDCVEFeedJSON10DefCVEItem) Config() []iface.LogicalTest {
+	if i == nil || i.Configurations == nil {
+		return nil
+	}
 	return i.Configurations.ifaceNodes
 }
 
@@ -72,19 +79,25 @@ func (i *NVDCVEFeedJSON10DefCVEItem) CVSS30base() float64 {
 
 // LogicalOperator implements part of cvefeed.LogicalTest interface
 func (n *NVDCVEFeedJSON10DefNode) LogicalOperator() string {
+	if n == nil {
+		return ""
+	}
 	return n.Operator
 }
 
 // NegateIfNeeded implements part of cvefeed.LogicalTest interface
 func (n *NVDCVEFeedJSON10DefNode) NegateIfNeeded(b bool) bool {
-	if n.Negate {
-		return !b
+	if n == nil || !n.Negate {
+		return b
 	}
-	return b
+	return !b
 }
 
 // InnerTests implements part of cvefeed.LogicalTest interface
 func (n *NVDCVEFeedJSON10DefNode) InnerTests() []iface.LogicalTest {
+	if n == nil {
+		return nil
+	}
 	if len(n.ifaceChildren) != 0 {
 		return n.ifaceChildren
 	}
@@ -100,6 +113,9 @@ func (n *NVDCVEFeedJSON10DefNode) InnerTests() []iface.LogicalTest {
 
 // CPEs implements part of cvefeed.LogicalTest interface
 func (n *NVDCVEFeedJSON10DefNode) CPEs() []*wfn.Attributes {
+	if n == nil {
+		return nil
+	}
 	if len(n.wfnCPEs) != 0 {
 		return n.wfnCPEs
 	}
@@ -118,6 +134,9 @@ func (n *NVDCVEFeedJSON10DefNode) CPEs() []*wfn.Attributes {
 
 // MatchPlatform implements part of cvefeed.LogicalTest interface
 func (n *NVDCVEFeedJSON10DefNode) MatchPlatform(platform *wfn.Attributes, requireVersion bool) bool {
+	if n == nil {
+		return false
+	}
 	for _, cpeNode := range n.CPEMatch {
 		cpe, err := node2CPE(cpeNode)
 		if err != nil {
@@ -163,6 +182,9 @@ func (n *NVDCVEFeedJSON10DefNode) MatchPlatform(platform *wfn.Attributes, requir
 
 func node2CPE(node *NVDCVEFeedJSON10DefCPEMatch) (*wfn.Attributes, error) {
 	var err error
+	if node == nil {
+		return nil, fmt.Errorf("cannot collect CPEs from nil node")
+	}
 	if node.wfname != nil {
 		return node.wfname, nil
 	}
