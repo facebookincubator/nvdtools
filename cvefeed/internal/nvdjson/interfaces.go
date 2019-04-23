@@ -161,6 +161,9 @@ func (n *NVDCVEFeedJSON10DefNode) MatchPlatform(platform *wfn.Attributes, requir
 				cpeNode.VersionEndIncluding == "" && cpeNode.VersionEndExcluding == "" {
 				return true
 			}
+			if cpe.Version == wfn.NA {
+				return false
+			}
 			ver := wfn.StripSlashes(platform.Version)
 			if cpeNode.VersionStartIncluding != "" && smartVerCmp(ver, cpeNode.VersionStartIncluding) < 0 {
 				continue
