@@ -21,6 +21,9 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
+// TimeLayout is the layout of NVD CVE timestamps.
+const TimeLayout = "2006-01-02T15:04Z"
+
 // LogicalTest describes logical test performed during matching
 type LogicalTest interface {
 	LogicalOperator() string // "and", "or", "eq"
