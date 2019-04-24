@@ -116,9 +116,9 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 		cpeList := strings.Split(rec[cpesAt], cfg.inRecSep)
 		cpes := make([]*wfn.Attributes, len(cpeList))
 		for i, uri := range cpeList {
-			attr, err := wfn.UnbindURI(uri)
+			attr, err := wfn.Parse(uri)
 			if err != nil {
-				glog.Errorf("couldn't unbind uri %q: %v", uri, err)
+				glog.Errorf("couldn't parse uri %q: %v", uri, err)
 				continue
 			}
 			cpes[i] = attr
