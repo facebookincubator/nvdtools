@@ -13,7 +13,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package iface
+
+// Package nvdcommon provides a common interface for NVD JSON and XML feeds.
+package nvdcommon
 
 import (
 	"github.com/facebookincubator/nvdtools/wfn"

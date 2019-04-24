@@ -17,7 +17,7 @@ package nvdjson
 // This file was auto-generated.
 
 import (
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -46,12 +46,12 @@ type NVDCVEFeedJSON10DefCPEMatch struct {
 // NVDCVEFeedJSON10DefNode was auto-generated.
 // Defines a node or sub-node in an NVD applicability statement.
 type NVDCVEFeedJSON10DefNode struct {
-	CPEMatch      []*NVDCVEFeedJSON10DefCPEMatch `json:"cpe_match,omitempty"`
-	Children      []*NVDCVEFeedJSON10DefNode     `json:"children,omitempty"`
-	Negate        bool                           `json:"negate,omitempty"`
-	Operator      string                         `json:"operator,omitempty"`
-	ifaceChildren []iface.LogicalTest
-	wfnCPEs       []*wfn.Attributes
+	CPEMatch          []*NVDCVEFeedJSON10DefCPEMatch `json:"cpe_match,omitempty"`
+	Children          []*NVDCVEFeedJSON10DefNode     `json:"children,omitempty"`
+	Negate            bool                           `json:"negate,omitempty"`
+	Operator          string                         `json:"operator,omitempty"`
+	nvdcommonChildren []nvdcommon.LogicalTest
+	wfnCPEs           []*wfn.Attributes
 }
 
 // NVDCVEFeedJSON10DefConfigurations was auto-generated.
@@ -59,7 +59,7 @@ type NVDCVEFeedJSON10DefNode struct {
 type NVDCVEFeedJSON10DefConfigurations struct {
 	CVEDataVersion string                     `json:"CVE_data_version"`
 	Nodes          []*NVDCVEFeedJSON10DefNode `json:"nodes,omitempty"`
-	ifaceNodes     []iface.LogicalTest
+	nvdcommonNodes []nvdcommon.LogicalTest
 }
 
 // CVEJSON40CVEDataMeta was auto-generated.

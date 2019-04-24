@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -98,11 +98,11 @@ func (t *OperatorString) String() string {
 
 // LogicalTestType defines test using logical operators (AND, OR, negate).
 type LogicalTestType struct {
-	Op                OperatorString      `xml:"operator,attr"`
-	Neg               bool                `xml:"negate,attr"`
-	LogicalTests      []*LogicalTestType  `xml:"logical-test"`
-	ifaceLogicalTests []iface.LogicalTest // for re-parsing LogicalTests as []iface.LogicalTest interfaces
-	FactRefs          []*FactRefType      `xml:"fact-ref"`
+	Op                    OperatorString          `xml:"operator,attr"`
+	Neg                   bool                    `xml:"negate,attr"`
+	LogicalTests          []*LogicalTestType      `xml:"logical-test"`
+	nvdcommonLogicalTests []nvdcommon.LogicalTest // for re-parsing LogicalTests as []nvdcommon.LogicalTest interfaces
+	FactRefs              []*FactRefType          `xml:"fact-ref"`
 	//TODO: CheckFactRefs []CheckFactRefType   `xml:"check-fact-ref"`
 }
 
@@ -142,12 +142,12 @@ type CWEType struct {
 
 // Entry represents a CVE entry
 type Entry struct {
-	ID            string                       `xml:"id,attr"`
-	Configuration []*PlatformSpecificationType `xml:"vulnerable-configuration"`
-	ifaceConfig   []iface.LogicalTest          // for reparsing Config field as []iface.LogicalTest
-	CVE           string                       `xml:"cve-id"`
-	CWEs          []*CWEType                   `xml:"cwe"`
-	CVSSscore     float64                      `xml:"cvss>base_metrics>score"`
+	ID              string                       `xml:"id,attr"`
+	Configuration   []*PlatformSpecificationType `xml:"vulnerable-configuration"`
+	nvdcommonConfig []nvdcommon.LogicalTest      // for reparsing Config field as []nvdcommon.LogicalTest
+	CVE             string                       `xml:"cve-id"`
+	CWEs            []*CWEType                   `xml:"cwe"`
+	CVSSscore       float64                      `xml:"cvss>base_metrics>score"`
 }
 
 // NVDFeed represents the root element of NVD CVE feed
