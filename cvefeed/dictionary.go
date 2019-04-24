@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 )
 
 // Dictionary is a slice of entries
@@ -38,7 +38,7 @@ func (d *Dictionary) Override(d2 Dictionary) {
 	}
 	for k, cve := range d2 {
 		if _, ok := (*d)[k]; ok {
-			(*d)[k] = iface.MergeCVEItems((*d)[k], cve)
+			(*d)[k] = nvdcommon.MergeCVEItems((*d)[k], cve)
 		}
 	}
 }

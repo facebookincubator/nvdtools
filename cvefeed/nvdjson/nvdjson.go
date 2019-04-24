@@ -14,6 +14,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package nvdjson provides a parser for the NVD JSON feed format.
 package nvdjson
 
 import (
@@ -21,11 +23,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 )
 
 // Parse parses dictionary from NVD vulnerability feed JSON
-func Parse(in io.Reader) ([]iface.CVEItem, error) {
+func Parse(in io.Reader) ([]nvdcommon.CVEItem, error) {
 	var root NVDCVEFeedJSON10
 	err := json.NewDecoder(in).Decode(&root)
 	if err != nil && err != io.EOF {
@@ -34,21 +36,21 @@ func Parse(in io.Reader) ([]iface.CVEItem, error) {
 	return reparse(&root)
 }
 
-func reparse(root *NVDCVEFeedJSON10) ([]iface.CVEItem, error) {
+func reparse(root *NVDCVEFeedJSON10) ([]nvdcommon.CVEItem, error) {
 	srcItems := root.CVEItems
 	if len(srcItems) == 0 {
 		return nil, fmt.Errorf("NVD CVE JSON feed had no CVE_Items element")
 	}
-	items := make([]iface.CVEItem, 0, len(srcItems))
+	items := make([]nvdcommon.CVEItem, 0, len(srcItems))
 	for _, item := range srcItems {
 		if item == nil || item.Configurations == nil {
 			continue
 		}
 		for _, node := range item.Configurations.Nodes {
 			reparseLogicalTest(node)
-			item.Configurations.ifaceNodes = append(item.Configurations.ifaceNodes, iface.LogicalTest(node))
+			item.Configurations.nvdcommonNodes = append(item.Configurations.nvdcommonNodes, nvdcommon.LogicalTest(node))
 		}
-		items = append(items, iface.CVEItem(item))
+		items = append(items, nvdcommon.CVEItem(item))
 	}
 	return items, nil
 }
@@ -60,6 +62,6 @@ func reparseLogicalTest(node *NVDCVEFeedJSON10DefNode) {
 	for _, innerNode := range node.Children {
 		reparseLogicalTest(innerNode)
 	}
-	node.ifaceChildren = node.InnerTests()
+	node.nvdcommonChildren = node.InnerTests()
 	node.wfnCPEs = node.CPEs()
 }

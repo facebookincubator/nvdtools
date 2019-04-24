@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/nvdxml"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdxml"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 

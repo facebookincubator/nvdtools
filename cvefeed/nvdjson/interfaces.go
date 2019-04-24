@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -33,11 +33,11 @@ func (i *NVDCVEFeedJSON10DefCVEItem) CVEID() string {
 }
 
 // Config returns a set of tests that identify vulnerable platform.
-func (i *NVDCVEFeedJSON10DefCVEItem) Config() []iface.LogicalTest {
+func (i *NVDCVEFeedJSON10DefCVEItem) Config() []nvdcommon.LogicalTest {
 	if i == nil || i.Configurations == nil {
 		return nil
 	}
-	return i.Configurations.ifaceNodes
+	return i.Configurations.nvdcommonNodes
 }
 
 // ProblemTypes returns weakness types associated with vulnerability (e.g. CWE)
@@ -94,19 +94,19 @@ func (n *NVDCVEFeedJSON10DefNode) NegateIfNeeded(b bool) bool {
 }
 
 // InnerTests implements part of cvefeed.LogicalTest interface
-func (n *NVDCVEFeedJSON10DefNode) InnerTests() []iface.LogicalTest {
+func (n *NVDCVEFeedJSON10DefNode) InnerTests() []nvdcommon.LogicalTest {
 	if n == nil {
 		return nil
 	}
-	if len(n.ifaceChildren) != 0 {
-		return n.ifaceChildren
+	if len(n.nvdcommonChildren) != 0 {
+		return n.nvdcommonChildren
 	}
 	if len(n.Children) == 0 {
 		return nil
 	}
-	children := make([]iface.LogicalTest, len(n.Children))
+	children := make([]nvdcommon.LogicalTest, len(n.Children))
 	for i, child := range n.Children {
-		children[i] = iface.LogicalTest(child)
+		children[i] = nvdcommon.LogicalTest(child)
 	}
 	return children
 }

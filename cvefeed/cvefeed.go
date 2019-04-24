@@ -14,6 +14,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package cvefeed provides an API to NVD CVE feeds parsing and matching.
 package cvefeed
 
 import (
@@ -24,9 +26,9 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/nvdjson"
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/nvdxml"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdjson"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdxml"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -35,7 +37,7 @@ import (
 //		CVE() string
 //		Configuration() []LogicalTest
 //	}
-type CVEItem = iface.CVEItem
+type CVEItem = nvdcommon.CVEItem
 
 // LogicalTest describes logical test performed during matching
 // type LogicalTest interface {
@@ -45,7 +47,7 @@ type CVEItem = iface.CVEItem
 // 	MatchPlatform(platform *wfn.Attributes, requireVersion bool) bool
 // 	CPEs() []*wfn.Attributes
 // }
-type LogicalTest = iface.LogicalTest
+type LogicalTest = nvdcommon.LogicalTest
 
 // ParseXML loads CVE feed from XML
 func ParseXML(in io.Reader) ([]CVEItem, error) {

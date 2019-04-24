@@ -15,7 +15,7 @@
 package nvdxml
 
 import (
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -25,8 +25,8 @@ func (e *Entry) CVEID() string {
 }
 
 // Config returns a set of tests that identify vulnerable platform.
-func (e *Entry) Config() []iface.LogicalTest {
-	return e.ifaceConfig
+func (e *Entry) Config() []nvdcommon.LogicalTest {
+	return e.nvdcommonConfig
 }
 
 // ProblemTypes returns weakness types associated with vulnerability (e.g. CWE)
@@ -75,9 +75,9 @@ func (ps *PlatformSpecificationType) NegateIfNeeded(b bool) bool {
 }
 
 // InnerTests implements cvefeed.LogicalTest interface
-func (ps *PlatformSpecificationType) InnerTests() []iface.LogicalTest {
+func (ps *PlatformSpecificationType) InnerTests() []nvdcommon.LogicalTest {
 	if ps.LogicalTest != nil {
-		return ps.LogicalTest.ifaceLogicalTests
+		return ps.LogicalTest.nvdcommonLogicalTests
 	}
 	return nil
 }
@@ -122,9 +122,9 @@ func (pb *PlatformBaseType) NegateIfNeeded(b bool) bool {
 }
 
 // InnerTests implements cvefeed.LogicalTest interface
-func (pb *PlatformBaseType) InnerTests() []iface.LogicalTest {
+func (pb *PlatformBaseType) InnerTests() []nvdcommon.LogicalTest {
 	if pb.LogicalTest != nil {
-		return pb.LogicalTest.ifaceLogicalTests
+		return pb.LogicalTest.nvdcommonLogicalTests
 	}
 	return nil
 }
@@ -166,8 +166,8 @@ func (lt *LogicalTestType) NegateIfNeeded(b bool) bool {
 }
 
 // InnerTests implements cvefeed.LogicalTest interface
-func (lt *LogicalTestType) InnerTests() []iface.LogicalTest {
-	return lt.ifaceLogicalTests
+func (lt *LogicalTestType) InnerTests() []nvdcommon.LogicalTest {
+	return lt.nvdcommonLogicalTests
 }
 
 // CPEs implements cvefeed.LogicalTest interface
@@ -200,25 +200,25 @@ func collectCPEs(factRefs []*FactRefType) []*wfn.Attributes {
 }
 
 // Reparse transforms set of structure parsed from XML vulnerability feed into compartible set of interfaces
-func Reparse(xmlEntries []*Entry) []iface.CVEItem {
-	entries := make([]iface.CVEItem, len(xmlEntries))
+func Reparse(xmlEntries []*Entry) []nvdcommon.CVEItem {
+	entries := make([]nvdcommon.CVEItem, len(xmlEntries))
 	for i, xe := range xmlEntries {
-		xe.ifaceConfig = ReparsePlatformSpecifications(xe.Configuration)
-		entries[i] = iface.CVEItem(xe)
+		xe.nvdcommonConfig = ReparsePlatformSpecifications(xe.Configuration)
+		entries[i] = nvdcommon.CVEItem(xe)
 	}
 	return entries
 }
 
 // ReparsePlatformSpecifications transfoms slice of *PlatformSpecificationType to slice of LogicalTest interfaces.
 // Processes the fields of PlatformSpecificationType structure recursively, doing necessary transformations.
-func ReparsePlatformSpecifications(pss []*PlatformSpecificationType) []iface.LogicalTest {
+func ReparsePlatformSpecifications(pss []*PlatformSpecificationType) []nvdcommon.LogicalTest {
 	if len(pss) == 0 {
 		return nil
 	}
-	lts := make([]iface.LogicalTest, len(pss))
+	lts := make([]nvdcommon.LogicalTest, len(pss))
 	for i, ps := range pss {
 		ReparsePlatformSpecification(ps)
-		lts[i] = iface.LogicalTest(ps)
+		lts[i] = nvdcommon.LogicalTest(ps)
 	}
 	return lts
 }
@@ -238,9 +238,9 @@ func ReparseLogicalTest(lt *LogicalTestType) {
 	if len(lt.LogicalTests) == 0 {
 		return
 	}
-	lt.ifaceLogicalTests = make([]iface.LogicalTest, len(lt.LogicalTests))
+	lt.nvdcommonLogicalTests = make([]nvdcommon.LogicalTest, len(lt.LogicalTests))
 	for i, t := range lt.LogicalTests {
 		ReparseLogicalTest(t)
-		lt.ifaceLogicalTests[i] = iface.LogicalTest(t)
+		lt.nvdcommonLogicalTests[i] = nvdcommon.LogicalTest(t)
 	}
 }

@@ -15,6 +15,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package nvdxml provides a parser for the NVD XML feed format.
 package nvdxml
 
 import (
@@ -22,11 +24,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/internal/iface"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 )
 
-// Parse parses dictionary from NVD vulnerability feed XML
-func Parse(in io.Reader) ([]iface.CVEItem, error) {
+// Parse parses dictionary from NVD XML vulnerability feed.
+func Parse(in io.Reader) ([]nvdcommon.CVEItem, error) {
 	var feed NVDFeed
 	d := xml.NewDecoder(in)
 	if err := d.Decode(&feed); err != nil {
