@@ -14,6 +14,7 @@ The [HOWTO](HOWTO.md) provides a broader view on how to effectively use these to
   * [csv2cpe](#cpe2cve)
   * [rpm2cpe](#rpm2cpe)
   * [nvdsync](#nvdsync)
+  * [vulndb](#vulndb)
 * [License](#license)
 ---
 
@@ -183,6 +184,18 @@ I0820 09:16:29.316352 1197925 cve.go:311] downloading data file "https://static.
 
 ... more lines skipped ...
 ```
+
+### vulndb
+
+vulndb is a command line tool to manage NVD-like vulnerability databases, backed by MySQL.
+
+Supports NVD CVE JSON 1.0 feeds. Data is versioned, organized by provider names and grouped by vendor, custom, and snoozes datasets:
+
+* Vendor dataset: read-only CVE feeds we continuously import.
+* Custom dataset: allows to overwrite CVEs from vendor data with custom data during exports
+* Snooze dataset: user-defined CVE and metadata with deadline, used for remediation automation
+
+See `vulndb help` for details.
 
 ### fireeye2nvd
 
