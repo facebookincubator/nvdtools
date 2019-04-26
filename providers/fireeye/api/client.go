@@ -1,0 +1,107 @@
+package api
+
+import (
+	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"hash"
+	"io"
+	"net/http"
+	"regexp"
+	"time"
+
+	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
+	"github.com/pkg/errors"
+)
+
+const (
+	acceptVersion = "2.6"
+)
+
+// Client struct
+type Client struct {
+	hash      hash.Hash
+	publicKey string
+	baseURL   string
+	userAgent string
+}
+
+// NewClient creates an object which is used to query the iDefense API
+func NewClient(baseURL, userAgent, publicKey, privateKey string) (*Client, error) {
+	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(userAgent) {
+		return nil, fmt.Errorf("user agent contains non ascii characters")
+	}
+	return &Client{
+		hash:      hmac.New(sha256.New, []byte(privateKey)),
+		publicKey: publicKey,
+		baseURL:   baseURL,
+		userAgent: userAgent,
+	}, nil
+}
+
+// Request will fetch the given endpoint and return the response
+func (client Client) Request(endpoint string) (io.Reader, error) {
+	req, err := http.NewRequest("GET", client.baseURL+endpoint, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot create http get request")
+	}
+
+	acceptHeader := "application/json"
+	timestamp := time.Now().Format(time.RFC1123)
+	auth := client.getHash("%s%s%s%s", endpoint, acceptVersion, acceptHeader, timestamp)
+
+	// FireEye required
+	req.Header.Set("Accept", acceptHeader)
+	req.Header.Set("Accept-Version", acceptVersion)
+	req.Header.Set("X-Auth", client.publicKey)
+	req.Header.Set("X-Auth-Hash", auth)
+	req.Header.Set("Date", timestamp)
+
+	req.Header.Set("User-Agent", client.userAgent)
+
+	// execute the request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot get url")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%d - %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+
+	// Fireeye response is always {success:boolean, message:something}
+	// First we decode this from response, and fail fast if success = false
+	// Otherwise, we return the message only
+
+	var fireeyeResult schema.FireeyeResult
+	body := io.LimitReader(resp.Body, 2<<30) // 1 GB
+	if err := json.NewDecoder(body).Decode(&fireeyeResult); err != nil {
+		return nil, errors.Wrap(err, "couldn't decode result")
+	}
+
+	var buff bytes.Buffer
+	if err := json.NewEncoder(&buff).Encode(fireeyeResult.Message); err != nil {
+		return nil, errors.Wrap(err, "couldn't encode message back to buffer")
+	}
+
+	if !fireeyeResult.Success {
+		var errorMessage schema.FireeyeResultErrorMessage
+		if err := json.Unmarshal(buff.Bytes(), &errorMessage); err != nil {
+			return nil, errors.Wrap(err, "failed to decode error message")
+		}
+		return nil, fmt.Errorf("%s: %s", errorMessage.Error, errorMessage.Description)
+	}
+
+	return &buff, nil
+}
+
+func (client Client) getHash(format string, a ...interface{}) string {
+	fmt.Fprintf(client.hash, format, a...)
+	b := client.hash.Sum(nil)
+	client.hash.Reset()
+	return hex.EncodeToString(b)
+}
