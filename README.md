@@ -184,6 +184,18 @@ I0820 09:16:29.316352 1197925 cve.go:311] downloading data file "https://static.
 ... more lines skipped ...
 ```
 
+### fireeye2nvd
+
+*fireeye2nvd* downloads the vulnerability data from FireEye and converts it into NVD format. The resulting file can be used as a feed in cpe2cve processor
+
+```bash
+FIREEYE_PUBLIC=public_key
+FIREEYE_PRIVATE=private_key
+fireeye2nvd -since 1h > fireeye_vulns.json
+2019/04/26 03:24:12 fireeye2nvd.go:70: Downloading since Fri, 26 Apr 2019 02:24:12 PDT
+2019/04/26 03:24:12 vulnerability.go:19: Fetching: Start: (Fri, 26 Apr 2019 02:24:12 PDT); End: (Fri, 26 Apr 2019 03:24:12 PDT)
+2019/04/26 03:24:13 vulnerability.go:24: Adding 2 vulns
+```
 
 ## License
 
