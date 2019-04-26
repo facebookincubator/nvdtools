@@ -44,9 +44,6 @@ The --provider flag is optional, as well as the list of IDs to filter in.
 
 Use the JSON_INDENT environment variable to set the indentation character
 for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
-
-Use --csvdelimiter to provide custom delimiter for csv file, comma by default.
-Use --noheader to avoid printing header in csv file.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mysql.OpenRead(gFlagMySQL)
