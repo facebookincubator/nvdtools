@@ -189,12 +189,23 @@ I0820 09:16:29.316352 1197925 cve.go:311] downloading data file "https://static.
 *fireeye2nvd* downloads the vulnerability data from FireEye and converts it into NVD format. The resulting file can be used as a feed in cpe2cve processor
 
 ```bash
-FIREEYE_PUBLIC=public_key
-FIREEYE_PRIVATE=private_key
+export FIREEYE_PUBLIC=public_key
+export FIREEYE_PRIVATE=private_key
 fireeye2nvd -since 1h > fireeye_vulns.json
 2019/04/26 03:24:12 fireeye2nvd.go:70: Downloading since Fri, 26 Apr 2019 02:24:12 PDT
 2019/04/26 03:24:12 vulnerability.go:19: Fetching: Start: (Fri, 26 Apr 2019 02:24:12 PDT); End: (Fri, 26 Apr 2019 03:24:12 PDT)
 2019/04/26 03:24:13 vulnerability.go:24: Adding 2 vulns
+```
+
+### flexera2nvd
+
+*flexera2nvd* downloads the vulnerability data from Flexera and converts it into NVD format. The resulting file can be used as a feed in cpe2cve processor
+
+```bash
+export FLEXERA_TOKEN=token
+flexera2nvd -since 1h >/dev/null
+2019/04/26 13:00:32 flexera2nvd.go:77: Download window: Fri, 26 Apr 2019 12:00:32 BST - Fri, 26 Apr 2019 13:00:32 BST
+2019/04/26 13:00:34 client.go:57: starting sync for 12 advisories over 1 pages
 ```
 
 ## License
