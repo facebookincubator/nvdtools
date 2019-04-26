@@ -97,9 +97,6 @@ var snoozeGetCmd = &cobra.Command{
 The get command returns snooze records from the database.
 
 The --collector and --provider flags, and list of CVEs are optional filters.
-
-Use --csvdelimiter to provide custom delimiter for csv file, comma by default.
-Use --noheader to avoid printing header in csv file.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mysql.OpenRead(gFlagMySQL)
