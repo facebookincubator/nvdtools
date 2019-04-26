@@ -6,8 +6,15 @@ go:
 - 1.x
 - master
 
+services:
+  mysql
+
 before_install:
 - sudo apt-get install -y rpm build-essential debhelper dh-make fakeroot
+- mysql -e 'CREATE DATABASE vulndb;'
+
+env:
+- MYSQL_TEST_DSN=root@/vulndb
 
 script:
 - go get -v -u ./...
