@@ -92,7 +92,7 @@ type SnoozeGetter struct {
 	FilterCVEs []string
 }
 
-// CSV returns data from the database.
+// CSV writes snooze records to w.
 func (s SnoozeGetter) CSV(ctx context.Context, w io.Writer, header bool) error {
 	r := sqlutil.NewRecordType(SnoozeRecord{})
 	q := sqlutil.Select(

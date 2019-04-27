@@ -187,7 +187,7 @@ I0820 09:16:29.316352 1197925 cve.go:311] downloading data file "https://static.
 
 ### vulndb
 
-vulndb is a command line tool to manage NVD-like vulnerability databases, backed by MySQL.
+*vulndb* is a command line tool to manage NVD-like vulnerability databases, backed by MySQL.
 
 Supports NVD CVE JSON 1.0 feeds. Data is versioned, organized by provider names and grouped by vendor, custom, and snoozes datasets:
 

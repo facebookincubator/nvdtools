@@ -19,8 +19,6 @@ DROP TABLE IF EXISTS
 	`vendor`
 ;
 
-SET sql_mode = '';
-
 CREATE TABLE `vendor` (
 	`version`  INT         NOT NULL AUTO_INCREMENT COMMENT 'ID of the dataset',
 	`ts`       TIMESTAMP   NOT NULL  COMMENT 'Time of the dataset import',

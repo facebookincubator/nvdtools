@@ -51,7 +51,7 @@ The database supports multiple providers, and for each provider there should
 be an owner (a unixname or other form of ID). Each import requires setting
 the --provider and --owner flags.
 
-File schema: https://csrc.nist.gov/schema/nvd/feed/0.1/nvd_cve_feed_json_0.1_beta.schema
+File schema: https://csrc.nist.gov/schema/nvd/feed/1.0/nvd_cve_feed_json_1.0.schema
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {

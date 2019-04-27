@@ -131,7 +131,7 @@ func (o CustomDataExporter) condition() *sqlutil.QueryConditionSet {
 	return cond
 }
 
-// CSV exports data to w.
+// CSV writes custom data records to w.
 func (o CustomDataExporter) CSV(ctx context.Context, w io.Writer, header bool) error {
 	fields := []string{
 		"owner",
@@ -192,7 +192,7 @@ func (o CustomDataExporter) CSV(ctx context.Context, w io.Writer, header bool) e
 	return nil
 }
 
-// JSON exports NVD CVE JSON to w.
+// JSON writes NVD CVE JSON to w.
 func (o CustomDataExporter) JSON(ctx context.Context, w io.Writer, indent string) error {
 	q := sqlutil.Select(
 		"cve_id",

@@ -230,7 +230,7 @@ func (v VendorDataExporter) condition() *sqlutil.QueryConditionSet {
 	return cond
 }
 
-// CSV exports data to w.
+// CSV writes vendor data records to w.
 func (v VendorDataExporter) CSV(ctx context.Context, w io.Writer, header bool) error {
 	q := sqlutil.Select(
 		"vendor.version AS version",
@@ -306,7 +306,7 @@ func (v VendorDataExporter) CSV(ctx context.Context, w io.Writer, header bool) e
 	return nil
 }
 
-// JSON exports NVD CVE JSON to w.
+// JSON writes NVD CVE JSON to w.
 func (v VendorDataExporter) JSON(ctx context.Context, w io.Writer, indent string) error {
 	q := sqlutil.Select(
 		"cve_id",
@@ -361,9 +361,12 @@ func (v VendorDataExporter) JSON(ctx context.Context, w io.Writer, indent string
 
 // VendorDataTrimmer is a helper for trimming vendor data.
 //
+// It deletes all versions but the latest.
+//
 // Deleting would be easier in common scenarions, but we have some hard
 // constraints:
 //
+//	* Vendor data is versioned
 //	* No foreign key between vendor_data and vendor tables
 //	* MySQL in safe mode forbids deleting from SELECT queries, wants values
 //	* Must keep the binlog smaller than 500M, not enough for the NVD database
@@ -372,9 +375,9 @@ func (v VendorDataExporter) JSON(ctx context.Context, w io.Writer, indent string
 //
 //	* Select versions from the vendor table based on the provided settings
 //	* Operate on vendor records with ready=true or older versions
-//	* By default, delete all versions but the latest for each provider
+//	* By default, delete all versions but the latest, for each provider
 //	* Delete from vendor table first, effectively making data records orphans
-//	* Delete any orphan records from vendor_data, effectively crow sourcing deletions
+//	* Delete any orphan records from vendor_data, effectively crowd sourcing deletions
 //	* Delete data in chunks, keeping binlog small
 //
 // Deletion operations are expensive.
