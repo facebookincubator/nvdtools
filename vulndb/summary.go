@@ -70,7 +70,7 @@ func (exp SummaryExporter) SummaryRecords(ctx context.Context) ([]SummaryRecord,
 	return records, nil
 }
 
-// CSV exports data to w.
+// CSV writes summary records to w.
 func (exp SummaryExporter) CSV(ctx context.Context, w io.Writer, header bool) error {
 	records, err := exp.SummaryRecords(ctx)
 	if err != nil {
