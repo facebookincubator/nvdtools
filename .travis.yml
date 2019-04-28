@@ -10,28 +10,25 @@ services:
   mysql
 
 before_install:
-- sudo apt-get install -y rpm build-essential debhelper dh-make fakeroot
+- sudo apt-get install -y rpm build-essential debhelper dh-make fakeroot zip
 - mysql -e 'CREATE DATABASE vulndb;'
 
 env:
 - MYSQL_TEST_DSN=root@/vulndb
 
 script:
-- go get -v -u ./...
+- go get -v -u -d ./...
 - go test -v ./...
 
 before_deploy:
-- export VERSION=${TRAVIS_TAG:1}
-- chmod +x build_tarballs.sh && ./build_tarballs.sh
-- make -C rpm/
-- dpkg-buildpackage -rfakeroot -uc -us && mv ../*.deb release
+- make release VERSION=${TRAVIS_TAG:1}
 
 deploy:
   provider: releases
   api_key:
     secure: hnofbIf34EiluDy1u288ZVu1CM7f8MxKY8T40Tkj6dj6CBJAtEscm6AQiXP2v2TVLK0mOAtpZ8gK6oGRE6jVmKxrLZNKhuL1E3XNfi5poED8kW0hjjXBCWMG5tLrXCXk7d5qYMMVTD8/eB5XBJMrfiC8GcjuD0QgzqhkQiJdpBnMZj5NamL0JR6Tht2turSglwWAQ9E0GdIaHYpHwN4IJ2wkh0kBoR7uJrIU9F5STOO0OqgJ8LZ9YwCtljgz9XvJt3W6Xds+AH0w/MtfhZucJXG20vCYaTMxdFKoQxitol/YISIOD/P4MhFBzmf2O2Cw5X517owAb++wkfYL+E2NEhVilZlKkTTHBNzCRzO85GGsDCBv91MSDTykZwu047/VWvxxIpGPTC7bQnYFcgWTc3d93pBERRL1ppfzNlU/CPIebLj5KPCCkSzb1RTEy8gOL2aoKzqImv/428P+FVaaibbM0M87OM3iWOe1yGRXUVQtc2CMNdNukr7/p4HFaptPyBu9OjnNsqjsI+yS1flqrDpFbkBV5ZDUhy0tPyu59m9l34qrrGJ1nJdiZvcNgAaC8VEeZ42OUuvNtl/77Wx1X7cYU8Iqz/zz/QWLqkwljQCjoXPEqIBvVyqzn+eeeRNzGDpzbxFf3MMhx7zE7QVk8M+M//SIGFMeyTHswriMkZk=
   file_glob: true
-  file: release/**/*
+  file: release/*
   skip_cleanup: true
   on:
     tags: true
