@@ -20,6 +20,7 @@ TOOLS = \
 	csv2cpe \
 	fireeye2nvd \
 	flexera2nvd \
+	idefense2nvd \
 	nvdsync \
 	rpm2cpe \
 	rustsec2nvd \
@@ -119,6 +120,7 @@ release_tar:
 	mkdir -p release
 	make deps binary_tar GOOS=darwin GOARCH=amd64
 	make deps binary_tar GOOS=freebsd GOARCH=amd64
+	make deps binary_tar GOOS=freebsd GOARCH=arm
 	make deps binary_tar GOOS=linux GOARCH=amd64
 	make deps binary_tar GOOS=linux GOARCH=arm64
 	mv build/tgz/*.tar.gz release

@@ -14,9 +14,8 @@ import (
 )
 
 const (
-	baseURL      = "https://api.intelgraph.idefense.com"
-	endpoint     = "rest/vulnerability/v0"
-	startOfTimes = int64(1517472000) // 01 Feb 2018, 00:00:00 PST - we don't have access before this
+	baseURL  = "https://api.intelgraph.idefense.com"
+	endpoint = "rest/vulnerability/v0"
 )
 
 var (
@@ -35,8 +34,8 @@ func init() {
 func main() {
 	url := flag.String("url", fmt.Sprintf("%s/%s", baseURL, endpoint), "iDefense API endpoint")
 	parametersPath := flag.String("parameters_path", "", "Path to a json file which contains parameters used to query the API")
-	sinceDuration := flag.String("since", "", "Golang duration string, use this instead of sinceUnix")
-	sinceUnix := flag.Int64("since_unix", -1, "Unix timestamp since when should we download. If not set, downloads all available data")
+	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
+	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
 	dontConvert := flag.Bool("dont_convert", false, "Should the feed be converted to NVD format or not")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
@@ -52,9 +51,6 @@ func main() {
 			log.Fatal(err)
 		}
 		since = time.Now().Add(dur).Unix()
-	}
-	if since < startOfTimes {
-		since = startOfTimes
 	}
 
 	parameters = make(map[string]interface{})
