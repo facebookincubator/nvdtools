@@ -28,8 +28,7 @@ import (
 )
 
 const (
-	baseURL      = "https://api.app.secunia.com"
-	startOfTimes = int64(1517472000) // 01 Feb 2018, 00:00:00 PST
+	baseURL = "https://api.app.secunia.com"
 )
 
 var (
@@ -46,8 +45,8 @@ func init() {
 
 func main() {
 	baseURL := flag.String("url", baseURL, "Flexera API base URL")
-	sinceDuration := flag.String("since", "", "Golang duration string, use this instead of sinceUnix")
-	sinceUnix := flag.Int64("since_unix", -1, "Unix timestamp since when should we download. If not set, downloads all available data")
+	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
+	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
 	only := flag.String("only", "", "If present, it will only download this advisory")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
@@ -80,9 +79,6 @@ func main() {
 				log.Fatal(err)
 			}
 			since = time.Now().Add(dur).Unix()
-		}
-		if since < startOfTimes {
-			since = startOfTimes
 		}
 
 		from, to := since, time.Now().Unix()

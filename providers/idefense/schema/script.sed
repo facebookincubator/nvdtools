@@ -1,7 +1,7 @@
 # remove the comment
 s/^copy paste.*$//g
 
-# fix first line to remove this stupid signs
+# fix first line to remove these weird signs
 s/SearchResults«Vulnerability»/VulnerabilitySearchResults/g
 
 # remove : Translatable

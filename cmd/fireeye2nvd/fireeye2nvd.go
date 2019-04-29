@@ -27,9 +27,8 @@ import (
 )
 
 const (
-	baseURL      = "https://api.isightpartners.com"
-	userAgent    = "fireeye2nvd"
-	startOfTimes = int64(1517472000) // 01 Feb 2018, 00:00:00 PST
+	baseURL   = "https://api.isightpartners.com"
+	userAgent = "fireeye2nvd"
 )
 
 var (
@@ -51,8 +50,8 @@ func init() {
 
 func main() {
 	baseURL := flag.String("base_url", baseURL, "FireEye API base URL")
-	sinceDuration := flag.String("since", "", "Golang duration string, use this instead of sinceUnix")
-	sinceUnix := flag.Int64("since_unix", -1, "Unix timestamp since when should we download. If not set, downloads all available data")
+	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
+	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
 	dontConvert := flag.Bool("dont_convert", false, "Should the feed be converted to NVD format or not")
 	userAgent := flag.String("user_agent", userAgent, "User agent to be used when sending requests")
 	flag.Usage = func() {
@@ -69,10 +68,6 @@ func main() {
 			log.Fatalln(err)
 		}
 		since = time.Now().Add(dur).Unix()
-	}
-
-	if since < startOfTimes {
-		since = startOfTimes
 	}
 
 	// create the API
