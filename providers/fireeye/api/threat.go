@@ -24,7 +24,7 @@ import (
 )
 
 // FetchAllThreatReportsSince will fetch all vulnerabilities with specified parameters
-func (c Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.FireeyeReport, error) {
+func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.FireeyeReport, error) {
 	parameters := newParametersSince(since)
 	if err := parameters.validate(); err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (c Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.FireeyeR
 	return reports, nil
 }
 
-func (c Client) fetchReportIDs(parameters timeRangeParameters) ([]string, error) {
+func (c *Client) fetchReportIDs(parameters timeRangeParameters) ([]string, error) {
 	resp, err := c.Request(fmt.Sprintf("/report/index?intelligenceType=threat&%s", parameters.query()))
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (c Client) fetchReportIDs(parameters timeRangeParameters) ([]string, error)
 	return reportIDs, nil
 }
 
-func (c Client) fetchReport(reportID string) (*schema.FireeyeReport, error) {
+func (c *Client) fetchReport(reportID string) (*schema.FireeyeReport, error) {
 	resp, err := c.Request(fmt.Sprintf("/report/%s?detail=full", reportID))
 	if err != nil {
 		return nil, err
