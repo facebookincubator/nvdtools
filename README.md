@@ -221,6 +221,17 @@ flexera2nvd -since 1h >/dev/null
 2019/04/26 13:00:34 client.go:57: starting sync for 12 advisories over 1 pages
 ```
 
+### idefense2nvd
+
+*idefense2nvd* downloads the vulnerability data from Idefense and converts it into NVD format. The resulting file can be used as a feed in cpe2cve processor
+
+```bash
+export IDEFENSE_TOKEN=token
+idefense2nvd -since 2190m >/dev/null
+2019/04/29 14:46:56 client.go:43: querying with last_published.from = 2019-04-28T02:16:56.000Z
+2019/04/29 14:46:56 client.go:76: starting sync for 29 vulnerabilities over 1 pages
+```
+
 ## License
 
 nvdtools licensed under Apache License, Version 2.0, as found in the [LICENSE](LICENSE) file.
