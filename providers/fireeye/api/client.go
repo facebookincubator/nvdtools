@@ -25,6 +25,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
@@ -41,6 +42,7 @@ type Client struct {
 	publicKey string
 	baseURL   string
 	userAgent string
+	m         sync.Mutex
 }
 
 // NewClient creates an object which is used to query the iDefense API
@@ -57,24 +59,24 @@ func NewClient(baseURL, userAgent, publicKey, privateKey string) (*Client, error
 }
 
 // Request will fetch the given endpoint and return the response
-func (client Client) Request(endpoint string) (io.Reader, error) {
-	req, err := http.NewRequest("GET", client.baseURL+endpoint, nil)
+func (c *Client) Request(endpoint string) (io.Reader, error) {
+	req, err := http.NewRequest("GET", c.baseURL+endpoint, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create http get request")
 	}
 
 	acceptHeader := "application/json"
 	timestamp := time.Now().Format(time.RFC1123)
-	auth := client.getHash("%s%s%s%s", endpoint, acceptVersion, acceptHeader, timestamp)
+	auth := c.getHash("%s%s%s%s", endpoint, acceptVersion, acceptHeader, timestamp)
 
 	// FireEye required
 	req.Header.Set("Accept", acceptHeader)
 	req.Header.Set("Accept-Version", acceptVersion)
-	req.Header.Set("X-Auth", client.publicKey)
+	req.Header.Set("X-Auth", c.publicKey)
 	req.Header.Set("X-Auth-Hash", auth)
 	req.Header.Set("Date", timestamp)
 
-	req.Header.Set("User-Agent", client.userAgent)
+	req.Header.Set("User-Agent", c.userAgent)
 
 	// execute the request
 	resp, err := http.DefaultClient.Do(req)
@@ -113,9 +115,11 @@ func (client Client) Request(endpoint string) (io.Reader, error) {
 	return &buff, nil
 }
 
-func (client Client) getHash(format string, a ...interface{}) string {
-	fmt.Fprintf(client.hash, format, a...)
-	b := client.hash.Sum(nil)
-	client.hash.Reset()
+func (c *Client) getHash(format string, a ...interface{}) string {
+	c.m.Lock()
+	defer c.m.Unlock()
+	fmt.Fprintf(c.hash, format, a...)
+	b := c.hash.Sum(nil)
+	c.hash.Reset()
 	return hex.EncodeToString(b)
 }
