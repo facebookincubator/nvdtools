@@ -272,3 +272,20 @@ var testJSONdict = `{
     }
   }
 ] }`
+
+func matchesAll(src, tgt []*wfn.Attributes) bool {
+	if len(src) != len(tgt) {
+		return false
+	}
+	for i, j := 0, 0; i < len(src); i, j = i+1, 0 {
+		for ; j < len(tgt); j++ {
+			if *src[i] == *tgt[j] {
+				break
+			}
+		}
+		if j == len(tgt) { // reached the end, no match
+			return false
+		}
+	}
+	return true
+}

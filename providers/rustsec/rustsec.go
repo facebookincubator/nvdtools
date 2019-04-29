@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdjson"
 	"github.com/facebookincubator/nvdtools/wfn"
 
 	"github.com/BurntSushi/toml"
@@ -32,8 +32,8 @@ import (
 )
 
 // Convert scans a directory recursively for rustsec advisory files and convert to NVD CVE JSON 1.0 format.
-func Convert(dir string) (*nvdjson.NVDCVEFeedJSON10, error) {
-	feed := &nvdjson.NVDCVEFeedJSON10{}
+func Convert(dir string) (*jsonschema.NVDCVEFeedJSON10, error) {
+	feed := &jsonschema.NVDCVEFeedJSON10{}
 
 	walker := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -65,7 +65,7 @@ func Convert(dir string) (*nvdjson.NVDCVEFeedJSON10, error) {
 }
 
 // ConvertAdvisory converts the rustsec toml advisory data from r to NVD CVE JSON 1.0 format.
-func ConvertAdvisory(r io.Reader) (*nvdjson.NVDCVEFeedJSON10DefCVEItem, error) {
+func ConvertAdvisory(r io.Reader) (*jsonschema.NVDCVEFeedJSON10DefCVEItem, error) {
 	var spec advisoryFile
 	_, err := toml.DecodeReader(r, &spec)
 	if err != nil {
@@ -100,7 +100,7 @@ type advisoryItem struct {
 
 const advisoryTimeLayout = "2006-01-02"
 
-func (item *advisoryItem) Convert() (*nvdjson.NVDCVEFeedJSON10DefCVEItem, error) {
+func (item *advisoryItem) Convert() (*jsonschema.NVDCVEFeedJSON10DefCVEItem, error) {
 	// TODO: Add CVSS score: https://github.com/RustSec/advisory-db/issues/20
 
 	t, err := time.Parse(advisoryTimeLayout, item.Date)
@@ -113,17 +113,17 @@ func (item *advisoryItem) Convert() (*nvdjson.NVDCVEFeedJSON10DefCVEItem, error)
 		return nil, err
 	}
 
-	cve := &nvdjson.NVDCVEFeedJSON10DefCVEItem{
-		CVE: &nvdjson.CVEJSON40{
-			CVEDataMeta: &nvdjson.CVEJSON40CVEDataMeta{
+	cve := &jsonschema.NVDCVEFeedJSON10DefCVEItem{
+		CVE: &jsonschema.CVEJSON40{
+			CVEDataMeta: &jsonschema.CVEJSON40CVEDataMeta{
 				ID:       item.ID,
 				ASSIGNER: "RustSec",
 			},
 			DataFormat:  "MITRE",
 			DataType:    "CVE",
 			DataVersion: "4.0",
-			Description: &nvdjson.CVEJSON40Description{
-				DescriptionData: []*nvdjson.CVEJSON40LangString{
+			Description: &jsonschema.CVEJSON40Description{
+				DescriptionData: []*jsonschema.CVEJSON40LangString{
 					{
 						Lang:  "en",
 						Value: item.Description,
@@ -140,18 +140,18 @@ func (item *advisoryItem) Convert() (*nvdjson.NVDCVEFeedJSON10DefCVEItem, error)
 	return cve, nil
 }
 
-func (item *advisoryItem) newReferences() *nvdjson.CVEJSON40References {
+func (item *advisoryItem) newReferences() *jsonschema.CVEJSON40References {
 	if len(item.References) == 0 {
 		return nil
 	}
 
 	nrefs := 1 + len(item.Aliases) + len(item.References)
-	refs := &nvdjson.CVEJSON40References{
-		ReferenceData: make([]*nvdjson.CVEJSON40Reference, 0, nrefs),
+	refs := &jsonschema.CVEJSON40References{
+		ReferenceData: make([]*jsonschema.CVEJSON40Reference, 0, nrefs),
 	}
 
 	addRef := func(name, url string) {
-		refs.ReferenceData = append(refs.ReferenceData, &nvdjson.CVEJSON40Reference{
+		refs.ReferenceData = append(refs.ReferenceData, &jsonschema.CVEJSON40Reference{
 			Name: name,
 			URL:  url,
 		})
@@ -177,7 +177,7 @@ func (item *advisoryItem) newReferences() *nvdjson.CVEJSON40References {
 	return refs
 }
 
-func (item *advisoryItem) newConfigurations() (*nvdjson.NVDCVEFeedJSON10DefConfigurations, error) {
+func (item *advisoryItem) newConfigurations() (*jsonschema.NVDCVEFeedJSON10DefConfigurations, error) {
 	pkg, err := wfn.WFNize(item.Package)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot wfn-ize: %q", item.Package)
@@ -186,7 +186,7 @@ func (item *advisoryItem) newConfigurations() (*nvdjson.NVDCVEFeedJSON10DefConfi
 	cpe22uri := cpe.BindToURI()
 	cpe23uri := cpe.BindToFmtString()
 
-	matches := []*nvdjson.NVDCVEFeedJSON10DefCPEMatch{}
+	matches := []*jsonschema.NVDCVEFeedJSON10DefCPEMatch{}
 	unnafected := append(item.UnaffectedVersions, item.PatchedVersions...)
 
 	for _, version := range unnafected {
@@ -206,8 +206,8 @@ func (item *advisoryItem) newConfigurations() (*nvdjson.NVDCVEFeedJSON10DefConfi
 			cpe := wfn.Attributes{Part: "a", Product: pkg, Version: wfnver}
 			cpe22uri := cpe.BindToURI()
 			cpe23uri := cpe.BindToFmtString()
-			match := &nvdjson.NVDCVEFeedJSON10DefCPEMatch{
-				CPEName: []*nvdjson.NVDCVEFeedJSON10DefCPEName{
+			match := &jsonschema.NVDCVEFeedJSON10DefCPEMatch{
+				CPEName: []*jsonschema.NVDCVEFeedJSON10DefCPEName{
 					{
 						Cpe22Uri: cpe22uri,
 						Cpe23Uri: cpe23uri,
@@ -219,8 +219,8 @@ func (item *advisoryItem) newConfigurations() (*nvdjson.NVDCVEFeedJSON10DefConfi
 			matches = append(matches, match)
 
 		case ">", "<":
-			match := &nvdjson.NVDCVEFeedJSON10DefCPEMatch{
-				CPEName: []*nvdjson.NVDCVEFeedJSON10DefCPEName{
+			match := &jsonschema.NVDCVEFeedJSON10DefCPEMatch{
+				CPEName: []*jsonschema.NVDCVEFeedJSON10DefCPEName{
 					{
 						Cpe22Uri: cpe22uri,
 						Cpe23Uri: cpe23uri,
@@ -249,16 +249,16 @@ func (item *advisoryItem) newConfigurations() (*nvdjson.NVDCVEFeedJSON10DefConfi
 		}
 	}
 
-	conf := &nvdjson.NVDCVEFeedJSON10DefConfigurations{
+	conf := &jsonschema.NVDCVEFeedJSON10DefConfigurations{
 		CVEDataVersion: "4.0",
-		Nodes: []*nvdjson.NVDCVEFeedJSON10DefNode{
+		Nodes: []*jsonschema.NVDCVEFeedJSON10DefNode{
 			{
 				Operator: "AND",
-				Children: []*nvdjson.NVDCVEFeedJSON10DefNode{
+				Children: []*jsonschema.NVDCVEFeedJSON10DefNode{
 					{
-						CPEMatch: []*nvdjson.NVDCVEFeedJSON10DefCPEMatch{
+						CPEMatch: []*jsonschema.NVDCVEFeedJSON10DefCPEMatch{
 							{
-								CPEName: []*nvdjson.NVDCVEFeedJSON10DefCPEName{
+								CPEName: []*jsonschema.NVDCVEFeedJSON10DefCPEName{
 									{
 										Cpe22Uri: cpe22uri,
 										Cpe23Uri: cpe23uri,

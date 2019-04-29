@@ -70,13 +70,6 @@ func TestProcessInput(t *testing.T) {
 		},
 		// TODO: add more test cases
 	}
-	testDictXML, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
-		return cvefeed.ParseXML(bytes.NewBufferString(testDictXMLStr))
-	}, "")
-	if err != nil {
-		t.Fatalf("couldn't parse XML dictionary: %v", err)
-	}
-	cacheXML := cvefeed.NewCache(testDictXML)
 	testDictJSON, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
 		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr))
 	}, "")
@@ -97,7 +90,7 @@ func TestProcessInput(t *testing.T) {
 		memProfile:  "",
 		skip:        getSkip([]int{1, 3}),
 	}
-	for cacheID, cache := range []*cvefeed.Cache{cacheXML, cacheJSON} {
+	for cacheID, cache := range []*cvefeed.Cache{cacheJSON} {
 		for i, c := range cases {
 			c := c
 			t.Run(fmt.Sprintf("cache#%d case #%d", cacheID+1, i+1), func(t *testing.T) {
@@ -182,39 +175,6 @@ func TestProcessInputRequireVersion(t *testing.T) {
 	out := strings.TrimSpace(w.String())
 	if out != "" {
 		t.Fatalf("got a match that should've been ignored due to an absence of version:\n%s\nyielded\n%s", in, out)
-	}
-}
-
-func BenchmarkProcessInputXML(t *testing.B) {
-	in := `1;2;3;cpe:/o:microsoft:windows_10:-::~~~~x64~,cpe:/a:adobe:flash_player:24.0.0.194
-1;2;3;cpe:/o::centos_linux:7.5.1804,cpe:/a::chardet:2.2.1,cpe:/a::javapackages:1.0.0,cpe:/a::kitchen:1.1.1,cpe:/a::nose:1.3.7,cpe:/a::python-dateutil:1.5,cpe:/a::pytz:2016.10,cpe:/a::setuptools:0.9.8,cpe:/a::chardet:2.2.1,cpe:/a::javapackages:1.0.0,cpe:/a::kitchen:1.1.1,cpe:/a::nose:1.3.7,cpe:/a::python-dateutil:1.5,cpe:/a::pytz:2016.10,cpe:/a::setuptools:0.9.8
-1;2;3;cpe:/o::centos_linux:7.5.1804,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1
-`
-	testDict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
-		return cvefeed.ParseXML(bytes.NewBufferString(testDictXMLStr))
-	}, "")
-	if err != nil {
-		t.Fatalf("couldn't parse dictionary: %v", err)
-	}
-	cache := cvefeed.NewCache(testDict)
-	cfg := config{
-		nProcessors: 1,
-		cpesAt:      4,
-		cvesAt:      5,
-		matchesAt:   6,
-		inFieldSep:  ";",
-		outFieldSep: "|",
-		inRecSep:    ",",
-		outRecSep:   "&",
-		cpuProfile:  "",
-		memProfile:  "",
-	}
-	t.ResetTimer()
-	for i := 0; i < t.N; i++ {
-		var w bytes.Buffer
-		r := strings.NewReader(in)
-		done := processInput(r, &w, cache, cfg)
-		<-done
 	}
 }
 

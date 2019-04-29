@@ -43,11 +43,6 @@ func (d *Dictionary) Override(d2 Dictionary) {
 	}
 }
 
-// LoadXMLDictionary parses dictionary from multiple NVD vulenrability feed XML files
-func LoadXMLDictionary(paths ...string) (Dictionary, error) {
-	return LoadFeed(loadXMLFile, paths...)
-}
-
 // LoadJSONDictionary parses dictionary from multiple NVD vulenrability feed JSON files
 func LoadJSONDictionary(paths ...string) (Dictionary, error) {
 	return LoadFeed(loadJSONFile, paths...)
@@ -101,17 +96,7 @@ func LoadFeed(loadFunc func(string) ([]CVEItem, error), paths ...string) (Dictio
 	return dict, nil
 }
 
-// loadXMLFile parses dictionary from NVD vulnerability feed XML file
-func loadXMLFile(path string) ([]CVEItem, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("dictionary: failed to load feed %q: %v", path, err)
-	}
-	defer f.Close()
-	return ParseXML(f)
-}
-
-// loadJSONFile parses dictionary from NVD vulnerability feed XML file
+// loadJSONFile parses dictionary from NVD vulnerability feed JSON file
 func loadJSONFile(path string) ([]CVEItem, error) {
 	f, err := os.Open(path)
 	if err != nil {

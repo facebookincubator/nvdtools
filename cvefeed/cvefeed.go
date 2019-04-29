@@ -28,7 +28,6 @@ import (
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 	"github.com/facebookincubator/nvdtools/cvefeed/nvdjson"
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdxml"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -48,16 +47,6 @@ type CVEItem = nvdcommon.CVEItem
 // 	CPEs() []*wfn.Attributes
 // }
 type LogicalTest = nvdcommon.LogicalTest
-
-// ParseXML loads CVE feed from XML
-func ParseXML(in io.Reader) ([]CVEItem, error) {
-	feed, err := setupReader(in)
-	if err != nil {
-		return nil, fmt.Errorf("cvefeed.ParseXML: read error: %v", err)
-	}
-	defer feed.Close()
-	return nvdxml.Parse(feed)
-}
 
 // ParseJSON loads CVE feed from JSON
 func ParseJSON(in io.Reader) ([]CVEItem, error) {

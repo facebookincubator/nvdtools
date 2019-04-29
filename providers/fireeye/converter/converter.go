@@ -17,7 +17,7 @@ package converter
 import (
 	"strings"
 
-	dstSchema "github.com/facebookincubator/nvdtools/cvefeed/nvdjson"
+	dstSchema "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 	srcSchema "github.com/facebookincubator/nvdtools/providers/fireeye/schema"
 )
 

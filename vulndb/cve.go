@@ -26,7 +26,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/facebookincubator/nvdtools/vulndb/jsonschema"
+	"github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 )
 
 type cveFile struct {
