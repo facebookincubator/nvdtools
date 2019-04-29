@@ -23,20 +23,21 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 )
 
 // Parse parses dictionary from NVD vulnerability feed JSON
 func Parse(in io.Reader) ([]nvdcommon.CVEItem, error) {
-	var root NVDCVEFeedJSON10
+	var root jsonschema.NVDCVEFeedJSON10
 	err := json.NewDecoder(in).Decode(&root)
 	if err != nil && err != io.EOF {
 		return nil, err
 	}
-	return reparse(&root)
+	return traverse(&root)
 }
 
-func reparse(root *NVDCVEFeedJSON10) ([]nvdcommon.CVEItem, error) {
+func traverse(root *jsonschema.NVDCVEFeedJSON10) ([]nvdcommon.CVEItem, error) {
 	srcItems := root.CVEItems
 	if len(srcItems) == 0 {
 		return nil, fmt.Errorf("NVD CVE JSON feed had no CVE_Items element")
@@ -46,22 +47,7 @@ func reparse(root *NVDCVEFeedJSON10) ([]nvdcommon.CVEItem, error) {
 		if item == nil || item.Configurations == nil {
 			continue
 		}
-		for _, node := range item.Configurations.Nodes {
-			reparseLogicalTest(node)
-			item.Configurations.nvdcommonNodes = append(item.Configurations.nvdcommonNodes, nvdcommon.LogicalTest(node))
-		}
-		items = append(items, nvdcommon.CVEItem(item))
+		items = append(items, newCveItem(item))
 	}
 	return items, nil
-}
-
-func reparseLogicalTest(node *NVDCVEFeedJSON10DefNode) {
-	if node == nil {
-		return
-	}
-	for _, innerNode := range node.Children {
-		reparseLogicalTest(innerNode)
-	}
-	node.nvdcommonChildren = node.InnerTests()
-	node.wfnCPEs = node.CPEs()
 }

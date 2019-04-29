@@ -47,7 +47,7 @@ go install ./...
 
 It expects a stream of lines of delimiter-separated fields, one of these fields being a delimiter-separated list of CPE names in the inventory.
 
-Vulnerability feeds should be provided as arguments to the program in XML or JSON format (configured by `-feed` flag).
+Vulnerability feeds should be provided as arguments to the program in JSON format.
 
 Output is a stream of delimiter-separated input value decorated with a vulnerability ID (CVE) and a delimiter-separated list of CPE names that match this vulnerability.
 

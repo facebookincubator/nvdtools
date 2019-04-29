@@ -18,37 +18,85 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-// NVDCVEFeedJSON10DefCVEItem is a CVEItem
+type cveItem struct {
+	cveItem     *jsonschema.NVDCVEFeedJSON10DefCVEItem
+	configNodes []nvdcommon.LogicalTest
+}
+
+type node struct {
+	node              *jsonschema.NVDCVEFeedJSON10DefNode
+	nvdcommonChildren []nvdcommon.LogicalTest
+	wfnCPEs           []*wfn.Attributes
+}
+
+type cpeMatch struct {
+	cpeMatch *jsonschema.NVDCVEFeedJSON10DefCPEMatch
+	wfname   *wfn.Attributes
+}
+
+func newCveItem(json *jsonschema.NVDCVEFeedJSON10DefCVEItem) nvdcommon.CVEItem {
+	item := &cveItem{cveItem: json}
+	for _, n := range item.cveItem.Configurations.Nodes {
+		item.configNodes = append(item.configNodes, nvdcommon.LogicalTest(newNode(n)))
+	}
+	return item
+}
+
+func newNode(json *jsonschema.NVDCVEFeedJSON10DefNode) nvdcommon.LogicalTest {
+	n := &node{node: json}
+
+	if len(n.node.Children) != 0 {
+		children := make([]nvdcommon.LogicalTest, len(n.node.Children))
+		for i, child := range n.node.Children {
+			children[i] = nvdcommon.LogicalTest(&node{node: child})
+		}
+		n.nvdcommonChildren = children
+	}
+
+	if len(n.node.CPEMatch) != 0 {
+		cpes := make([]*wfn.Attributes, len(n.node.CPEMatch))
+		for i, node := range n.node.CPEMatch {
+			cpe, err := node2CPE(&cpeMatch{cpeMatch: node})
+			if err == nil {
+				cpes[i] = cpe
+			}
+		}
+		n.wfnCPEs = cpes
+	}
+
+	return n
+}
 
 // CVEID returns the identifier of the vulnerability (e.g. CVE).
-func (i *NVDCVEFeedJSON10DefCVEItem) CVEID() string {
+func (i *cveItem) CVEID() string {
 	if i == nil {
 		return ""
 	}
-	return i.CVE.CVEDataMeta.ID
+	return i.cveItem.CVE.CVEDataMeta.ID
 }
 
 // Config returns a set of tests that identify vulnerable platform.
-func (i *NVDCVEFeedJSON10DefCVEItem) Config() []nvdcommon.LogicalTest {
-	if i == nil || i.Configurations == nil {
+func (i *cveItem) Config() []nvdcommon.LogicalTest {
+	if i == nil {
 		return nil
 	}
-	return i.Configurations.nvdcommonNodes
+	return i.configNodes
 }
 
 // ProblemTypes returns weakness types associated with vulnerability (e.g. CWE)
-func (i *NVDCVEFeedJSON10DefCVEItem) ProblemTypes() []string {
+func (i *cveItem) ProblemTypes() []string {
 	var cwes []string
-	if i.CVE == nil || i.CVE.CVEDataMeta == nil || i.CVE.CVEDataMeta.ID == "" {
+	if i.cveItem.CVE == nil || i.cveItem.CVE.CVEDataMeta == nil || i.cveItem.CVE.CVEDataMeta.ID == "" {
 		return nil
 	}
 
-	if i.CVE.Problemtype != nil {
-		for _, pt := range i.CVE.Problemtype.ProblemtypeData {
+	if i.cveItem.CVE.Problemtype != nil {
+		for _, pt := range i.cveItem.CVE.Problemtype.ProblemtypeData {
 			if pt != nil {
 				cwe := getLangStr(pt.Description)
 				cwes = append(cwes, cwe)
@@ -59,86 +107,61 @@ func (i *NVDCVEFeedJSON10DefCVEItem) ProblemTypes() []string {
 }
 
 // CVSS20base returns CVSS 2.0 base score of vulnerability
-func (i *NVDCVEFeedJSON10DefCVEItem) CVSS20base() float64 {
-	if i.Impact != nil && i.Impact.BaseMetricV2 != nil && i.Impact.BaseMetricV2.CVSSV2 != nil {
-		return i.Impact.BaseMetricV2.CVSSV2.BaseScore
+func (i *cveItem) CVSS20base() float64 {
+	if i.cveItem.Impact != nil && i.cveItem.Impact.BaseMetricV2 != nil && i.cveItem.Impact.BaseMetricV2.CVSSV2 != nil {
+		return i.cveItem.Impact.BaseMetricV2.CVSSV2.BaseScore
 	}
 	return 0.0
 }
 
 // CVSS30base returns CVSS 3.0 base score of vulnerability
-func (i *NVDCVEFeedJSON10DefCVEItem) CVSS30base() float64 {
+func (i *cveItem) CVSS30base() float64 {
 	// find CVSSv3 base score
-	if i.Impact != nil && i.Impact.BaseMetricV3 != nil && i.Impact.BaseMetricV3.CVSSV3 != nil {
-		return i.Impact.BaseMetricV3.CVSSV3.BaseScore
+	if i.cveItem.Impact != nil && i.cveItem.Impact.BaseMetricV3 != nil && i.cveItem.Impact.BaseMetricV3.CVSSV3 != nil {
+		return i.cveItem.Impact.BaseMetricV3.CVSSV3.BaseScore
 	}
 	return 0.0
 }
 
-// NVDCVEFeedJSON10DefNode is a LogicalTest
-
 // LogicalOperator implements part of cvefeed.LogicalTest interface
-func (n *NVDCVEFeedJSON10DefNode) LogicalOperator() string {
+func (n *node) LogicalOperator() string {
 	if n == nil {
 		return ""
 	}
-	return n.Operator
+	return n.node.Operator
 }
 
 // NegateIfNeeded implements part of cvefeed.LogicalTest interface
-func (n *NVDCVEFeedJSON10DefNode) NegateIfNeeded(b bool) bool {
-	if n == nil || !n.Negate {
+func (n *node) NegateIfNeeded(b bool) bool {
+	if n == nil || !n.node.Negate {
 		return b
 	}
 	return !b
 }
 
 // InnerTests implements part of cvefeed.LogicalTest interface
-func (n *NVDCVEFeedJSON10DefNode) InnerTests() []nvdcommon.LogicalTest {
+func (n *node) InnerTests() []nvdcommon.LogicalTest {
 	if n == nil {
 		return nil
 	}
-	if len(n.nvdcommonChildren) != 0 {
-		return n.nvdcommonChildren
-	}
-	if len(n.Children) == 0 {
-		return nil
-	}
-	children := make([]nvdcommon.LogicalTest, len(n.Children))
-	for i, child := range n.Children {
-		children[i] = nvdcommon.LogicalTest(child)
-	}
-	return children
+	return n.nvdcommonChildren
 }
 
 // CPEs implements part of cvefeed.LogicalTest interface
-func (n *NVDCVEFeedJSON10DefNode) CPEs() []*wfn.Attributes {
+func (n *node) CPEs() []*wfn.Attributes {
 	if n == nil {
 		return nil
 	}
-	if len(n.wfnCPEs) != 0 {
-		return n.wfnCPEs
-	}
-	if len(n.CPEMatch) == 0 {
-		return nil
-	}
-	cpes := make([]*wfn.Attributes, len(n.CPEMatch))
-	for i, node := range n.CPEMatch {
-		cpe, err := node2CPE(node)
-		if err == nil {
-			cpes[i] = cpe
-		}
-	}
-	return cpes
+	return n.wfnCPEs
 }
 
 // MatchPlatform implements part of cvefeed.LogicalTest interface
-func (n *NVDCVEFeedJSON10DefNode) MatchPlatform(platform *wfn.Attributes, requireVersion bool) bool {
+func (n *node) MatchPlatform(platform *wfn.Attributes, requireVersion bool) bool {
 	if n == nil {
 		return false
 	}
-	for _, cpeNode := range n.CPEMatch {
-		cpe, err := node2CPE(cpeNode)
+	for _, cpeNode := range n.node.CPEMatch {
+		cpe, err := node2CPE(&cpeMatch{cpeMatch: cpeNode})
 		if err != nil {
 			continue
 		}
@@ -183,7 +206,7 @@ func (n *NVDCVEFeedJSON10DefNode) MatchPlatform(platform *wfn.Attributes, requir
 	return false
 }
 
-func node2CPE(node *NVDCVEFeedJSON10DefCPEMatch) (*wfn.Attributes, error) {
+func node2CPE(node *cpeMatch) (*wfn.Attributes, error) {
 	var err error
 	if node == nil {
 		return nil, fmt.Errorf("cannot collect CPEs from nil node")
@@ -191,9 +214,9 @@ func node2CPE(node *NVDCVEFeedJSON10DefCPEMatch) (*wfn.Attributes, error) {
 	if node.wfname != nil {
 		return node.wfname, nil
 	}
-	uri := node.Cpe23Uri
+	uri := node.cpeMatch.Cpe23Uri
 	if uri == "" {
-		uri = node.Cpe22Uri
+		uri = node.cpeMatch.Cpe22Uri
 	}
 	node.wfname, err = wfn.Parse(uri)
 	return node.wfname, err
@@ -261,7 +284,7 @@ func parseVerParts(v string) (int, int, int) {
 	return num, skip, skip + 1
 }
 
-func getLangStr(lss []*CVEJSON40LangString) string {
+func getLangStr(lss []*jsonschema.CVEJSON40LangString) string {
 	var s string
 	for _, ls := range lss {
 		if ls == nil {

@@ -17,7 +17,7 @@ package converter
 import (
 	"log"
 
-	dstSchema "github.com/facebookincubator/nvdtools/cvefeed/nvdjson"
+	dstSchema "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 	srcSchema "github.com/facebookincubator/nvdtools/providers/flexera/schema"
 
 	"github.com/pkg/errors"

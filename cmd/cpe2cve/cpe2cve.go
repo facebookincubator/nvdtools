@@ -58,7 +58,7 @@ func (c *config) addFlags() {
 	flag.IntVar(&c.cvss3at, "cvss3", 0, "output CVSS 3.0 base score at this position (starts with 1)")
 	flag.IntVar(&c.matchesAt, "matches", 0, "output CPEs that matches CVE at this position; 0 disables the output")
 	flag.Int64Var(&c.cacheSize, "cache_size", 0, "limit the cache size to this amount in bytes; 0 removes the limit, -1 disables caching")
-	flag.StringVar(&c.feedFormat, "feed", "xml", "vulnerability feed format (currently xml and json values are supported")
+	flag.StringVar(&c.feedFormat, "feed", "json", "vulnerability feed format (currently only json is supported)")
 	flag.StringVar(&c.inFieldSep, "d", "\t", "input columns delimiter")
 	flag.StringVar(&c.inRecSep, "d2", ",", "inner input columns delimiter: separates elements of list passed into a CSV columns")
 	flag.StringVar(&c.outFieldSep, "o", "\t", "output columns delimiter")
@@ -237,19 +237,13 @@ func main() {
 
 	glog.V(1).Info("loading NVD feeds...")
 	start := time.Now()
-	var dict, overrides cvefeed.Dictionary
-	var err error
-	switch cfg.feedFormat {
-	case "xml":
-		if dict, err = cvefeed.LoadXMLDictionary(flag.Args()...); err == nil {
-			overrides, err = cvefeed.LoadXMLDictionary(cfg.overrides...)
-		}
-	case "json":
-		if dict, err = cvefeed.LoadJSONDictionary(flag.Args()...); err == nil {
-			overrides, err = cvefeed.LoadJSONDictionary(cfg.overrides...)
-		}
-	default:
+	if cfg.feedFormat != "json" {
 		glog.Fatalf("unknown vulnerability feed format %q", cfg.feedFormat)
+	}
+	var overrides cvefeed.Dictionary
+	dict, err := cvefeed.LoadJSONDictionary(flag.Args()...)
+	if err == nil {
+		overrides, err = cvefeed.LoadJSONDictionary(cfg.overrides...)
 	}
 	if err != nil {
 		glog.Error(err)
