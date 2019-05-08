@@ -15,6 +15,7 @@
 package cvss
 
 import (
+	"github.com/facebookincubator/nvdtools/cvss/v2"
 	"github.com/facebookincubator/nvdtools/cvss/v3"
 )
 
@@ -34,7 +35,11 @@ type Vector interface {
 	Score() float64
 }
 
-func NewV3() Vector {
+func NewVectorV2() Vector {
+	return v2.NewVector()
+}
+
+func NewVectorV3() Vector {
 	return v3.NewVector()
 }
 
