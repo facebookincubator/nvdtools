@@ -22,19 +22,64 @@ import (
 func TestStrToMetrics(t *testing.T) {
 	str := "A:B/C:D"
 	expected := Metrics{"A": "B", "C": "D"}
-	if m, err := StrToMetrics(str); err != nil {
+	if m, err := strToMetrics(str); err != nil {
 		t.Errorf("should be able to parse A:B/C:D")
 	} else if !reflect.DeepEqual(m, expected) {
 		t.Errorf("parsed %s incorrectly, expecting %q, got %q", str, expected, m)
 	}
 
 	str = "A:B/C"
-	if _, err := StrToMetrics(str); err == nil {
+	if _, err := strToMetrics(str); err == nil {
 		t.Errorf("shouldn't be able to parse %q", str)
 	}
 
 	str = "A:B/A:C"
-	if _, err := StrToMetrics(str); err == nil {
+	if _, err := strToMetrics(str); err == nil {
 		t.Errorf("should fail when provided multiple values for the same metric")
+	}
+}
+
+func TestMetrics(t *testing.T) {
+	metrics, _ := strToMetrics("A:B/C:D")
+	if b, err := metrics.Get("A"); err != nil || b != "B" {
+		t.Errorf("metrics.Get(A) != B")
+	}
+	if d, err := metrics.Get("C"); err != nil || d != "D" {
+		t.Errorf("metrics.Get(C) != D")
+	}
+	if metrics.Set("X", "Y") != nil {
+		t.Errorf("can't set metric X to Y")
+	}
+}
+
+func TestWeightsMetrics(t *testing.T) {
+	weights := map[string]map[string]float64{"A": {"B": 1, "C": 2}}
+	wms := WeightsMetrics{make(Metrics), weights}
+
+	// test set
+	if wms.Set("A", "B") != nil {
+		t.Errorf("should be able to set valid metric to valid value")
+	}
+	if wms.Set("A", "D") == nil {
+		t.Errorf("shouldn't be able to set valid metric to invalid value")
+	}
+	if wms.Set("B", "ANY") == nil {
+		t.Errorf("shouldn't be able to set invalid metric")
+	}
+
+	// test parse
+	if wms.Parse("A:C") != nil {
+		t.Errorf("should be able to parse valid metric and value")
+	}
+	if c, err := wms.Get("A"); err != nil || c != "C" {
+		t.Errorf("incorrectlly parsed metric A, should have value C")
+	}
+
+	// test Weights
+	if w, err := wms.Weight("A"); err != nil || w != 2 {
+		t.Errorf("incorrect weight returned for metric A, should be 2 (C)")
+	}
+	if _, err := wms.Weight("B"); err == nil {
+		t.Errorf("should return an error on invalid metric")
 	}
 }

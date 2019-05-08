@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v3
+package v2
 
 import (
 	"fmt"
@@ -21,9 +21,9 @@ import (
 
 func TestParse(t *testing.T) {
 	// all possible metrics are defined in these 3 strings
-	base := "AV:P/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L"
-	temporal := "E:U/RL:T/RC:R"
-	environmental := "CR:H/IR:M/AR:L/MAV:P/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MI:L/MA:H"
+	base := "AV:A/AC:L/Au:S/C:C/I:P/A:C"
+	temporal := "E:F/RL:W/RC:UR"
+	environmental := "CDP:MH/TD:M/CR:M/IR:L/AR:H"
 
 	v := NewVector()
 	if err := v.Parse(base); err != nil {
@@ -38,30 +38,22 @@ func TestParse(t *testing.T) {
 
 	tests := map[string]string{
 		// base vector
-		"AV": "P",
-		"AC": "H",
-		"PR": "L",
-		"UI": "R",
-		"S":  "C",
-		"C":  "L",
-		"I":  "L",
-		"A":  "L",
+		"AV": "A",
+		"AC": "L",
+		"Au": "S",
+		"C":  "C",
+		"I":  "P",
+		"A":  "C",
 		// temporal vector
-		"E":  "U",
-		"RL": "T",
-		"RC": "R",
+		"E":  "F",
+		"RL": "W",
+		"RC": "UR",
 		// environmental vector
-		"CR":  "H",
-		"IR":  "M",
-		"AR":  "L",
-		"MAV": "P",
-		"MAC": "H",
-		"MPR": "L",
-		"MUI": "R",
-		"MS":  "U",
-		"MC":  "L",
-		"MI":  "L",
-		"MA":  "H",
+		"CDP": "MH",
+		"TD":  "M",
+		"CR":  "M",
+		"IR":  "L",
+		"AR":  "H",
 	}
 
 	for metric, value := range tests {
@@ -79,6 +71,6 @@ func BenchmarkParse(b *testing.B) {
 	v := NewVector()
 	for i := 0; i < b.N; i++ {
 		// all possible metrics are defined in this string
-		v.Parse("CVSS:3.0/AV:P/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L/E:U/RL:T/RC:R/CR:H/IR:M/AR:L/MAV:P/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MI:L/MA:H")
+		v.Parse("(AV:A/AC:L/Au:S/C:C/I:P/A:C/E:F/RL:W/RC:UR/CDP:MH/TD:M/CR:M/IR:L/AR:H)")
 	}
 }

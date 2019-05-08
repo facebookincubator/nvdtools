@@ -29,7 +29,6 @@ func (v Vector) Score() float64 {
 	return v.environmentalScore()
 }
 
-// BaseScore returns the base score
 func (v Vector) baseScore() float64 {
 	i, e := v.impactScore(), v.exploitabilityScore()
 	if i < 0 {
@@ -43,27 +42,10 @@ func (v Vector) baseScore() float64 {
 	return roundUp(math.Min(c*(e+i), 10.0))
 }
 
-// ImpactScore returns the impact sub score of the base score
-func (v Vector) impactScore() float64 {
-	iscBase := 1 - (1-v.weightMust("C"))*(1-v.weightMust("I"))*(1-v.weightMust("A"))
-	if v.baseScopeChanged() {
-		return 7.52*(iscBase-0.029) - 3.25*math.Pow((iscBase-0.02), 15)
-	} else {
-		return 6.42 * iscBase
-	}
-}
-
-// ExploitablityScore returns the exploitability sub score of the base score
-func (v Vector) exploitabilityScore() float64 {
-	return 8.22 * v.weightMust("AV") * v.weightMust("AC") * v.prWeight() * v.weightMust("UI")
-}
-
-// TemporalScore returns the temporal score
 func (v Vector) temporalScore() float64 {
-	return roundUp(v.baseScore() * v.weightDefault("E", 1.0) * v.weightDefault("RL", 1.0) * v.weightDefault("RC", 1.0))
+	return roundUp(v.baseScore() * v.WeightDefault("E", 1.0) * v.WeightDefault("RL", 1.0) * v.WeightDefault("RC", 1.0))
 }
 
-// EnvironmentalScore return the environmental score
 func (v Vector) environmentalScore() float64 {
 	i, e := v.modifiedImpactScore(), v.modifiedExploitabilityScore()
 	if i < 0 {
@@ -74,15 +56,29 @@ func (v Vector) environmentalScore() float64 {
 		c = 1.08
 	}
 
-	return roundUp(roundUp(math.Min(c*(e+i), 10.0)) * v.weightDefault("E", 1.0) * v.weightDefault("RL", 1.0) * v.weightDefault("RC", 1.0))
+	return roundUp(roundUp(math.Min(c*(e+i), 10.0)) * v.WeightDefault("E", 1.0) * v.WeightDefault("RL", 1.0) * v.WeightDefault("RC", 1.0))
 }
 
-// ModifedImpactScore returns the impact sub score of the environmental score
+// helpers
+
+func (v Vector) impactScore() float64 {
+	iscBase := 1 - (1-v.WeightMust("C"))*(1-v.WeightMust("I"))*(1-v.WeightMust("A"))
+	if v.baseScopeChanged() {
+		return 7.52*(iscBase-0.029) - 3.25*math.Pow((iscBase-0.02), 15)
+	} else {
+		return 6.42 * iscBase
+	}
+}
+
+func (v Vector) exploitabilityScore() float64 {
+	return 8.22 * v.WeightMust("AV") * v.WeightMust("AC") * v.prWeight() * v.WeightMust("UI")
+}
+
 func (v Vector) modifiedImpactScore() float64 {
 	iscModified := math.Min(
-		1-(1-v.modifiedWeight("C")*v.weightDefault("CR", 1.0))*
-			(1-v.modifiedWeight("I")*v.weightDefault("IR", 1.0))*
-			(1-v.modifiedWeight("A")*v.weightDefault("AR", 1.0)),
+		1-(1-v.modifiedWeight("C")*v.WeightDefault("CR", 1.0))*
+			(1-v.modifiedWeight("I")*v.WeightDefault("IR", 1.0))*
+			(1-v.modifiedWeight("A")*v.WeightDefault("AR", 1.0)),
 		0.915,
 	)
 	if v.modifiedScopeChanged() {
@@ -92,7 +88,6 @@ func (v Vector) modifiedImpactScore() float64 {
 	}
 }
 
-// ModifiedExplotiabilityScore returns the explotiablity sub score of the environmental score
 func (v Vector) modifiedExploitabilityScore() float64 {
 	return 8.22 * v.modifiedWeight("AV") * v.modifiedWeight("AC") * v.modifiedPRWeight() * v.modifiedWeight("UI")
 }
