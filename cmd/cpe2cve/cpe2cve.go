@@ -37,7 +37,6 @@ type config struct {
 	nProcessors                      int
 	cpesAt, cvesAt, matchesAt        int
 	cwesAt, cvss2at, cvss3at, cvssAt int
-	feedFormat                       string
 	inFieldSep, inRecSep             string
 	outFieldSep, outRecSep           string
 	cpuProfile, memProfile           string
@@ -58,7 +57,6 @@ func (c *config) addFlags() {
 	flag.IntVar(&c.cvss3at, "cvss3", 0, "output CVSS 3.0 base score at this position (starts with 1)")
 	flag.IntVar(&c.matchesAt, "matches", 0, "output CPEs that matches CVE at this position; 0 disables the output")
 	flag.Int64Var(&c.cacheSize, "cache_size", 0, "limit the cache size to this amount in bytes; 0 removes the limit, -1 disables caching")
-	flag.StringVar(&c.feedFormat, "feed", "json", "vulnerability feed format (currently only json is supported)")
 	flag.StringVar(&c.inFieldSep, "d", "\t", "input columns delimiter")
 	flag.StringVar(&c.inRecSep, "d2", ",", "inner input columns delimiter: separates elements of list passed into a CSV columns")
 	flag.StringVar(&c.outFieldSep, "o", "\t", "output columns delimiter")
@@ -237,9 +235,6 @@ func main() {
 
 	glog.V(1).Info("loading NVD feeds...")
 	start := time.Now()
-	if cfg.feedFormat != "json" {
-		glog.Fatalf("unknown vulnerability feed format %q", cfg.feedFormat)
-	}
 	var overrides cvefeed.Dictionary
 	dict, err := cvefeed.LoadJSONDictionary(flag.Args()...)
 	if err == nil {
