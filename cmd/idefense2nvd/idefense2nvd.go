@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/idefense/api"
@@ -28,13 +29,12 @@ import (
 )
 
 const (
-	baseURL  = "https://api.intelgraph.idefense.com"
-	endpoint = "rest/vulnerability/v0"
+	baseURL          = "https://api.intelgraph.idefense.com"
+	defaultUserAgent = "idefense2nvd"
 )
 
 var (
-	parameters map[string]interface{}
-	apiKey     string
+	apiKey string
 )
 
 func init() {
@@ -46,10 +46,10 @@ func init() {
 }
 
 func main() {
-	url := flag.String("url", fmt.Sprintf("%s/%s", baseURL, endpoint), "iDefense API endpoint")
-	parametersPath := flag.String("parameters_path", "", "Path to a json file which contains parameters used to query the API")
-	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
+	baseURL := flag.String("base_url", baseURL, "API base URL")
+	userAgent := flag.String("user_agent", defaultUserAgent, "User agent to be used when sending requests")
 	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
+	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
 	dontConvert := flag.Bool("dont_convert", false, "Should the feed be converted to NVD format or not")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
@@ -62,23 +62,20 @@ func main() {
 	if *sinceDuration != "" {
 		dur, err := time.ParseDuration("-" + *sinceDuration)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		since = time.Now().Add(dur).Unix()
 	}
 
-	parameters = make(map[string]interface{})
-	if *parametersPath != "" {
-		if err := readParameters(*parametersPath); err != nil {
-			log.Fatal(err)
-		}
+	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(*userAgent) {
+		log.Println("User-Agent contains non ascii characters, using default")
+		*userAgent = defaultUserAgent
 	}
-	parameters["last_published.from"] = time.Unix(since, 0).Format("2006-01-02T15:04:05.000Z")
 
 	// create the API
-	client := api.NewClient(*url, apiKey, parameters)
+	client := api.NewClient(*baseURL, *userAgent, apiKey)
 
-	vulns, err := client.FetchAll()
+	vulns, err := client.FetchAll(since)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,16 +95,4 @@ func writeOutput(output interface{}) {
 	if err := json.NewEncoder(os.Stdout).Encode(output); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func readParameters(filepath string) error {
-	f, err := os.Open(filepath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if err := json.NewDecoder(f).Decode(&parameters); err != nil {
-		return err
-	}
-	return nil
 }

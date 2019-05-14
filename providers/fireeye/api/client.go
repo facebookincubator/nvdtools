@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
+	"github.com/facebookincubator/nvdtools/providers/lib/download"
 	"github.com/pkg/errors"
 )
 
@@ -79,7 +80,11 @@ func (c *Client) Request(endpoint string) (io.Reader, error) {
 	req.Header.Set("User-Agent", c.userAgent)
 
 	// execute the request
-	resp, err := http.DefaultClient.Do(req)
+	client, err := download.Client()
+	if err != nil {
+		return nil, errors.Wrap(err, "can't obtain http client")
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get url")
 	}

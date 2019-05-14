@@ -22,7 +22,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cmd/nvdsync/datafeed"
+	"github.com/facebookincubator/nvdtools/providers/nvd"
 	"github.com/golang/glog"
 )
 
@@ -32,20 +32,21 @@ func init() {
 
 func main() {
 	var (
-		cvefeed datafeed.CVE
-		cpefeed datafeed.CPE
-		timeout time.Duration
-		source  = datafeed.NewSourceConfig()
+		cvefeed   nvd.CVE
+		cpefeed   nvd.CPE
+		timeout   time.Duration
+		userAgent string
+		source    = nvd.NewSourceConfig()
 	)
 
 	flag.Var(&cvefeed, "cve_feed", cvefeed.Help())
 	flag.Var(&cpefeed, "cpe_feed", cpefeed.Help())
 	flag.DurationVar(&timeout, "timeout", 5*time.Minute, "sync timeout")
-	ua := flag.String("user_agent", datafeed.UserAgent(), "HTTP request User-Agent header")
+	flag.StringVar(&userAgent, "user_agent", nvd.UserAgent(), "HTTP request User-Agent header")
 	source.AddFlags(flag.CommandLine)
 
 	flag.Usage = func() {
-		fmt.Printf("nvdsync %s\n\n", datafeed.Version)
+		fmt.Printf("nvdsync %s\n\n", nvd.Version)
 		fmt.Printf("use: %s [flags] dir\n", os.Args[0])
 		fmt.Printf("Synchronizes NVD data feeds to local directory.\n\n")
 		fmt.Printf("Flags:\n\n")
@@ -62,13 +63,13 @@ func main() {
 
 	// determine User-Agent header
 	// check if it's only ascii characters
-	if err := datafeed.SetUserAgent(*ua); err != nil {
+	if err := nvd.SetUserAgent(userAgent); err != nil {
 		glog.Warningf("could not set User-Agent HTTP header, using default: %v", err)
 	}
-	glog.Infof("Using http User-Agent: %s", datafeed.UserAgent())
+	glog.Infof("Using http User-Agent: %s", nvd.UserAgent())
 
-	dfs := datafeed.Sync{
-		Feeds:    []datafeed.Syncer{cvefeed, cpefeed},
+	dfs := nvd.Sync{
+		Feeds:    []nvd.Syncer{cvefeed, cpefeed},
 		Source:   source,
 		LocalDir: localdir,
 	}

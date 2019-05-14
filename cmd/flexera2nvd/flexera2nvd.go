@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/flexera/api"
@@ -28,7 +29,8 @@ import (
 )
 
 const (
-	baseURL = "https://api.app.secunia.com"
+	baseURL          = "https://api.app.secunia.com"
+	defaultUserAgent = "flexera2nvd"
 )
 
 var (
@@ -44,10 +46,11 @@ func init() {
 }
 
 func main() {
-	baseURL := flag.String("url", baseURL, "Flexera API base URL")
-	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
+	baseURL := flag.String("base_url", baseURL, "API base URL")
+	userAgent := flag.String("user_agent", defaultUserAgent, "User agent to be used when sending requests")
 	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
-	only := flag.String("only", "", "If present, it will only download this advisory")
+	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
+	dontConvert := flag.Bool("dont_convert", false, "Should the feed be converted to NVD format or not")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
 		flag.PrintDefaults()
@@ -55,51 +58,48 @@ func main() {
 	}
 	flag.Parse()
 
-	// create the API
-	client := api.NewClient(*baseURL, apiKey)
-	var fetch func() (<-chan *schema.FlexeraAdvisory, error)
-
-	if *only != "" {
-		fetch = func() (<-chan *schema.FlexeraAdvisory, error) {
-			log.Printf("Downloading only: %s\n", *only)
-			adv, err := client.Fetch(*only)
-			if err != nil {
-				return nil, err
-			}
-			output := make(chan *schema.FlexeraAdvisory, 1)
-			output <- adv
-			close(output)
-			return output, nil
+	since := *sinceUnix
+	if *sinceDuration != "" {
+		dur, err := time.ParseDuration("-" + *sinceDuration)
+		if err != nil {
+			log.Fatalln(err)
 		}
-	} else {
-		since := *sinceUnix
-		if *sinceDuration != "" {
-			dur, err := time.ParseDuration("-" + *sinceDuration)
-			if err != nil {
-				log.Fatal(err)
-			}
-			since = time.Now().Add(dur).Unix()
-		}
-
-		from, to := since, time.Now().Unix()
-
-		fetch = func() (<-chan *schema.FlexeraAdvisory, error) {
-			log.Printf(
-				"Download window: %s - %s\n",
-				time.Unix(from, 0).Format(time.RFC1123),
-				time.Unix(to, 0).Format(time.RFC1123),
-			)
-			return client.FetchAll(from, to)
-		}
+		since = time.Now().Add(dur).Unix()
 	}
 
-	advCh, err := fetch()
+	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(*userAgent) {
+		log.Println("User-Agent contains non ascii characters, using default")
+		*userAgent = defaultUserAgent
+	}
+
+	// create the API
+	client := api.NewClient(*baseURL, *userAgent, apiKey)
+
+	from, to := since, time.Now().Unix()
+	log.Printf(
+		"Download window: %s - %s\n",
+		time.Unix(from, 0).Format(time.RFC1123),
+		time.Unix(to, 0).Format(time.RFC1123),
+	)
+
+	advCh, err := client.FetchAll(from, to)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	converted := converter.Convert(advCh)
-	if err := json.NewEncoder(os.Stdout).Encode(converted); err != nil {
+	if *dontConvert {
+		var output []*schema.FlexeraAdvisory
+		for adv := range advCh {
+			output = append(output, adv)
+		}
+		writeOutput(output)
+	} else {
+		writeOutput(converter.Convert(advCh))
+	}
+}
+
+func writeOutput(output interface{}) {
+	if err := json.NewEncoder(os.Stdout).Encode(output); err != nil {
 		log.Fatal(err)
 	}
 }

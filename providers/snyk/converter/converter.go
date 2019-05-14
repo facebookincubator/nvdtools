@@ -18,7 +18,7 @@ import (
 	"log"
 
 	dstschema "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
-	srcschema "github.com/facebookincubator/nvdtools/providers/snyk/jsonschema"
+	srcschema "github.com/facebookincubator/nvdtools/providers/snyk/schema"
 
 	"github.com/facebookincubator/nvdtools/wfn"
 )

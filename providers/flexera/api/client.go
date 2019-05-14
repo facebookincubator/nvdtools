@@ -20,12 +20,12 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"sync"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/providers/flexera/rate"
 	"github.com/facebookincubator/nvdtools/providers/flexera/schema"
+	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/lib/rate"
 	"github.com/pkg/errors"
 )
 
@@ -33,14 +33,14 @@ import (
 // API key will be sent in the Authorization field
 // rate limiter is used to enforce their api limits (so we don't go over them)
 type Client struct {
-	apiKey  string
-	baseURL string
-	limiter rate.Limiter
+	baseURL   string
+	userAgent string
+	apiKey    string
+	limiter   rate.Limiter
 }
 
 const (
 	pageSize           = 100
-	userAgent          = "fb-flexera"
 	advisoriesEndpoint = "/api/advisories"
 	numFetchers        = 4
 	requestsPerMinute  = 240
@@ -49,11 +49,12 @@ const (
 )
 
 // NewClient creates a new Client object with given properties
-func NewClient(baseURL, apiKey string) Client {
+func NewClient(baseURL, userAgent, apiKey string) Client {
 	return Client{
-		apiKey:  apiKey,
-		baseURL: baseURL,
-		limiter: rate.BurstyLimiter(time.Minute, requestsPerMinute),
+		baseURL:   baseURL,
+		userAgent: userAgent,
+		apiKey:    apiKey,
+		limiter:   rate.BurstyLimiter(time.Minute, requestsPerMinute),
 	}
 }
 
@@ -122,7 +123,7 @@ func (c Client) FetchAll(from, to int64) (<-chan *schema.FlexeraAdvisory, error)
 func (c Client) Fetch(identifier string) (*schema.FlexeraAdvisory, error) {
 	var advisory schema.FlexeraAdvisory
 	endpoint := fmt.Sprintf("%s/%s", advisoriesEndpoint, identifier)
-	if err := c.query(endpoint, map[string]string{}, &advisory); err != nil {
+	if err := c.query(endpoint, map[string]interface{}{}, &advisory); err != nil {
 		return nil, errors.Wrapf(err, "failed to query advisory details endpoint %s", endpoint)
 	}
 	return &advisory, nil
@@ -130,11 +131,11 @@ func (c Client) Fetch(identifier string) (*schema.FlexeraAdvisory, error) {
 
 func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.FlexeraAdvisoryListResult, error) {
 	var list schema.FlexeraAdvisoryListResult
-	params := map[string]string{
-		"released__gte": strconv.FormatInt(from, 10),
-		"released__lt":  strconv.FormatInt(to, 10),
-		"page":          strconv.Itoa(page),
-		"page_size":     strconv.Itoa(pageSize),
+	params := map[string]interface{}{
+		"released__gte": from,
+		"released__lt":  to,
+		"page":          page,
+		"page_size":     pageSize,
 	}
 	if err := c.query(advisoriesEndpoint, params, &list); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch page %d", page)
@@ -144,10 +145,10 @@ func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.FlexeraAdvi
 
 func (c Client) getNumberOfAdvisories(from, to int64) (int, error) {
 	var list schema.FlexeraAdvisoryListResult
-	params := map[string]string{
-		"released__gte": strconv.FormatInt(from, 10),
-		"released__lt":  strconv.FormatInt(to, 10),
-		"page_size":     "1",
+	params := map[string]interface{}{
+		"released__gte": from,
+		"released__lt":  to,
+		"page_size":     1,
 	}
 	if err := c.query(advisoriesEndpoint, params, &list); err != nil {
 		return 0, errors.Wrap(err, "failed to fetch first page")
@@ -155,7 +156,7 @@ func (c Client) getNumberOfAdvisories(from, to int64) (int, error) {
 	return list.Count, nil
 }
 
-func (c Client) query(endpoint string, params map[string]string, v interface{}) error {
+func (c Client) query(endpoint string, params map[string]interface{}, v interface{}) error {
 	// setup new parameters
 	u, err := url.Parse(fmt.Sprintf("%s%s", c.baseURL, endpoint))
 	if err != nil {
@@ -163,22 +164,22 @@ func (c Client) query(endpoint string, params map[string]string, v interface{}) 
 	}
 	query := u.Query()
 	for key, value := range params {
-		query.Set(key, value)
+		query.Set(key, fmt.Sprintf("%v", value))
 	}
 	u.RawQuery = query.Encode()
 
 	var resp *http.Response
 	for i := 0; i < numRequestRetries; i++ {
 		c.limiter.Allow() // block until we can make another request
-		resp, err = queryURL(u.String(), http.Header{
+		resp, err = download.Get(u.String(), http.Header{
 			"Authorization": {c.apiKey},
-			"User-Agent":    {userAgent},
+			"User-Agent":    {c.userAgent},
 		})
 		if err == nil {
 			break
 		}
 
-		if he, ok := err.(httpError); !ok || !he.isRateLimit() {
+		if he, ok := err.(download.Err); !ok || he.Code != http.StatusTooManyRequests {
 			return err
 		}
 		// it is rate limit, just retry after 1 second

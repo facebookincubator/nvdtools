@@ -19,19 +19,16 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"regexp"
 	"strings"
-	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 
+	"github.com/facebookincubator/nvdtools/providers/snyk/api"
 	"github.com/facebookincubator/nvdtools/providers/snyk/converter"
-	"github.com/facebookincubator/nvdtools/providers/snyk/jsonschema"
+	"github.com/facebookincubator/nvdtools/providers/snyk/schema"
 )
 
 const (
@@ -86,6 +83,12 @@ func obtainFeed(download bool) (io.ReadCloser, error) {
 		if token == "" {
 			log.Fatal("Please set SNYK_TOKEN in environment")
 		}
+		parts := strings.SplitN(strings.TrimSuffix(token, "\n"), ":", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return nil, errors.Errorf("malformed token: must contain 'consumer_id:secret'")
+		}
+		consumerID, secret := parts[0], parts[1]
+
 		// determine User-Agent header, check if it's only ascii characters
 		if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(userAgent) {
 			log.Println("User-Agent contains non ascii characters, using default")
@@ -97,7 +100,9 @@ func obtainFeed(download bool) (io.ReadCloser, error) {
 		if uri == "" {
 			uri = feedURL
 		}
-		return httpGet(uri, userAgent, token)
+
+		client := api.NewClient(consumerID, secret, userAgent)
+		return client.Get(uri)
 	}
 
 	// open the file if specified
@@ -110,7 +115,7 @@ func obtainFeed(download bool) (io.ReadCloser, error) {
 }
 
 func convert(r io.Reader, lf languageFilter) error {
-	var snykFeed jsonschema.Snyk
+	var snykFeed schema.Snyk
 	if err := json.NewDecoder(r).Decode(&snykFeed); err != nil {
 		return err
 	}
@@ -121,51 +126,6 @@ func convert(r io.Reader, lf languageFilter) error {
 		return err
 	}
 	return nil
-}
-
-func httpGet(url, userAgent string, token string) (io.ReadCloser, error) {
-	parts := strings.SplitN(strings.TrimSuffix(token, "\n"), ":", 2)
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return nil, errors.Errorf("malformed token: must contain 'consumer_id:secret'")
-	}
-
-	consumerID, secret := parts[0], parts[1]
-	tok, err := newSnykToken(consumerID, secret)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot create jwt token")
-	}
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot create http get request")
-	}
-
-	req.Header.Set("User-Agent", userAgent)
-	req.Header.Add("Authorization", "Bearer "+tok)
-
-	log.Printf("downloading feed from %s", url)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot get snyk feed")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 1024*1024))
-		if err != nil {
-			return nil, errors.Wrap(err, "cannot read snyk http response")
-		}
-		return nil, errors.Errorf("snyk http error: %s %q", resp.Status, string(body))
-	}
-
-	return resp.Body, nil
-}
-
-func newSnykToken(consumerID, secret string) (string, error) {
-	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
-		Issuer:   consumerID,
-		IssuedAt: time.Now().Unix(),
-	})
-	return tok.SignedString([]byte(secret))
 }
 
 // language filter
