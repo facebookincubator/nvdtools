@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/fireeye/api"
@@ -27,8 +28,8 @@ import (
 )
 
 const (
-	baseURL   = "https://api.isightpartners.com"
-	userAgent = "fireeye2nvd"
+	baseURL          = "https://api.isightpartners.com"
+	defaultUserAgent = "fireeye2nvd"
 )
 
 var (
@@ -49,11 +50,11 @@ func init() {
 }
 
 func main() {
-	baseURL := flag.String("base_url", baseURL, "FireEye API base URL")
-	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
+	baseURL := flag.String("base_url", baseURL, "API base URL")
+	userAgent := flag.String("user_agent", defaultUserAgent, "User agent to be used when sending requests")
 	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
+	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
 	dontConvert := flag.Bool("dont_convert", false, "Should the feed be converted to NVD format or not")
-	userAgent := flag.String("user_agent", userAgent, "User agent to be used when sending requests")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
 		flag.PrintDefaults()
@@ -68,6 +69,11 @@ func main() {
 			log.Fatalln(err)
 		}
 		since = time.Now().Add(dur).Unix()
+	}
+
+	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(*userAgent) {
+		log.Println("User-Agent contains non ascii characters, using default")
+		*userAgent = defaultUserAgent
 	}
 
 	// create the API

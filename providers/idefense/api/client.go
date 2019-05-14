@@ -16,64 +16,47 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"sync"
+	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/idefense/schema"
+	"github.com/facebookincubator/nvdtools/providers/lib/download"
 	"github.com/pkg/errors"
 )
 
 // Client struct
 type Client struct {
-	APIKey string
-	URL    url.URL
+	baseUrl   string
+	userAgent string
+	apiKey    string
 }
 
 const (
-	pageSize  = 200
-	userAgent = "fb-idefense"
+	pageSize              = 200
+	vulnerabilityEndpoint = "/rest/vulnerability/v0"
 )
 
 // NewClient creates an object which is used to query the iDefense API
-func NewClient(u, apiKey string, parameters map[string]interface{}) Client {
-	apiURL, err := url.Parse(u)
-	if err != nil {
-		log.Fatal(err)
-	}
-	apiURL.RawQuery = createQuery(parameters).Encode()
-
+func NewClient(baseUrl, userAgent, apiKey string) Client {
 	return Client{
-		APIKey: apiKey,
-		URL:    *apiURL,
+		baseUrl:   baseUrl,
+		userAgent: userAgent,
+		apiKey:    apiKey,
 	}
-}
-
-func createQuery(parameters map[string]interface{}) *url.Values {
-	query := url.Values{}
-	for key, value := range parameters {
-		log.Printf("querying with %s = %v\n", key, value)
-		switch v := value.(type) {
-		case string:
-			query.Add(key, v)
-		case []string:
-			for _, s := range v {
-				query.Add(key, s)
-			}
-		case int:
-			query.Add(key, strconv.Itoa(v))
-		case bool:
-			query.Add(key, strconv.FormatBool(v))
-		}
-	}
-	return &query
 }
 
 // FetchAll will fetch all vulnerabilities from iDefense API
-func (client Client) FetchAll() (<-chan *schema.IDefenseVulnerability, error) {
-	result, err := client.query(map[string]string{"page_size": "0"})
+func (c Client) FetchAll(since int64) (<-chan *schema.IDefenseVulnerability, error) {
+	sinceStr := time.Unix(since, 0).Format("2006-01-02T15:04:05.000Z")
+
+	result, err := c.queryVulnerabilities(map[string]interface{}{
+		"last_published.from": sinceStr,
+		"page_size":           0,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -90,13 +73,25 @@ func (client Client) FetchAll() (<-chan *schema.IDefenseVulnerability, error) {
 	log.Printf("starting sync for %d vulnerabilities over %d pages\n", totalVulns, numPages)
 	wg := sync.WaitGroup{}
 	for page := 1; page <= numPages; page++ {
+		page := page
 		wg.Add(1)
-		go func(p int) {
-			if err := client.fetchPage(p, output); err != nil {
-				log.Println(err)
+		go func() {
+			defer wg.Done()
+			result, err := c.queryVulnerabilities(map[string]interface{}{
+				"last_published.from": sinceStr,
+				"page_size":           pageSize,
+				"page":                page,
+			})
+			if err != nil {
+				log.Printf("failed to get page %d: %v", page, err)
+				return
 			}
-			wg.Done()
-		}(page)
+			for _, vuln := range result.Results {
+				if vuln != nil {
+					output <- vuln
+				}
+			}
+		}()
 	}
 
 	go func() {
@@ -107,37 +102,20 @@ func (client Client) FetchAll() (<-chan *schema.IDefenseVulnerability, error) {
 	return output, nil
 }
 
-func (client Client) fetchPage(page int, output chan<- *schema.IDefenseVulnerability) error {
-	result, err := client.query(map[string]string{
-		"page":      strconv.Itoa(page),
-		"page_size": strconv.Itoa(pageSize),
-	})
+func (c Client) queryVulnerabilities(params map[string]interface{}) (*schema.IDefenseVulnerabilitySearchResults, error) {
+	u, err := url.Parse(c.baseUrl + vulnerabilityEndpoint)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get page %d", page)
+		return nil, errors.Wrap(err, "failed to parse url")
 	}
-	for _, vuln := range result.Results {
-		if vuln != nil {
-			output <- vuln
-		}
-	}
-	return nil
-}
-
-func (client Client) query(params map[string]string) (*schema.IDefenseVulnerabilitySearchResults, error) {
-	// setup new parameters
-	u, err := url.Parse(client.URL.String()) // in other words: url.copy()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse client URL")
-	}
-	query := u.Query()
+	query := url.Values{}
 	for key, value := range params {
-		query.Set(key, value)
+		query.Set(key, fmt.Sprintf("%v", value))
 	}
 	u.RawQuery = query.Encode()
 
-	resp, err := queryURL(u.String(), http.Header{
-		"Auth-Token": {client.APIKey},
-		"User-Agent": {userAgent},
+	resp, err := download.Get(u.String(), http.Header{
+		"Auth-Token": {c.apiKey},
+		"User-Agent": {c.userAgent},
 	})
 	if err != nil {
 		return nil, err

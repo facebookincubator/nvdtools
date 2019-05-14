@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package datafeed
+package nvd
 
 import (
 	"archive/zip"
@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -34,6 +33,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/facebookincubator/nvdtools/providers/lib/download"
 	"github.com/golang/glog"
 )
 
@@ -323,7 +323,11 @@ func (cf cveFile) downloadAndVerify(ctx context.Context, m *metaFile, remoteFile
 		return "", err
 	}
 	glog.V(1).Infof("downloading data file %q", remoteFileURL)
-	resp, err := http.DefaultClient.Do(req)
+	client, err := download.Client()
+	if err != nil {
+		return "", fmt.Errorf("can't obtain http client: %v", err)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -501,7 +505,11 @@ func newMetaFromURL(ctx context.Context, url string) (metaFile, error) {
 	if err != nil {
 		return m, err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	client, err := download.Client()
+	if err != nil {
+		return m, fmt.Errorf("can't obtain http client: %v", err)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return m, err
 	}
