@@ -24,12 +24,15 @@ import (
 	"strings"
 	"time"
 
+	// TODO lose download package, move all to here
+	"github.com/facebookincubator/nvdtools/providers/lib/download"
 	"github.com/facebookincubator/nvdtools/providers/lib/rate"
 )
 
 // Config is used to configure a client
 type Config struct {
 	numRetries        int
+	retryDelay        time.Duration
 	retriable         ints
 	requestsPerPeriod int
 	period            time.Duration
@@ -38,6 +41,8 @@ type Config struct {
 // AddFlags adds flags used to configure a client
 func (conf *Config) AddFlags() {
 	flag.IntVar(&conf.numRetries, "num-retries", 0, "how many times will specified statuses get retried. 0 means no retries")
+	// TODO implement exponential backoff (for some statuses?)
+	flag.DurationVar(&conf.retryDelay, "retry-delay", time.Second, "delay between each retry")
 	flag.Var(&conf.retriable, "retry", "which http statuses to retry. specify multiple by specifying the flag multiple times or using a comma")
 	flag.IntVar(&conf.requestsPerPeriod, "requests-per-period", 0, "how many requests per period to make. 0 means no throttling")
 	flag.DurationVar(&conf.period, "period", time.Second, "period in which requests are capped by the requests-per-period flag")
@@ -46,10 +51,10 @@ func (conf *Config) AddFlags() {
 // Configure configures the given client (add throttling, retries, ...)
 func (conf *Config) Configure(c Client) Client {
 	if conf.numRetries > 0 {
-		c = Retry(conf.numRetries, conf.retriable...)(c)
+		c = Retry(c, conf.numRetries, conf.retryDelay, conf.retriable...)
 	}
 	if conf.requestsPerPeriod > 0 {
-		c = Throttle(conf.period, conf.requestsPerPeriod)(c)
+		c = Throttle(c, conf.period, conf.requestsPerPeriod)
 	}
 	return c
 }
@@ -72,20 +77,30 @@ type Client interface {
 	Get(url string) (*http.Response, error)
 }
 
-// Wrapper is a function which takes in a client and wraps it in some way to produce a new one
-type Wrapper func(Client) Client
+// Get will create a GET request with given headers and call Do on the client
+func Get(c Client, url string, header http.Header) (*http.Response, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create http get request: %v", err)
+	}
+	req.Header = header
+
+	return c.Do(req)
+}
 
 // Default returns the default http client to use
 func Default() Client {
+	// TODO merge into one function
+	if cl, err := download.Client(); err == nil {
+		return cl
+	}
 	return http.DefaultClient
 }
 
 // Throttle creates a rate limitted client - all requests are throttled
-func Throttle(period time.Duration, requestsPerPeriod int) Wrapper {
+func Throttle(c Client, period time.Duration, requestsPerPeriod int) Client {
 	limiter := rate.BurstyLimiter(period, requestsPerPeriod)
-	return func(c Client) Client {
-		return &rateLimitedClient{c, limiter}
-	}
+	return &rateLimitedClient{c, limiter}
 }
 
 type rateLimitedClient struct {
@@ -107,15 +122,17 @@ func (c *rateLimitedClient) Get(url string) (*http.Response, error) {
 //	- if status is 200, returns
 //	- if status is one of the specified and hasn't been retried the total number of times, retry
 //	- otherwise, fail the request
-func Retry(retries int, statuses ...int) Wrapper {
+func Retry(c Client, retries int, delay time.Duration, statuses ...int) Client {
+	if retries <= 0 || len(statuses) == 0 {
+		// if no retries, return the normal client
+		// if no statuses are retried, do the same
+		return c
+	}
 	retriable := make(map[int]bool, len(statuses))
 	for _, status := range statuses {
 		retriable[status] = true
 	}
-
-	return func(c Client) Client {
-		return &retriableClient{c, retriable, retries}
-	}
+	return &retriableClient{c, retries, delay, retriable}
 }
 
 // FailedRetries is an error returned when all retries have been exhausted
@@ -127,60 +144,55 @@ func (fr FailedRetries) Error() string {
 
 type retriableClient struct {
 	Client
-	retriable map[int]bool
 	retries   int
+	delay     time.Duration
+	retriable map[int]bool
 }
 
 func (c *retriableClient) Do(req *http.Request) (*http.Response, error) {
-	return c.do(req, c.retries)
-}
+	for retry := 0; retry <= c.retries; retry++ {
+		resp, err := c.Client.Do(req)
+		if err != nil {
+			return resp, err
+		}
 
-func (c *retriableClient) do(req *http.Request, retry int) (*http.Response, error) {
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		return resp, err
+		if resp.StatusCode == http.StatusOK {
+			return resp, nil
+		}
+
+		if err = c.checkStatus(resp); err != nil {
+			return nil, err
+		}
+
+		if retry != c.retries {
+			time.Sleep(c.delay)
+		}
 	}
-
-	if resp.StatusCode == http.StatusOK {
-		return resp, nil
-	}
-
-	if err = c.checkStatus(resp); err != nil {
-		return nil, err
-	}
-
-	if retry <= 0 {
-		// no more retries left
-		return nil, FailedRetries(c.retries)
-	}
-
-	return c.do(req, retry-1)
+	// no more retries left
+	return nil, FailedRetries(c.retries)
 }
 
 func (c *retriableClient) Get(url string) (*http.Response, error) {
-	return c.get(url, c.retries)
-}
+	for retry := 0; retry <= c.retries; retry++ {
+		resp, err := c.Client.Get(url)
+		if err != nil {
+			return resp, err
+		}
 
-func (c *retriableClient) get(url string, retry int) (*http.Response, error) {
-	resp, err := c.Client.Get(url)
-	if err != nil {
-		return resp, err
+		if resp.StatusCode == http.StatusOK {
+			return resp, nil
+		}
+
+		if err = c.checkStatus(resp); err != nil {
+			return nil, err
+		}
+
+		if retry != c.retries {
+			time.Sleep(c.delay)
+		}
 	}
-
-	if resp.StatusCode == http.StatusOK {
-		return resp, nil
-	}
-
-	if err = c.checkStatus(resp); err != nil {
-		return nil, err
-	}
-
-	if retry <= 0 {
-		// no more retries left
-		return nil, FailedRetries(c.retries)
-	}
-
-	return c.get(url, retry-1)
+	// no more retries left
+	return nil, FailedRetries(c.retries)
 }
 
 // returns an error if status is not retriable
