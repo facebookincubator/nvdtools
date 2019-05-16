@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	prefix = "CVSS:3.0/"
+	prefix     = "CVSS:3.0/"
+	notDefined = "X"
 )
 
 var (
@@ -71,38 +72,44 @@ var (
 
 	temporalMetricsWeights = map[string]map[string]float64{
 		"E": { // Exploit Code Maturity
-			"H": 1.00, // High
-			"F": 0.97, // Functional
-			"P": 0.94, // Proof-Of-Concept
-			"U": 0.91, // Unproven
+			notDefined: 1.00, // Not defined
+			"H":        1.00, // High
+			"F":        0.97, // Functional
+			"P":        0.94, // Proof-Of-Concept
+			"U":        0.91, // Unproven
 		},
 		"RL": { // Remediation Level
-			"U": 1.00, // Unavailable
-			"W": 0.97, // Workaround
-			"T": 0.96, // Temporary Fix
-			"O": 0.95, // Official Fix
+			notDefined: 1.00, // Not defined
+			"U":        1.00, // Unavailable
+			"W":        0.97, // Workaround
+			"T":        0.96, // Temporary Fix
+			"O":        0.95, // Official Fix
 		},
 		"RC": { // Report Confidence
-			"C": 1.00, // Confirmed
-			"R": 0.96, // Reasonable
-			"U": 0.92, // Unknown
+			notDefined: 1.00, // Not defined
+			"C":        1.00, // Confirmed
+			"R":        0.96, // Reasonable
+			"U":        0.92, // Unknown
 		},
 	}
 	environmentalMetricsWeights = map[string]map[string]float64{
 		"CR": { // Confidentiality Requirement
-			"H": 1.50, // High
-			"M": 1.00, // Medium
-			"L": 0.50, // Low
+			notDefined: 1.00, // Not defined
+			"H":        1.50, // High
+			"M":        1.00, // Medium
+			"L":        0.50, // Low
 		},
 		"IR": { // Integrity Requirement
-			"H": 1.50, // High
-			"M": 1.00, // Medium
-			"L": 0.50, // Low
+			notDefined: 1.00, // Not defined
+			"H":        1.50, // High
+			"M":        1.00, // Medium
+			"L":        0.50, // Low
 		},
 		"AR": { // Availability Requirement
-			"H": 1.50, // High
-			"M": 1.00, // Medium
-			"L": 0.50, // Low
+			notDefined: 1.00, // Not defined
+			"H":        1.50, // High
+			"M":        1.00, // Medium
+			"L":        0.50, // Low
 		},
 		// + the ones from base vector, see init function below
 	}
@@ -124,11 +131,11 @@ func init() {
 }
 
 type Vector struct {
-	common.WeightsMetrics
+	common.Metrics
 }
 
 func NewVector() Vector {
-	return Vector{common.WeightsMetrics{make(common.Metrics), weights}}
+	return Vector{common.NewMetrics(weights, notDefined)}
 }
 
 func (v Vector) Validate() error {
@@ -147,11 +154,11 @@ func (v Vector) Parse(str string) error {
 	if strings.HasPrefix(strings.ToUpper(str), prefix) {
 		str = str[len(prefix):]
 	}
-	return v.WeightsMetrics.Parse(str)
+	return v.Metrics.Parse(str)
 }
 
 func (v Vector) String() string {
-	return prefix + v.WeightsMetrics.String()
+	return prefix + v.Metrics.String()
 }
 
 // weight functions

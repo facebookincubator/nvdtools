@@ -26,34 +26,9 @@ const (
 	metricSeparator = ":"
 )
 
-// Metrics maps value to metrics
-type Metrics map[string]string
-
-// implement parts of Vector for Metrics
-
-func (ms Metrics) Get(m string) (string, error) {
-	if value, ok := ms[m]; ok {
-		return value, nil
-	}
-	return "", fmt.Errorf("metric %q not defined", m)
-}
-
-func (ms Metrics) Set(metric string, value string) error {
-	ms[metric] = value
-	return nil
-}
-
-func (ms Metrics) String() string {
-	var parts []string
-	for metric, value := range ms {
-		parts = append(parts, fmt.Sprintf("%s%s%s", metric, metricSeparator, value))
-	}
-	return strings.Join(parts, partSeparator)
-}
-
 // parse A:B/C:D into map{A:B, C:D}
-func strToMetrics(str string) (Metrics, error) {
-	metrics := make(Metrics)
+func strToMap(str string) (map[string]string, error) {
+	metrics := make(map[string]string)
 	for _, part := range strings.Split(str, partSeparator) {
 		tmp := strings.Split(part, metricSeparator)
 		if len(tmp) != 2 {
@@ -67,31 +42,65 @@ func strToMetrics(str string) (Metrics, error) {
 	return metrics, nil
 }
 
-// WeightsMetrics uses weights to do Set and Parse metrics
-type WeightsMetrics struct {
-	Metrics
-	Weights map[string]map[string]float64
+// Metrics holds metric values. Weights are used to validate values as well as to do parsing
+type Metrics struct {
+	metrics   map[string]string
+	weights   map[string]map[string]float64
+	undefined string
 }
 
-func (wms WeightsMetrics) Set(metric string, value string) error {
-	values, ok := wms.Weights[metric]
+func NewMetrics(weights map[string]map[string]float64, undefined string) Metrics {
+	return Metrics{
+		metrics:   make(map[string]string),
+		weights:   weights,
+		undefined: undefined,
+	}
+}
+
+func (ms Metrics) Get(m string) (string, error) {
+	if value, ok := ms.metrics[m]; ok {
+		return value, nil
+	}
+	if values, ok := ms.weights[m]; ok {
+		if _, ok := values[ms.undefined]; ok {
+			return ms.undefined, nil
+		}
+	}
+	return "", fmt.Errorf("metric %q not defined", m)
+}
+
+func (ms Metrics) Set(metric string, value string) error {
+	values, ok := ms.weights[metric]
 	if !ok {
 		return fmt.Errorf("metric %q not defined for vector", metric)
 	}
 	if _, ok = values[value]; !ok {
 		return fmt.Errorf("can't set metric %q to %q", metric, value)
 	}
-	return wms.Metrics.Set(metric, value)
+	ms.metrics[metric] = value
+	return nil
 }
 
-func (wms WeightsMetrics) Parse(str string) error {
-	metrics, err := strToMetrics(str)
+func (ms Metrics) String() string {
+	var parts []string
+	for metric, value := range ms.metrics {
+		if value != ms.undefined {
+			parts = append(parts, fmt.Sprintf("%s%s%s", metric, metricSeparator, value))
+		}
+	}
+	return strings.Join(parts, partSeparator)
+}
+
+func (ms Metrics) Parse(str string) error {
+	metrics, err := strToMap(str)
 	if err != nil {
 		return errors.Wrapf(err, "unable to parse metrics")
 	}
 	for metric, value := range metrics {
-		if err = wms.Set(metric, value); err != nil {
-			return errors.Wrapf(err, "unable to set metric %q to %q", metric, value)
+		if value != ms.undefined {
+			if err = ms.Set(metric, value); err != nil {
+				return errors.Wrapf(err, "unable to set metric %q to %q", metric, value)
+			}
 		}
 	}
 	return nil
@@ -99,26 +108,24 @@ func (wms WeightsMetrics) Parse(str string) error {
 
 // weight functions
 
-func (wms WeightsMetrics) Weight(metric string) (float64, error) {
-	value, err := wms.Get(metric)
-	if err != nil {
-		return 0, errors.Wrapf(err, "unable to get value for metric %q", metric)
+// Weight will return the weight for given metric.
+// If metric is not set, try to return weight as if metric wasn't defined
+// if there's not weight fo undefined, return an error
+func (ms Metrics) Weight(metric string) (float64, error) {
+	if value, err := ms.Get(metric); err == nil {
+		return ms.weights[metric][value], nil
 	}
-	// this will always work because we only set values for valid metrics
-	return wms.Weights[metric][value], nil
+	if w, ok := ms.weights[metric][ms.undefined]; ok {
+		return w, nil
+	}
+	return 0, fmt.Errorf("weight for %s not set and does not allow undefined values", metric)
 }
 
-func (wms WeightsMetrics) WeightMust(metric string) float64 {
-	w, err := wms.Weight(metric)
+// WeightMust does the same as Weight, but panics if error gets returned
+func (ms Metrics) WeightMust(metric string) float64 {
+	w, err := ms.Weight(metric)
 	if err != nil {
 		panic(err)
 	}
 	return w
-}
-
-func (wms WeightsMetrics) WeightDefault(metric string, def float64) float64 {
-	if w, err := wms.Weight(metric); err == nil {
-		return w
-	}
-	return def
 }

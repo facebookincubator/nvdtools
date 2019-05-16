@@ -43,7 +43,7 @@ func (v Vector) baseScore() float64 {
 }
 
 func (v Vector) temporalScore() float64 {
-	return roundUp(v.baseScore() * v.WeightDefault("E", 1.0) * v.WeightDefault("RL", 1.0) * v.WeightDefault("RC", 1.0))
+	return roundUp(v.baseScore() * v.WeightMust("E") * v.WeightMust("RL") * v.WeightMust("RC"))
 }
 
 func (v Vector) environmentalScore() float64 {
@@ -56,7 +56,7 @@ func (v Vector) environmentalScore() float64 {
 		c = 1.08
 	}
 
-	return roundUp(roundUp(math.Min(c*(e+i), 10.0)) * v.WeightDefault("E", 1.0) * v.WeightDefault("RL", 1.0) * v.WeightDefault("RC", 1.0))
+	return roundUp(roundUp(math.Min(c*(e+i), 10.0)) * v.WeightMust("E") * v.WeightMust("RL") * v.WeightMust("RC"))
 }
 
 // helpers
@@ -76,9 +76,9 @@ func (v Vector) exploitabilityScore() float64 {
 
 func (v Vector) modifiedImpactScore() float64 {
 	iscModified := math.Min(
-		1-(1-v.modifiedWeight("C")*v.WeightDefault("CR", 1.0))*
-			(1-v.modifiedWeight("I")*v.WeightDefault("IR", 1.0))*
-			(1-v.modifiedWeight("A")*v.WeightDefault("AR", 1.0)),
+		1-(1-v.modifiedWeight("C")*v.WeightMust("CR"))*
+			(1-v.modifiedWeight("I")*v.WeightMust("IR"))*
+			(1-v.modifiedWeight("A")*v.WeightMust("AR")),
 		0.915,
 	)
 	if v.modifiedScopeChanged() {
