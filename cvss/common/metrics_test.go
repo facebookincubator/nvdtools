@@ -19,67 +19,73 @@ import (
 	"testing"
 )
 
-func TestStrToMetrics(t *testing.T) {
+func TestStrToMap(t *testing.T) {
 	str := "A:B/C:D"
-	expected := Metrics{"A": "B", "C": "D"}
-	if m, err := strToMetrics(str); err != nil {
+	expected := map[string]string{"A": "B", "C": "D"}
+	if m, err := strToMap(str); err != nil {
 		t.Errorf("should be able to parse A:B/C:D")
 	} else if !reflect.DeepEqual(m, expected) {
 		t.Errorf("parsed %s incorrectly, expecting %q, got %q", str, expected, m)
 	}
 
 	str = "A:B/C"
-	if _, err := strToMetrics(str); err == nil {
+	if _, err := strToMap(str); err == nil {
 		t.Errorf("shouldn't be able to parse %q", str)
 	}
 
 	str = "A:B/A:C"
-	if _, err := strToMetrics(str); err == nil {
+	if _, err := strToMap(str); err == nil {
 		t.Errorf("should fail when provided multiple values for the same metric")
+	}
+
+	metrics, _ := strToMap("A:B/C:D")
+	if b, ok := metrics["A"]; !(ok && b == "B") {
+		t.Errorf("metrics[A] != B")
+	}
+	if d, ok := metrics["C"]; !(ok && d == "D") {
+		t.Errorf("metrics[C] != D")
 	}
 }
 
 func TestMetrics(t *testing.T) {
-	metrics, _ := strToMetrics("A:B/C:D")
-	if b, err := metrics.Get("A"); err != nil || b != "B" {
-		t.Errorf("metrics.Get(A) != B")
-	}
-	if d, err := metrics.Get("C"); err != nil || d != "D" {
-		t.Errorf("metrics.Get(C) != D")
-	}
-	if metrics.Set("X", "Y") != nil {
-		t.Errorf("can't set metric X to Y")
-	}
-}
+	weights := map[string]map[string]float64{"A": {"B": 1, "C": 2, "X": 3}}
+	ms := NewMetrics(weights, "X")
 
-func TestWeightsMetrics(t *testing.T) {
-	weights := map[string]map[string]float64{"A": {"B": 1, "C": 2}}
-	wms := WeightsMetrics{make(Metrics), weights}
+	if x, err := ms.Get("A"); err != nil || x != "X" {
+		t.Errorf("value for A should be undefined X")
+	}
 
 	// test set
-	if wms.Set("A", "B") != nil {
+	if ms.Set("A", "B") != nil {
 		t.Errorf("should be able to set valid metric to valid value")
 	}
-	if wms.Set("A", "D") == nil {
+	if ms.Set("A", "D") == nil {
 		t.Errorf("shouldn't be able to set valid metric to invalid value")
 	}
-	if wms.Set("B", "ANY") == nil {
+	if ms.Set("B", "ANY") == nil {
 		t.Errorf("shouldn't be able to set invalid metric")
 	}
 
 	// test parse
-	if wms.Parse("A:C") != nil {
+	if ms.Parse("A:C") != nil {
 		t.Errorf("should be able to parse valid metric and value")
 	}
-	if c, err := wms.Get("A"); err != nil || c != "C" {
+	if c, err := ms.Get("A"); err != nil || c != "C" {
 		t.Errorf("incorrectlly parsed metric A, should have value C")
 	}
 
 	// test Weights
-	if w, err := wms.Weight("A"); err != nil || w != 2 {
+	if w, err := ms.Weight("A"); err != nil || w != 2 {
 		t.Errorf("incorrect weight returned for metric A, should be 2 (C)")
 	}
-	if _, err := wms.Weight("B"); err == nil {
+	if _, err := ms.Weight("B"); err == nil {
 		t.Errorf("should return an error on invalid metric")
+	}
+
+	if ms.Parse("A:X") != nil {
+		t.Errorf("should be able to parse valid metric (undefined)")
+	}
+	if c, err := ms.Get("A"); err != nil || c != "C" {
+		t.Errorf("incorrectlly parsed metric A, should have old value C, not be undefined")
 	}
 }

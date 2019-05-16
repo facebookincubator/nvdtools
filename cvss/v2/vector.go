@@ -21,6 +21,10 @@ import (
 	"github.com/facebookincubator/nvdtools/cvss/common"
 )
 
+const (
+	notDefined = "ND"
+)
+
 var (
 	weights = map[string]map[string]float64{
 
@@ -58,59 +62,59 @@ var (
 
 		// temporal metrics
 		"E": { // Exploitability
-			"U":   0.85, // Unproven
-			"POC": 0.90, // Proof-Of-Concept
-			"F":   0.95, // Functional
-			"H":   1.00, // High
-			"ND":  1.00, // Not Defined
+			"U":        0.85, // Unproven
+			"POC":      0.90, // Proof-Of-Concept
+			"F":        0.95, // Functional
+			"H":        1.00, // High
+			notDefined: 1.00, // Not Defined
 		},
 		"RL": { // Remediation Level
-			"OF": 0.87, // Official Fix
-			"TF": 0.90, // Temporary Fix
-			"W":  0.95, // Workaround
-			"U":  1.00, // Unavailable
-			"ND": 1.00, // Not Defined
+			"OF":       0.87, // Official Fix
+			"TF":       0.90, // Temporary Fix
+			"W":        0.95, // Workaround
+			"U":        1.00, // Unavailable
+			notDefined: 1.00, // Not Defined
 		},
 		"RC": { // Report Confidence
-			"UC": 0.90, // Unconfirmed
-			"UR": 0.95, // Uncorroborated
-			"C":  1.00, // Confirmed
-			"ND": 1.00, // Not
+			"UC":       0.90, // Unconfirmed
+			"UR":       0.95, // Uncorroborated
+			"C":        1.00, // Confirmed
+			notDefined: 1.00, // Not
 		},
 
 		// environmental metrics
 		"CDP": { // Collateral Damage Potential
-			"N":  0.0, // None
-			"L":  0.1, // Low
-			"LM": 0.3, // Low-Medium
-			"MH": 0.4, // Medium-High
-			"H":  0.5, // High
-			"ND": 0.0, // Not Defined
+			"N":        0.0, // None
+			"L":        0.1, // Low
+			"LM":       0.3, // Low-Medium
+			"MH":       0.4, // Medium-High
+			"H":        0.5, // High
+			notDefined: 0.0, // Not Defined
 		},
 		"TD": { // Target Distribution
-			"N":  0.00, // None
-			"L":  0.25, // Low
-			"M":  0.75, // Medium
-			"H":  1.00, // High
-			"ND": 1.00, // Not Defined
+			"N":        0.00, // None
+			"L":        0.25, // Low
+			"M":        0.75, // Medium
+			"H":        1.00, // High
+			notDefined: 1.00, // Not Defined
 		},
 		"CR": { // Confidentiality Requirement
-			"L":  0.50, // Low
-			"M":  1.00, // Medium
-			"H":  1.51, // High
-			"ND": 1.00, // Not Defined
+			"L":        0.50, // Low
+			"M":        1.00, // Medium
+			"H":        1.51, // High
+			notDefined: 1.00, // Not Defined
 		},
 		"IR": { // Integrity Requirement
-			"L":  0.50, // Low
-			"M":  1.00, // Medium
-			"H":  1.51, // High
-			"ND": 1.00, // Not Defined
+			"L":        0.50, // Low
+			"M":        1.00, // Medium
+			"H":        1.51, // High
+			notDefined: 1.00, // Not Defined
 		},
 		"AR": { // Availability Requirement
-			"L":  0.50, // Low
-			"M":  1.00, // Medium
-			"H":  1.51, // High
-			"ND": 1.00, // Not Defined
+			"L":        0.50, // Low
+			"M":        1.00, // Medium
+			"H":        1.51, // High
+			notDefined: 1.00, // Not Defined
 		},
 	}
 
@@ -118,11 +122,11 @@ var (
 )
 
 type Vector struct {
-	common.WeightsMetrics
+	common.Metrics
 }
 
 func NewVector() Vector {
-	return Vector{common.WeightsMetrics{make(common.Metrics), weights}}
+	return Vector{common.NewMetrics(weights, notDefined)}
 }
 
 func (v Vector) Validate() error {
@@ -137,5 +141,5 @@ func (v Vector) Validate() error {
 // Override parse because it can contain parenthesis
 
 func (v Vector) Parse(str string) error {
-	return v.WeightsMetrics.Parse(strings.Trim(str, "()"))
+	return v.Metrics.Parse(strings.Trim(str, "()"))
 }

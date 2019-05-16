@@ -41,7 +41,7 @@ func (v Vector) environmentalScore() float64 {
 	ai := v.adjustedImpactScore()
 	at := v.temporalScoreWith(ai)
 
-	return roundTo1Decimal((at + (10-at)*v.WeightDefault("CDP", 0.0)) * v.WeightDefault("TD", 1.0))
+	return roundTo1Decimal((at + (10-at)*v.WeightMust("CDP")) * v.WeightMust("TD"))
 }
 
 // helpers
@@ -58,15 +58,15 @@ func (v Vector) adjustedImpactScore() float64 {
 	return math.Min(
 		10.0,
 		10.41*(1-
-			(1-v.WeightMust("C")*v.WeightDefault("CR", 1.0))*
-				(1-v.WeightMust("I")*v.WeightDefault("IR", 1.0))*
-				(1-v.WeightMust("A")*v.WeightDefault("AR", 1.0))),
+			(1-v.WeightMust("C")*v.WeightMust("CR"))*
+				(1-v.WeightMust("I")*v.WeightMust("IR"))*
+				(1-v.WeightMust("A")*v.WeightMust("AR"))),
 	)
 }
 
 func (v Vector) temporalScoreWith(impact float64) float64 {
 	base := v.baseScoreWith(impact)
-	return roundTo1Decimal(base * v.WeightDefault("E", 1.0) * v.WeightDefault("RL", 1.0) * v.WeightDefault("RC", 1.0))
+	return roundTo1Decimal(base * v.WeightMust("E") * v.WeightMust("RL") * v.WeightMust("RC"))
 }
 
 func (v Vector) baseScoreWith(impact float64) float64 {
