@@ -15,6 +15,7 @@
 package cvss3
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -23,12 +24,38 @@ func roundUp(x float64) float64 {
 	return math.Ceil(x*10) / 10
 }
 
+// Validate should be called before calculating any scores on vector
+// If there's an error, there's no guarantee that a call to *Score() won't panic
+func (v Vector) Validate() error {
+	switch {
+	case !v.BaseMetrics.AttackVector.defined():
+		return fmt.Errorf("base metric attack vector not defined")
+	case !v.BaseMetrics.AttackComplexity.defined():
+		return fmt.Errorf("base metric attack complexity not defined")
+	case !v.BaseMetrics.PrivilegesRequired.defined():
+		return fmt.Errorf("base metric privileges required not defined")
+	case !v.BaseMetrics.UserInteraction.defined():
+		return fmt.Errorf("base metric user interaction not defined")
+	case !v.BaseMetrics.Scope.defined():
+		return fmt.Errorf("base metric scope not defined")
+	case !v.BaseMetrics.Confidentiality.defined():
+		return fmt.Errorf("base metric confidentiality not defined")
+	case !v.BaseMetrics.Integrity.defined():
+		return fmt.Errorf("base metric integrity not defined")
+	case !v.BaseMetrics.Availability.defined():
+		return fmt.Errorf("base metric availability not defined")
+	default:
+		return nil
+	}
+}
+
 // Score = combined score for the whole Vector
 func (v Vector) Score() float64 {
 	// combines all of them
 	return v.EnvironmentalScore()
 }
 
+// BaseScore returns base score of the vector
 func (v Vector) BaseScore() float64 {
 	i, e := v.impactScore(), v.exploitabilityScore()
 	if i < 0 {
@@ -61,6 +88,7 @@ func (v Vector) exploitabilityScore() float64 {
 		v.BaseMetrics.UserInteraction.weight()
 }
 
+// TemporalScore returns temporal score of the vector
 func (v Vector) TemporalScore() float64 {
 	return roundUp(v.BaseScore() *
 		v.TemporalMetrics.ExploitCodeMaturity.weight() *
@@ -68,6 +96,7 @@ func (v Vector) TemporalScore() float64 {
 		v.TemporalMetrics.ReportConfidence.weight())
 }
 
+// EnvironmentalScore returns environmental score of the vector
 func (v Vector) EnvironmentalScore() float64 {
 	i, e := v.modifiedImpactScore(), v.modifiedExploitabilityScore()
 	if i < 0 {

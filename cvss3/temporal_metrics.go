@@ -106,12 +106,6 @@ const (
 var (
 	weightsReportConfidence = []float64{1.0, 1.0, 0.96, 0.92}
 	codeReportConfidence    = []string{"X", "C", "R", "U"}
-	mapReportConfidence     = map[string]ReportConfidence{
-		"X": ReportConfidenceNotdefined,
-		"C": ReportConfidenceConfirmed,
-		"R": ReportConfidenceReasonable,
-		"U": ReportConfidenceUnknown,
-	}
 )
 
 func (rc ReportConfidence) defined() bool {

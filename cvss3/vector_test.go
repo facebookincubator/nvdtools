@@ -19,7 +19,7 @@ import (
 	"testing"
 )
 
-func TestParse(t *testing.T) {
+func TestFromString(t *testing.T) {
 	cases := []string{
 		"CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H/E:H/RL:O/RC:C",
 		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N/E:U/RL:O/RC:C",
@@ -51,11 +51,9 @@ func TestParse(t *testing.T) {
 	for i, str := range cases {
 		str := str
 		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
-			v := Vector{}
-			if err := v.Parse(str); err != nil {
+			if v, err := VectorFromString(str); err != nil {
 				t.Errorf("unable to parse vector: %v", err)
-			}
-			if v.String() != str {
+			} else if v.String() != str {
 				t.Errorf("vector.String() should be the same thing it was parsed from.\nGot:\t%s\nExpect:\t%s", v, str)
 			}
 		})
@@ -63,9 +61,19 @@ func TestParse(t *testing.T) {
 }
 
 func BenchmarkParse(b *testing.B) {
-	v := Vector{}
 	for i := 0; i < b.N; i++ {
 		// all possible metrics are defined in this string
-		v.Parse("CVSS:3.0/AV:P/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L/E:U/RL:T/RC:R/CR:H/IR:M/AR:L/MAV:P/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MI:L/MA:H")
+		VectorFromString("CVSS:3.0/AV:P/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L/E:U/RL:T/RC:R/CR:H/IR:M/AR:L/MAV:P/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MI:L/MA:H")
+	}
+}
+
+func TestAbsorb(t *testing.T) {
+	v1, _ := VectorFromString("CVSS:3.0/E:U/RL:W/RC:R")
+	v2, _ := VectorFromString("CVSS:3.0/E:H/RL:T")
+
+	v1.Absorb(v2)
+	// should take values from v2, but only those which are defined. So RC should stay R
+	if v1.String() != "CVSS:3.0/E:H/RL:T/RC:R" {
+		t.Errorf("when absorbing only defined values from another vector, it shouldn't override undefined ones")
 	}
 }

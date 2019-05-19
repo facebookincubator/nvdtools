@@ -25,23 +25,93 @@ const (
 	metricSeparator = ":"
 )
 
+// Vector represents a CVSSv3 vector, holds all metrics inside (base, temporal and environmental)
 type Vector struct {
 	BaseMetrics
 	TemporalMetrics
 	EnvironmentalMetrics
 }
 
-var order = []string{"AV", "AC", "PR", "UI", "S", "C", "I", "A", "E", "RL", "RC", "CR", "IR", "AR", "MAV", "MAC", "MPR", "MUI", "MS", "MC", "MI", "MA"}
-
-type defineable interface {
-	defined() bool
-}
-
+// String returns this vectors representation as a string
+// it shouldn't depend on the order of metrics
 func (v Vector) String() string {
 	var sb strings.Builder
 	fmt.Fprint(&sb, prefix)
 
-	defineables := map[string]defineable{
+	defineables := v.definables()
+
+	first := true
+	for _, metric := range order {
+		def := defineables[metric]
+		if !def.defined() {
+			continue
+		}
+		if !first {
+			fmt.Fprint(&sb, partSeparator)
+		} else {
+			first = false
+		}
+		fmt.Fprintf(&sb, "%s%s%s", metric, metricSeparator, def)
+	}
+
+	return sb.String()
+}
+
+// VectorFromString will parse a string into a Vector, or return an error if it can't be parsed
+func VectorFromString(str string) (Vector, error) {
+	// remove prefix if exists
+	str = strings.ToUpper(str)
+	if strings.HasPrefix(str, prefix) {
+		str = str[len(prefix):]
+	}
+
+	var v Vector
+	parseables := v.parseables()
+
+	for _, part := range strings.Split(str, partSeparator) {
+		tmp := strings.Split(part, metricSeparator)
+		if len(tmp) != 2 {
+			return v, fmt.Errorf("need two values separated by %s, got %q", metricSeparator, part)
+		}
+
+		metric, value := tmp[0], tmp[1]
+		if p, ok := parseables[metric]; !ok {
+			return v, fmt.Errorf("undefined metric %s with value %s", metric, value)
+		} else if err := p.parse(value); err != nil {
+			return v, fmt.Errorf("error occurred while parsing metric %s: %v", metric, err)
+		}
+	}
+
+	return v, nil
+}
+
+// Absorb will override only metrics in the current vector from the one given which are defined
+// If the other vector specifies only a single metric with all others undefined, the resulting
+// vector will contain all metrics it previously did, with only the new one overriden
+func (v *Vector) Absorb(other Vector) {
+	parseables := v.parseables()
+	for metric, defineable := range other.definables() {
+		if defineable.defined() {
+			parseables[metric].parse(defineable.String())
+		}
+	}
+}
+
+// helpers
+
+var order = []string{"AV", "AC", "PR", "UI", "S", "C", "I", "A", "E", "RL", "RC", "CR", "IR", "AR", "MAV", "MAC", "MPR", "MUI", "MS", "MC", "MI", "MA"}
+
+type defineable interface {
+	defined() bool
+	String() string
+}
+
+type parseable interface {
+	parse(string) error
+}
+
+func (v *Vector) definables() map[string]defineable {
+	return map[string]defineable{
 		// base metrics
 		"AV": v.BaseMetrics.AttackVector,
 		"AC": v.BaseMetrics.AttackComplexity,
@@ -68,36 +138,10 @@ func (v Vector) String() string {
 		"MI":  v.EnvironmentalMetrics.ModifiedIntegrity,
 		"MA":  v.EnvironmentalMetrics.ModifiedAvailability,
 	}
-
-	first := true
-	for _, metric := range order {
-		def := defineables[metric]
-		if !def.defined() {
-			continue
-		}
-		if !first {
-			fmt.Fprint(&sb, partSeparator)
-		} else {
-			first = false
-		}
-		fmt.Fprintf(&sb, "%s%s%s", metric, metricSeparator, def)
-	}
-
-	return sb.String()
 }
 
-type parseable interface {
-	parse(string) error
-}
-
-func (v *Vector) Parse(str string) error {
-	// remove prefix if exists
-	str = strings.ToUpper(str)
-	if strings.HasPrefix(str, prefix) {
-		str = str[len(prefix):]
-	}
-
-	parseables := map[string]parseable{
+func (v *Vector) parseables() map[string]parseable {
+	return map[string]parseable{
 		// base metrics
 		"AV": &v.BaseMetrics.AttackVector,
 		"AC": &v.BaseMetrics.AttackComplexity,
@@ -124,20 +168,4 @@ func (v *Vector) Parse(str string) error {
 		"MI":  &v.EnvironmentalMetrics.ModifiedIntegrity,
 		"MA":  &v.EnvironmentalMetrics.ModifiedAvailability,
 	}
-
-	for _, part := range strings.Split(str, partSeparator) {
-		tmp := strings.Split(part, metricSeparator)
-		if len(tmp) != 2 {
-			return fmt.Errorf("need two values separated by %s, got %q", metricSeparator, part)
-		}
-
-		metric, value := tmp[0], tmp[1]
-		if p, ok := parseables[metric]; !ok {
-			return fmt.Errorf("undefined metric %s with value %s", metric, value)
-		} else if err := p.parse(value); err != nil {
-			return fmt.Errorf("error occurred while parsing metric %s: %v", metric, err)
-		}
-	}
-
-	return nil
 }

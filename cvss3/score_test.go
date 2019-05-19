@@ -78,8 +78,10 @@ func TestBaseScores(t *testing.T) {
 
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
-			v := Vector{}
-			v.Parse(c.str)
+			v, err := VectorFromString(c.str)
+			if err != nil {
+				t.Errorf("parse error: %v", err)
+			}
 			if vbs := v.BaseScore(); vbs != c.baseScore {
 				t.Errorf("expected %.1f, got %.1f", c.baseScore, vbs)
 			}
@@ -109,8 +111,10 @@ func TestScores(t *testing.T) {
 
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
-			v := Vector{}
-			v.Parse(c.str)
+			v, err := VectorFromString(c.str)
+			if err != nil {
+				t.Errorf("parse error: %v", err)
+			}
 			if vbs := v.BaseScore(); vbs != c.base {
 				t.Errorf("expected %.1f, got %.1f", c.base, vbs)
 			}
