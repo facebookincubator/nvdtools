@@ -1,9 +1,8 @@
 # nvdsync
 
-nvdsync is a command line tool for synchronizing vulnerability data feeds from NVD to a local directory: https://nvd.nist.gov/vuln/data-feeds
+`nvdsync` is a command line tool for synchronizing vulnerability [data feeds from NVD](https://nvd.nist.gov/vuln/data-feeds) to a local directory.
 
 Currently supports CVE and CPE feeds.
-
 
 ## How it works
 
@@ -16,3 +15,24 @@ By default, nvdsync does not print any information out, except errors. In order 
 ## Proxy
 
 nvdsync uses a standard http client that assumes it can access NVD (or the configured upstream host) directory. In order to use proxies please set the http_proxy or https_proxy environment variables.
+
+## Example: download NVD CVE feed in JSON to ~/feeds/json
+
+```bash
+./nvdsync -v 1 -cve_feed=cve-1.0.json.gz ~/feeds/json
+I0820 09:15:56.270696 1197925 cve.go:217] checking meta file "nvdcve-1.0-2002.meta" for updates to "nvdcve-1.0-2002.json.gz"
+I0820 09:15:56.270713 1197925 cve.go:252] downloading meta file "https://static.nvd.nist.gov/feeds/json/cve/1.0/nvdcve-1.0-2002.meta"
+I0820 09:16:01.847147 1197925 cve.go:217] checking meta file "nvdcve-1.0-2003.meta" for updates to "nvdcve-1.0-2003.json.gz"
+I0820 09:16:01.847168 1197925 cve.go:252] downloading meta file "https://static.nvd.nist.gov/feeds/json/cve/1.0/nvdcve-1.0-2003.meta"
+
+... 14 lines skipped ...
+
+I0820 09:16:26.833321 1197925 cve.go:217] checking meta file "nvdcve-1.0-2011.meta" for updates to "nvdcve-1.0-2011.json.gz"
+I0820 09:16:26.833346 1197925 cve.go:252] downloading meta file "https://static.nvd.nist.gov/feeds/json/cve/1.0/nvdcve-1.0-2011.meta"
+I0820 09:16:29.316286 1197925 cve.go:267] data file "nvdcve-1.0-2011.json.gz" needs update in "/home/dvl/feeds/json": local{LastModifiedDate:2018-07-28 03:33:26 -0400
+-0400 Size:201819657 ZipSize:9353214 GzSize:9353078 SHA256:AAEE78FB567FA96CC4A654C432414D98B741014A8A410E980F200127FD90F430} != remote{LastModifiedDate:2018-08-15 03:4
+8:06 -0400 -0400 Size:202676227 ZipSize:9409647 GzSize:9409511 SHA256:585251B440C894CAC1C96C45800D00488AC9EE82A46998797627E4937839FE03}
+I0820 09:16:29.316352 1197925 cve.go:311] downloading data file "https://static.nvd.nist.gov/feeds/json/cve/1.0/nvdcve-1.0-2011.json.gz"
+
+... more lines skipped ...
+```
