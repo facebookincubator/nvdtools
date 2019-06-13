@@ -21,7 +21,7 @@ import (
 	"net/http"
 )
 
-// HttpClient will return a client to be used when making http requests
+// Client will return a client to be used when making http requests
 // Returns an error if it can't be acquired
 func Client() (*http.Client, error) {
 	return http.DefaultClient, nil
@@ -38,9 +38,18 @@ func (e Err) Error() string {
 	return fmt.Sprintf("http error %s:\n %q", e.Status, e.Body)
 }
 
-// Query will query the given URL and then return the response if response status is HTTP.OK
-// if status is not HTTP.OK, returns Err
+// Get will call GetWithClient using the default client
 func Get(url string, header http.Header) (*http.Response, error) {
+	client, err := Client()
+	if err != nil {
+		return nil, fmt.Errorf("can't obtain default client: %v", err)
+	}
+	return GetWithClient(client, url, header)
+}
+
+// GetWithClient will query the given URL and then return the response if response status is HTTP.OK
+// if status is not HTTP.OK, returns Err
+func GetWithClient(client *http.Client, url string, header http.Header) (*http.Response, error) {
 	// create the request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -48,11 +57,6 @@ func Get(url string, header http.Header) (*http.Response, error) {
 	}
 	req.Header = header
 
-	// execute the request
-	client, err := Client()
-	if err != nil {
-		return nil, fmt.Errorf("can't obtain http client: %v", err)
-	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get url: %v", err)
