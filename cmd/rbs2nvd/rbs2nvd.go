@@ -18,96 +18,65 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"regexp"
-	"time"
 
+	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/rbs/api"
-	"github.com/facebookincubator/nvdtools/providers/rbs/converter"
 	"github.com/facebookincubator/nvdtools/providers/rbs/schema"
 )
 
 const (
-	defaultBaseURL   = "https://vulndb.cyberriskanalytics.com"
-	defaultTokenURL  = defaultBaseURL + "/oauth/token"
-	defaultUserAgent = "rbs2nvd"
+	baseURL   = "https://vulndb.cyberriskanalytics.com"
+	userAgent = "rbs2nvd"
 )
 
-var (
-	clientID     string
-	clientSecret string
-)
+var tokenURL = baseURL + "/oauth/token"
 
-func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	clientID = os.Getenv("RBS_CLIENT_ID")
+func Read(r io.Reader, c chan runner.Convertible) error {
+	var vulns []*schema.Vulnerability
+	if err := json.NewDecoder(r).Decode(&vulns); err != nil {
+		return fmt.Errorf("can't decode into vulns: %v", err)
+	}
+
+	for _, vuln := range vulns {
+		c <- vuln
+	}
+
+	return nil
+}
+
+func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
+	clientID := os.Getenv("RBS_CLIENT_ID")
 	if clientID == "" {
-		log.Fatalln("Please set RBS_CLIENT_ID in environment")
+		return nil, fmt.Errorf("Please set RBS_CLIENT_ID in environment")
 	}
-	clientSecret = os.Getenv("RBS_CLIENT_SECRET")
+	clientSecret := os.Getenv("RBS_CLIENT_SECRET")
 	if clientSecret == "" {
-		log.Fatalln("Please set RBS_CLIENT_SECRET in environment")
+		return nil, fmt.Errorf("Please set RBS_CLIENT_SECRET in environment")
 	}
+
+	client, err := api.NewClient(clientID, clientSecret, tokenURL, baseURL, userAgent)
+	if err != nil {
+		return nil, fmt.Errorf("can't create a client: %v", err)
+	}
+	return client.FetchAllVulnerabilities(since)
 }
 
 func main() {
-	baseURL := flag.String("base_url", defaultBaseURL, "API base URL")
-	tokenURL := flag.String("token_url", defaultTokenURL, "OAuth2 access token URL")
-	userAgent := flag.String("user_agent", defaultUserAgent, "User agent to be used when sending requests")
-	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
-	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
-	dontConvert := flag.Bool("dont_convert", false, "Should the feed be converted to NVD format or not")
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
-	flag.Parse()
+	flag.StringVar(&tokenURL, "token_url", tokenURL, "OAuth2 access token URL")
 
-	since := *sinceUnix
-	if *sinceDuration != "" {
-		dur, err := time.ParseDuration(*sinceDuration)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		since = time.Now().Add(-dur).Unix()
+	r := runner.Runner{
+		Config: runner.Config{
+			BaseURL:   baseURL,
+			UserAgent: userAgent,
+		},
+		FetchSince: FetchSince,
+		Read:       Read,
 	}
 
-	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(*userAgent) {
-		log.Println("User-Agent contains non ascii characters, using default")
-		*userAgent = defaultUserAgent
-	}
-
-	// create the API client
-	client, err := api.NewClient(clientID, clientSecret, *tokenURL, *baseURL, *userAgent)
-	if err != nil {
+	if err := r.Run(); err != nil {
 		log.Println(err)
-		return
-	}
-
-	log.Printf("Downloading since %s\n", time.Unix(since, 0).Format(time.RFC1123))
-	vulns, err := client.FetchAllVulnerabilitiesSince(since)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	if *dontConvert {
-		var output []*schema.Vulnerability
-		for vuln := range vulns {
-			output = append(output, vuln)
-		}
-		writeOutput(output)
-	} else {
-		writeOutput(converter.Convert(vulns))
-	}
-}
-
-func writeOutput(output interface{}) {
-	if err := json.NewEncoder(os.Stdout).Encode(output); err != nil {
-		log.Println(err)
-		return
 	}
 }

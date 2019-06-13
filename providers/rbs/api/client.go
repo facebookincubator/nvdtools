@@ -28,6 +28,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 
 	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/rbs/schema"
 )
 
@@ -64,13 +65,13 @@ func NewClient(clientID, clientSecret, tokenURL, baseURL, userAgent string) (*Cl
 	return &c, nil
 }
 
-func (c *Client) FetchAllVulnerabilitiesAfterVulndbID(vulndbID int) (<-chan *schema.Vulnerability, error) {
+func (c *Client) FetchAllVulnerabilitiesAfterVulndbID(vulndbID int) (<-chan runner.Convertible, error) {
 	u := fmt.Sprintf("%d/find_next_to_vulndb_id_full", vulndbID)
 
 	return c.fetchAllVulnerabilities(func() string { return u })
 }
 
-func (c *Client) FetchAllVulnerabilitiesSince(since int64) (<-chan *schema.Vulnerability, error) {
+func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
 	from := time.Unix(since, 0)
 	getEndpoint := func() string {
 		// we need to recalculate hours ago on each request, if the fetching takes more than an hour
@@ -81,7 +82,7 @@ func (c *Client) FetchAllVulnerabilitiesSince(since int64) (<-chan *schema.Vulne
 	return c.fetchAllVulnerabilities(getEndpoint)
 }
 
-func (c *Client) fetchAllVulnerabilities(getEndpoint func() string) (<-chan *schema.Vulnerability, error) {
+func (c *Client) fetchAllVulnerabilities(getEndpoint func() string) (<-chan runner.Convertible, error) {
 
 	fetch := func(page, size int) (*schema.VulnerabilityResult, error) {
 		u, err := url.Parse(fmt.Sprintf("%s/api/v1/vulnerabilities/%s", c.baseURL, getEndpoint()))
@@ -105,7 +106,7 @@ func (c *Client) fetchAllVulnerabilities(getEndpoint func() string) (<-chan *sch
 		return nil, fmt.Errorf("no vulnerabilities found")
 	}
 
-	output := make(chan *schema.Vulnerability)
+	output := make(chan runner.Convertible)
 	numPages := (totalVulns-1)/pageSize + 1
 
 	// fetch pages concurrently
