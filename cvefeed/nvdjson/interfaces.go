@@ -23,54 +23,172 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-type cveItem struct {
-	cveItem     *jsonschema.NVDCVEFeedJSON10DefCVEItem
-	configNodes []nvdcommon.LogicalTest
-}
-
-type node struct {
-	node              *jsonschema.NVDCVEFeedJSON10DefNode
-	nvdcommonChildren []nvdcommon.LogicalTest
-	wfnCPEs           []*wfn.Attributes
-}
-
+// cpeMatch is a wrapper around the actual NVDCVEFeedJSON10DefCPEMatch
 type cpeMatch struct {
-	cpeMatch *jsonschema.NVDCVEFeedJSON10DefCPEMatch
-	wfname   *wfn.Attributes
+	attrs                 *wfn.Attributes
+	versionEndExcluding   string
+	versionEndIncluding   string
+	versionStartExcluding string
+	versionStartIncluding string
 }
 
-func newCveItem(json *jsonschema.NVDCVEFeedJSON10DefCVEItem) nvdcommon.CVEItem {
-	item := &cveItem{cveItem: json}
-	for _, n := range item.cveItem.Configurations.Nodes {
-		item.configNodes = append(item.configNodes, nvdcommon.LogicalTest(newNode(n)))
+func newCpeMatch(nvdMatch *jsonschema.NVDCVEFeedJSON10DefCPEMatch) (*cpeMatch, error) {
+	var match cpeMatch
+
+	parse := func(uri string) (*wfn.Attributes, error) {
+		if uri == "" {
+			return nil, fmt.Errorf("can't parse empty uri")
+		}
+		return wfn.Parse(uri)
 	}
-	return item
+
+	// parse
+	var err error
+	if match.attrs, err = parse(nvdMatch.Cpe23Uri); err != nil {
+		if match.attrs, err = parse(nvdMatch.Cpe22Uri); err != nil {
+			return nil, fmt.Errorf("unable to parse both cpe2.2 and cpe2.3")
+		}
+	}
+
+	match.versionEndExcluding = nvdMatch.VersionEndExcluding
+	match.versionEndIncluding = nvdMatch.VersionEndIncluding
+	match.versionStartExcluding = nvdMatch.VersionStartExcluding
+	match.versionStartIncluding = nvdMatch.VersionStartIncluding
+
+	return &match, nil
 }
 
-func newNode(json *jsonschema.NVDCVEFeedJSON10DefNode) nvdcommon.LogicalTest {
-	n := &node{node: json}
+// node is a wrapper around the actual NVDCVEFeedJSON10DefNode
+type node struct {
+	nvdNode  *jsonschema.NVDCVEFeedJSON10DefNode
+	children []nvdcommon.LogicalTest
+	matches  []*cpeMatch
+	cpes     []*wfn.Attributes // uses pointers to matches.attrs
+}
 
-	if len(n.node.Children) != 0 {
-		children := make([]nvdcommon.LogicalTest, len(n.node.Children))
-		for i, child := range n.node.Children {
-			children[i] = nvdcommon.LogicalTest(&node{node: child})
-		}
-		n.nvdcommonChildren = children
+func newNode(nvdNode *jsonschema.NVDCVEFeedJSON10DefNode) *node {
+	n := &node{
+		nvdNode:  nvdNode,
+		children: make([]nvdcommon.LogicalTest, 0, len(nvdNode.Children)),
+		matches:  make([]*cpeMatch, 0, len(nvdNode.CPEMatch)),
+		cpes:     make([]*wfn.Attributes, 0, len(nvdNode.CPEMatch)),
 	}
 
-	if len(n.node.CPEMatch) != 0 {
-		cpes := make([]*wfn.Attributes, len(n.node.CPEMatch))
-		for i, node := range n.node.CPEMatch {
-			cpe, err := node2CPE(&cpeMatch{cpeMatch: node})
-			if err == nil {
-				cpes[i] = cpe
-			}
+	// copy chiltren
+	for _, child := range nvdNode.Children {
+		n.children = append(n.children, newNode(child))
+	}
+
+	// parse cpe matching
+	for _, nvdMatch := range nvdNode.CPEMatch {
+		if match, err := newCpeMatch(nvdMatch); err == nil {
+			n.matches = append(n.matches, match)
+			n.cpes = append(n.cpes, match.attrs)
 		}
-		n.wfnCPEs = cpes
 	}
 
 	return n
 }
+
+// LogicalOperator implements part of cvefeed.LogicalTest interface
+func (n *node) LogicalOperator() string {
+	if n == nil {
+		return ""
+	}
+	return n.nvdNode.Operator
+}
+
+// NegateIfNeeded implements part of cvefeed.LogicalTest interface
+func (n *node) NegateIfNeeded(b bool) bool {
+	if n == nil || !n.nvdNode.Negate {
+		return b
+	}
+	return !b
+}
+
+// InnerTests implements part of cvefeed.LogicalTest interface
+func (n *node) InnerTests() []nvdcommon.LogicalTest {
+	if n == nil {
+		return nil
+	}
+	return n.children
+}
+
+// CPEs implements part of cvefeed.LogicalTest interface
+func (n *node) CPEs() []*wfn.Attributes {
+	if n == nil {
+		return nil
+	}
+	return n.cpes
+}
+
+// MatchPlatform implements part of cvefeed.LogicalTest interface
+func (n *node) MatchPlatform(platform *wfn.Attributes, requireVersion bool) bool {
+	if n == nil {
+		return false
+	}
+	ver := wfn.StripSlashes(platform.Version)
+	for i, match := range n.matches {
+		if match == nil {
+			fmt.Println(i)
+			fmt.Printf("%v\n", *n)
+		}
+		// Not sure if this is needed, in the feed whenever there is a version constraints, version attributes is already ANY,
+		// but better safe, than sorry.
+		if match.versionStartIncluding != "" || match.versionStartExcluding != "" ||
+			match.versionEndIncluding != "" || match.versionEndExcluding != "" {
+			match.attrs.Version = wfn.Any
+		} else if requireVersion && match.attrs.Version == wfn.Any {
+			continue
+		}
+		if wfn.Match(match.attrs, platform) {
+			if platform.Version == wfn.Any || platform.Version == wfn.NA {
+				// logical value of N/A only matches logical value of ANY, so technically, this should
+				// return platform.Version == wfn.Any || cpe.Version == wfn.Any
+				// but these checks have already been performed by wfn.Match() above
+				return true
+			}
+			if match.versionStartIncluding == "" && match.versionStartExcluding == "" &&
+				match.versionEndIncluding == "" && match.versionEndExcluding == "" {
+				return true
+			}
+			if match.attrs.Version == wfn.NA {
+				return false
+			}
+			if match.versionStartIncluding != "" && smartVerCmp(ver, match.versionStartIncluding) < 0 {
+				continue
+			}
+			if match.versionStartExcluding != "" && smartVerCmp(ver, match.versionStartExcluding) <= 0 {
+				continue
+			}
+			if match.versionEndIncluding != "" && smartVerCmp(ver, match.versionEndIncluding) > 0 {
+				continue
+			}
+			if match.versionEndExcluding != "" && smartVerCmp(ver, match.versionEndExcluding) >= 0 {
+				continue
+			}
+			return true
+		}
+	}
+	return false
+}
+
+// cveItem is a wrapper around the actual NVDCVEFeedJSON10DefCVEItem
+type cveItem struct {
+	cveItem *jsonschema.NVDCVEFeedJSON10DefCVEItem
+	nodes   []nvdcommon.LogicalTest
+}
+
+// newCveItem is a helper function for creating
+func newCveItem(json *jsonschema.NVDCVEFeedJSON10DefCVEItem) nvdcommon.CVEItem {
+	item := &cveItem{cveItem: json}
+	for _, n := range item.cveItem.Configurations.Nodes {
+		item.nodes = append(item.nodes, newNode(n))
+	}
+	return item
+}
+
+// implement nvdcommon.CVEItem
 
 // CVEID returns the identifier of the vulnerability (e.g. CVE).
 func (i *cveItem) CVEID() string {
@@ -85,7 +203,7 @@ func (i *cveItem) Config() []nvdcommon.LogicalTest {
 	if i == nil {
 		return nil
 	}
-	return i.configNodes
+	return i.nodes
 }
 
 // ProblemTypes returns weakness types associated with vulnerability (e.g. CWE)
@@ -121,105 +239,6 @@ func (i *cveItem) CVSS30base() float64 {
 		return i.cveItem.Impact.BaseMetricV3.CVSSV3.BaseScore
 	}
 	return 0.0
-}
-
-// LogicalOperator implements part of cvefeed.LogicalTest interface
-func (n *node) LogicalOperator() string {
-	if n == nil {
-		return ""
-	}
-	return n.node.Operator
-}
-
-// NegateIfNeeded implements part of cvefeed.LogicalTest interface
-func (n *node) NegateIfNeeded(b bool) bool {
-	if n == nil || !n.node.Negate {
-		return b
-	}
-	return !b
-}
-
-// InnerTests implements part of cvefeed.LogicalTest interface
-func (n *node) InnerTests() []nvdcommon.LogicalTest {
-	if n == nil {
-		return nil
-	}
-	return n.nvdcommonChildren
-}
-
-// CPEs implements part of cvefeed.LogicalTest interface
-func (n *node) CPEs() []*wfn.Attributes {
-	if n == nil {
-		return nil
-	}
-	return n.wfnCPEs
-}
-
-// MatchPlatform implements part of cvefeed.LogicalTest interface
-func (n *node) MatchPlatform(platform *wfn.Attributes, requireVersion bool) bool {
-	if n == nil {
-		return false
-	}
-	for _, cpeNode := range n.node.CPEMatch {
-		cpe, err := node2CPE(&cpeMatch{cpeMatch: cpeNode})
-		if err != nil {
-			continue
-		}
-		// Not sure if this is needed, in the feed whenever there is a version constraints, version attributes is already ANY,
-		// but better safe, than sorry.
-		if cpeNode.VersionStartIncluding != "" || cpeNode.VersionStartExcluding != "" ||
-			cpeNode.VersionEndIncluding != "" || cpeNode.VersionEndExcluding != "" {
-			cpe.Version = wfn.Any
-		} else if requireVersion && cpe.Version == wfn.Any {
-			continue
-		}
-		if wfn.Match(cpe, platform) {
-			if platform.Version == wfn.Any || platform.Version == wfn.NA {
-				// logical value of N/A only matches logical value of ANY, so technically, this should
-				// return platform.Version == wfn.Any || cpe.Version == wfn.Any
-				// but these checks have already been performed by wfn.Match() above
-				return true
-			}
-			if cpeNode.VersionStartIncluding == "" && cpeNode.VersionStartExcluding == "" &&
-				cpeNode.VersionEndIncluding == "" && cpeNode.VersionEndExcluding == "" {
-				return true
-			}
-			if cpe.Version == wfn.NA {
-				return false
-			}
-			ver := wfn.StripSlashes(platform.Version)
-			if cpeNode.VersionStartIncluding != "" && smartVerCmp(ver, cpeNode.VersionStartIncluding) < 0 {
-				continue
-			}
-			if cpeNode.VersionStartExcluding != "" && smartVerCmp(ver, cpeNode.VersionStartExcluding) <= 0 {
-				continue
-			}
-			if cpeNode.VersionEndIncluding != "" && smartVerCmp(ver, cpeNode.VersionEndIncluding) > 0 {
-				continue
-			}
-			if cpeNode.VersionEndExcluding != "" && smartVerCmp(ver, cpeNode.VersionEndExcluding) >= 0 {
-				continue
-			}
-			return true
-		}
-	}
-	return false
-}
-
-func node2CPE(node *cpeMatch) (*wfn.Attributes, error) {
-	var err error
-	if node == nil {
-		return nil, fmt.Errorf("cannot collect CPEs from nil node")
-	}
-	if node.wfname != nil {
-		return node.wfname, nil
-	}
-	uri := node.cpeMatch.Cpe23Uri
-	if uri == "" {
-		uri = node.cpeMatch.Cpe22Uri
-	}
-	node.wfname, err = wfn.Parse(uri)
-	return node.wfname, err
 }
 
 // smartVerCmp compares stringified versions of software.
