@@ -128,10 +128,9 @@ func (n *node) MatchPlatform(platform *wfn.Attributes, requireVersion bool) bool
 		return false
 	}
 	ver := wfn.StripSlashes(platform.Version)
-	for i, match := range n.matches {
+	for _, match := range n.matches {
 		if match == nil {
-			fmt.Println(i)
-			fmt.Printf("%v\n", *n)
+			continue
 		}
 		// Not sure if this is needed, in the feed whenever there is a version constraints, version attributes is already ANY,
 		// but better safe, than sorry.

@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	feedURL          = "https://snyk.io/partners/api/v4/vulndb/feed.json"
+	feedURL          = "https://data.snyk.io/api/v4/vulnerabilities.json"
 	defaultUserAgent = "snyk2nvd"
 )
 
