@@ -25,6 +25,7 @@ import (
 
 	"github.com/facebookincubator/nvdtools/providers/idefense/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/pkg/errors"
 )
 
@@ -49,8 +50,8 @@ func NewClient(baseUrl, userAgent, apiKey string) Client {
 	}
 }
 
-// FetchAll will fetch all vulnerabilities from iDefense API
-func (c Client) FetchAll(since int64) (<-chan *schema.IDefenseVulnerability, error) {
+// FetchAllVulnerabilities will fetch all vulnerabilities from iDefense API
+func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
 	sinceStr := time.Unix(since, 0).Format("2006-01-02T15:04:05.000Z")
 
 	result, err := c.queryVulnerabilities(map[string]interface{}{
@@ -66,7 +67,7 @@ func (c Client) FetchAll(since int64) (<-chan *schema.IDefenseVulnerability, err
 		return nil, errors.New("no vulnerabilities found in given window")
 	}
 
-	output := make(chan *schema.IDefenseVulnerability)
+	output := make(chan runner.Convertible)
 	numPages := (totalVulns-1)/pageSize + 1
 
 	// fetch pages concurrently

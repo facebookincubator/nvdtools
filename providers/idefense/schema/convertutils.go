@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package converter
+package schema
 
 import (
 	"log"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
-	"github.com/facebookincubator/nvdtools/providers/idefense/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -47,7 +46,7 @@ func convertTime(idefenseTime string) (string, error) {
 	return t.Format(nvdcommon.TimeLayout), nil
 }
 
-func findConfigurations(item *schema.IDefenseVulnerability) []configuration {
+func (item *IDefenseVulnerability) findConfigurations() []configuration {
 	configMap := make(map[string]configuration)
 
 	if item.Affects == nil {
