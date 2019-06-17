@@ -28,9 +28,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/golang/glog"
+
 	"github.com/facebookincubator/nvdtools/cvefeed"
 	"github.com/facebookincubator/nvdtools/wfn"
-	"github.com/golang/glog"
 )
 
 type config struct {
@@ -45,6 +46,8 @@ type config struct {
 	requireVersion                   bool
 	cacheSize                        int64
 	overrides                        multiString
+	provider                         string
+	providerAt                       int
 }
 
 func (c *config) addFlags() {
@@ -67,6 +70,8 @@ func (c *config) addFlags() {
 	flag.BoolVar(&c.indexedDict, "idxd", false, "build and use an index for CVE dictionary: increases the processing speed, but might miss some matches")
 	flag.BoolVar(&c.requireVersion, "require_version", false, "ignore matches of CPEs with version ANY")
 	flag.Var(&c.overrides, "r", "overRide: path to override feed, can be specified multiple times")
+	flag.StringVar(&c.provider, "provider", "", "feed provider. affects the output only when the provider_field is specified: adds the $provider into that field")
+	flag.IntVar(&c.providerAt, "provider_field", 0, "where should the provider be placed in the output (starts with 1). when using this, also specify the provider")
 }
 
 func (c *config) mustBeValid() {
@@ -100,6 +105,10 @@ func (c *config) mustBeValid() {
 	}
 	if c.cvssAt < 0 {
 		glog.Errorf("-cvss value is invalid %d", c.cvssAt)
+		flag.Usage()
+	}
+	if c.providerAt > 0 && c.provider == "" {
+		glog.Errorf("provider field was specified without the specifying the provider")
 		flag.Usage()
 	}
 }
@@ -145,6 +154,7 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 				cfg.cvss2at-1, fmt.Sprintf("%.1f", matches.CVE.CVSS20base()),
 				cfg.cvss3at-1, fmt.Sprintf("%.1f", matches.CVE.CVSS30base()),
 				cfg.cvssAt-1, fmt.Sprintf("%.1f", cvss),
+				cfg.providerAt-1, cfg.provider,
 			)
 			out <- rec2
 		}
