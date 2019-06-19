@@ -28,9 +28,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/download"
-	"github.com/pkg/errors"
+	"github.com/facebookincubator/nvdtools/stats"
 )
 
 const (
@@ -84,11 +86,16 @@ func (c *Client) Request(endpoint string) (io.Reader, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "can't obtain http client")
 	}
+
+	stats.IncrementCounter("request")
 	resp, err := client.Do(req)
 	if err != nil {
+		stats.IncrementCounter("request.error")
 		return nil, errors.Wrap(err, "cannot get url")
 	}
 	defer resp.Body.Close()
+
+	stats.IncrementCounter(fmt.Sprintf("request.code.%d", resp.StatusCode))
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%d - %s", resp.StatusCode, http.StatusText(resp.StatusCode))
@@ -101,21 +108,26 @@ func (c *Client) Request(endpoint string) (io.Reader, error) {
 	var fireeyeResult schema.FireeyeResult
 	body := io.LimitReader(resp.Body, 2<<30) // 1 GB
 	if err := json.NewDecoder(body).Decode(&fireeyeResult); err != nil {
+		stats.IncrementCounter("request.feed.error")
 		return nil, errors.Wrap(err, "couldn't decode result")
 	}
 
 	var buff bytes.Buffer
 	if err := json.NewEncoder(&buff).Encode(fireeyeResult.Message); err != nil {
+		stats.IncrementCounter("request.feed.error")
 		return nil, errors.Wrap(err, "couldn't encode message back to buffer")
 	}
 
 	if !fireeyeResult.Success {
+		stats.IncrementCounter("request.feed.error")
 		var errorMessage schema.FireeyeResultErrorMessage
 		if err := json.Unmarshal(buff.Bytes(), &errorMessage); err != nil {
 			return nil, errors.Wrap(err, "failed to decode error message")
 		}
 		return nil, fmt.Errorf("%s: %s", errorMessage.Error, errorMessage.Description)
 	}
+
+	stats.IncrementCounter("request.success")
 
 	return &buff, nil
 }

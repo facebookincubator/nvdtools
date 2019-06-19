@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
+	"github.com/facebookincubator/nvdtools/stats"
 )
 
 // FetchAllThreatReportsSince will fetch all vulnerabilities with specified parameters
@@ -67,8 +68,10 @@ func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.Fireeye
 		go func() {
 			defer wgReports.Done()
 			if report, err := c.fetchReport(rID); err == nil {
+				stats.IncrementCounter("report.success")
 				reports <- report
 			} else {
+				stats.IncrementCounter("report.error")
 				log.Println(err)
 			}
 		}()

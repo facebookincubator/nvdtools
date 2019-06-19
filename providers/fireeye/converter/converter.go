@@ -16,9 +16,11 @@ package converter
 
 import (
 	"strings"
+	"time"
 
 	dstSchema "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 	srcSchema "github.com/facebookincubator/nvdtools/providers/fireeye/schema"
+	"github.com/facebookincubator/nvdtools/stats"
 )
 
 const (
@@ -27,6 +29,7 @@ const (
 
 // Convert converts FireEye vulnerability to NVD format
 func Convert(items []*srcSchema.FireeyeVulnerability) dstSchema.NVDCVEFeedJSON10 {
+	defer stats.TrackTime("conversion.time", time.Now(), time.Second)
 	cveItems := make([]*dstSchema.NVDCVEFeedJSON10DefCVEItem, len(items))
 	for idx, item := range items {
 		cveItems[idx] = convert(item)
