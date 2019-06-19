@@ -25,6 +25,7 @@ import (
 
 	"github.com/facebookincubator/nvdtools/providers/fireeye/api"
 	"github.com/facebookincubator/nvdtools/providers/fireeye/converter"
+	"github.com/facebookincubator/nvdtools/stats"
 )
 
 const (
@@ -55,18 +56,21 @@ func main() {
 	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
 	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
 	dontConvert := flag.Bool("dont_convert", false, "Should the feed be converted to NVD format or not")
+	stats.AddFlags()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 	flag.Parse()
+	defer stats.WriteAndLogError()
 
 	since := *sinceUnix
 	if *sinceDuration != "" {
 		dur, err := time.ParseDuration("-" + *sinceDuration)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
+			return
 		}
 		since = time.Now().Add(dur).Unix()
 	}
@@ -79,13 +83,16 @@ func main() {
 	// create the API
 	client, err := api.NewClient(*baseURL, *userAgent, publicKey, privateKey)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return
 	}
 
+	stats.TrackTime("run.time", time.Now(), time.Second)
 	log.Printf("Downloading since %s\n", time.Unix(since, 0).Format(time.RFC1123))
 	vulns, err := client.FetchAllVulnerabilitiesSince(since)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return
 	}
 
 	if *dontConvert {
@@ -97,6 +104,6 @@ func main() {
 
 func writeOutput(output interface{}) {
 	if err := json.NewEncoder(os.Stdout).Encode(output); err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 }
