@@ -28,6 +28,8 @@ import (
 
 // Convertible is any struct which knows how to convert itself to NVD CVE Item
 type Convertible interface {
+	// ID should return vulnerabilities ID
+	ID() string
 	// Convert should return a new CVE Item, or an error if it's not possible
 	Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error)
 }
@@ -79,11 +81,11 @@ func (r *Runner) Run() error {
 		return nil
 	}
 
-	var vv []Convertible
+	m := make(map[string]Convertible)
 	for v := range vulns {
-		vv = append(vv, v)
+		m[v.ID()] = v
 	}
-	if err := json.NewEncoder(os.Stdout).Encode(vv); err != nil {
+	if err := json.NewEncoder(os.Stdout).Encode(m); err != nil {
 		return fmt.Errorf("couldn't write vulnerabilities: %v", err)
 	}
 

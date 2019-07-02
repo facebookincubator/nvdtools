@@ -47,7 +47,7 @@ func (item *Vulnerability) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
 	nvdItem := nvd.NVDCVEFeedJSON10DefCVEItem{
 		CVE: &nvd.CVEJSON40{
 			CVEDataMeta: &nvd.CVEJSON40CVEDataMeta{
-				ID:       item.makeID(),
+				ID:       item.ID(),
 				ASSIGNER: "rbs",
 			},
 			DataFormat:  "MITRE",
@@ -73,7 +73,7 @@ func (item *Vulnerability) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
 	return &nvdItem, nil
 }
 
-func (item *Vulnerability) makeID() string {
+func (item *Vulnerability) ID() string {
 	return fmt.Sprintf("rbs-%d", item.VulndbID)
 }
 

@@ -35,7 +35,7 @@ const (
 var tokenURL = baseURL + "/oauth/token"
 
 func Read(r io.Reader, c chan runner.Convertible) error {
-	var vulns []*schema.Vulnerability
+	var vulns map[string]*schema.Vulnerability
 	if err := json.NewDecoder(r).Decode(&vulns); err != nil {
 		return fmt.Errorf("can't decode into vulns: %v", err)
 	}

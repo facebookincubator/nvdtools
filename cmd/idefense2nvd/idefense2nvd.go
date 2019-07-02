@@ -32,7 +32,7 @@ const (
 )
 
 func Read(r io.Reader, c chan runner.Convertible) error {
-	var vulns []*schema.IDefenseVulnerability
+	var vulns map[string]*schema.IDefenseVulnerability
 	if err := json.NewDecoder(r).Decode(&vulns); err != nil {
 		return fmt.Errorf("can't decode into vulns: %v", err)
 	}
