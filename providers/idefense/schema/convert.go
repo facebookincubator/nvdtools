@@ -43,7 +43,7 @@ func (item *IDefenseVulnerability) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, e
 	return &nvd.NVDCVEFeedJSON10DefCVEItem{
 		CVE: &nvd.CVEJSON40{
 			CVEDataMeta: &nvd.CVEJSON40CVEDataMeta{
-				ID:       item.makeID(),
+				ID:       item.ID(),
 				ASSIGNER: "idefense",
 			},
 			DataFormat:  "MITRE",
@@ -87,7 +87,7 @@ func (item *IDefenseVulnerability) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, e
 	}, nil
 }
 
-func (item *IDefenseVulnerability) makeID() string {
+func (item *IDefenseVulnerability) ID() string {
 	return "idefense-" + item.Key
 }
 
