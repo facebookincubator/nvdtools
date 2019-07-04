@@ -26,10 +26,11 @@ import (
 	"github.com/facebookincubator/nvdtools/providers/flexera/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/download"
 	"github.com/facebookincubator/nvdtools/providers/lib/rate"
+	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/pkg/errors"
 )
 
-// Client stores information needed to access Flexera API
+// Client stores information needed to access  API
 // API key will be sent in the Authorization field
 // rate limiter is used to enforce their api limits (so we don't go over them)
 type Client struct {
@@ -58,11 +59,12 @@ func NewClient(baseURL, userAgent, apiKey string) Client {
 	}
 }
 
-// FetchAll will fetch all advisories since given time
+// FetchAllVulnerabilities will fetch all advisories since given time
 // we first fetch all pages and just collect all identifiers found on them and
 // push them into the `identifiers` channel. Then we start fetchers which take
 // those identifiers and fetch the real advisories
-func (c Client) FetchAll(from, to int64) (<-chan *schema.FlexeraAdvisory, error) {
+func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
+	from, to := since, time.Now().Unix()
 	totalAdvisories, err := c.getNumberOfAdvisories(from, to)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get total number of advisories")
@@ -72,7 +74,7 @@ func (c Client) FetchAll(from, to int64) (<-chan *schema.FlexeraAdvisory, error)
 	log.Printf("starting sync for %d advisories over %d pages\n", totalAdvisories, numPages)
 
 	identifiers := make(chan string, totalAdvisories)
-	advisories := make(chan *schema.FlexeraAdvisory, totalAdvisories)
+	advisories := make(chan runner.Convertible, totalAdvisories)
 
 	wgPages := sync.WaitGroup{}
 	for page := 0; page < numPages; page++ {
@@ -120,8 +122,8 @@ func (c Client) FetchAll(from, to int64) (<-chan *schema.FlexeraAdvisory, error)
 }
 
 // Fetch will return a channel with only one advisory in it
-func (c Client) Fetch(identifier string) (*schema.FlexeraAdvisory, error) {
-	var advisory schema.FlexeraAdvisory
+func (c Client) Fetch(identifier string) (*schema.Advisory, error) {
+	var advisory schema.Advisory
 	endpoint := fmt.Sprintf("%s/%s", advisoriesEndpoint, identifier)
 	if err := c.query(endpoint, map[string]interface{}{}, &advisory); err != nil {
 		return nil, errors.Wrapf(err, "failed to query advisory details endpoint %s", endpoint)
@@ -129,8 +131,8 @@ func (c Client) Fetch(identifier string) (*schema.FlexeraAdvisory, error) {
 	return &advisory, nil
 }
 
-func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.FlexeraAdvisoryListResult, error) {
-	var list schema.FlexeraAdvisoryListResult
+func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.AdvisoryListResult, error) {
+	var list schema.AdvisoryListResult
 	params := map[string]interface{}{
 		"released__gte": from,
 		"released__lt":  to,
@@ -144,7 +146,7 @@ func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.FlexeraAdvi
 }
 
 func (c Client) getNumberOfAdvisories(from, to int64) (int, error) {
-	var list schema.FlexeraAdvisoryListResult
+	var list schema.AdvisoryListResult
 	params := map[string]interface{}{
 		"released__gte": from,
 		"released__lt":  to,
@@ -179,7 +181,10 @@ func (c Client) query(endpoint string, params map[string]interface{}, v interfac
 			break
 		}
 
-		if he, ok := err.(download.Err); !ok || he.Code != http.StatusTooManyRequests {
+		if he, ok := err.(download.Err); !ok {
+			return err
+		} else if he.Code != http.StatusTooManyRequests && he.Code != http.StatusGatewayTimeout {
+			// if it's not any of these two, it's not rate limit so return the error
 			return err
 		}
 		// it is rate limit, just retry after 1 second

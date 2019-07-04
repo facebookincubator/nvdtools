@@ -21,111 +21,65 @@ import (
 	"io"
 	"log"
 	"os"
-	"regexp"
 	"strings"
 
-	"github.com/pkg/errors"
-
+	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/snyk/api"
-	"github.com/facebookincubator/nvdtools/providers/snyk/converter"
 	"github.com/facebookincubator/nvdtools/providers/snyk/schema"
 )
 
 const (
-	feedURL          = "https://data.snyk.io/api/v4/vulnerabilities.json"
-	defaultUserAgent = "snyk2nvd"
+	baseURL   = "https://data.snyk.io/api/v4"
+	userAgent = "snyk2nvd"
 )
 
-var (
-	userAgent string
-)
+var lf languageFilter
 
-func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+func Read(r io.Reader, c chan runner.Convertible) error {
+	var vulns map[string]*schema.Advisory
+	if err := json.NewDecoder(r).Decode(&vulns); err != nil {
+		return fmt.Errorf("can't decode into vulns: %v", err)
+	}
+
+	for _, vuln := range vulns {
+		if lf.accepts(vuln) {
+			c <- vuln
+		}
+	}
+
+	return nil
+}
+
+func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
+	token := os.Getenv("SNYK_TOKEN")
+	if token == "" {
+		return nil, fmt.Errorf("Please set SNYK_TOKEN in environment")
+	}
+	parts := strings.SplitN(strings.TrimSuffix(token, "\n"), ":", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return nil, fmt.Errorf("malformed token: must contain 'consumer_id:secret'")
+	}
+	consumerID, secret := parts[0], parts[1]
+	client := api.NewClient(baseURL, userAgent, consumerID, secret)
+
+	advs, err := client.FetchAllVulnerabilities(since)
+	return lf.filter(advs), err
 }
 
 func main() {
-	// set flags and parse
-	var lf languageFilter
-	flag.Var(&lf, "languages", "comma-separated list of languages to filter from input to output: golang, java, js, php, python; empty value means all")
-	flag.StringVar(&userAgent, "user_agent", defaultUserAgent, "HTTP request User-Agent header")
-	download := flag.Bool("download", false, "download feed from snyk.io, requires SNYK_TOKEN environment variable")
-	dontConvert := flag.Bool("dont_convert", false, "if set, doesn't convert the feed to NVD json format")
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: snyk2nvd [flags] [URI]")
-		fmt.Fprintln(os.Stderr, "Reads snyk feed from standard input, FILE, or URL, and writes NVD CVE JSON to standard output.")
-		fmt.Fprintln(os.Stderr, "Flags:")
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
-	flag.Parse()
-
-	// get feed
-	r, err := obtainFeed(*download)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer r.Close()
-
-	if *dontConvert {
-		io.Copy(os.Stdout, r)
-		return
+	flag.Var(&lf, "language", "Comma separated list of languages to download/convert. If not set, then use all available")
+	r := runner.Runner{
+		Config: runner.Config{
+			BaseURL:   baseURL,
+			UserAgent: userAgent,
+		},
+		FetchSince: FetchSince,
+		Read:       Read,
 	}
 
-	if err := convert(r, lf); err != nil {
-		log.Fatalln(err)
+	if err := r.Run(); err != nil {
+		log.Println(err)
 	}
-}
-
-func obtainFeed(download bool) (io.ReadCloser, error) {
-	if download {
-		token := os.Getenv("SNYK_TOKEN")
-		if token == "" {
-			log.Fatal("Please set SNYK_TOKEN in environment")
-		}
-		parts := strings.SplitN(strings.TrimSuffix(token, "\n"), ":", 2)
-		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-			return nil, errors.Errorf("malformed token: must contain 'consumer_id:secret'")
-		}
-		consumerID, secret := parts[0], parts[1]
-
-		// determine User-Agent header, check if it's only ascii characters
-		if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(userAgent) {
-			log.Println("User-Agent contains non ascii characters, using default")
-			userAgent = defaultUserAgent
-		}
-		log.Printf("Downloading using http User-Agent: %s", userAgent)
-
-		uri := flag.Arg(0)
-		if uri == "" {
-			uri = feedURL
-		}
-
-		client := api.NewClient(consumerID, secret, userAgent)
-		return client.Get(uri)
-	}
-
-	// open the file if specified
-	if len(flag.Args()) == 1 {
-		return os.Open(flag.Arg(0))
-	}
-
-	// otherwise use stdin
-	return os.Stdin, nil
-}
-
-func convert(r io.Reader, lf languageFilter) error {
-	var snykFeed schema.Snyk
-	if err := json.NewDecoder(r).Decode(&snykFeed); err != nil {
-		return err
-	}
-
-	nvdFeed := converter.Convert(&snykFeed, lf)
-
-	if err := json.NewEncoder(os.Stdout).Encode(nvdFeed); err != nil {
-		return err
-	}
-	return nil
 }
 
 // language filter
@@ -155,4 +109,21 @@ func (lf *languageFilter) Set(val string) error {
 		}
 	}
 	return nil
+}
+
+func (lf *languageFilter) accepts(adv *schema.Advisory) bool {
+	return lf == nil || len(*lf) == 0 || (*lf)[adv.Language]
+}
+
+func (lf *languageFilter) filter(ch <-chan *schema.Advisory) <-chan runner.Convertible {
+	output := make(chan runner.Convertible)
+	go func() {
+		defer close(output)
+		for adv := range ch {
+			if lf.accepts(adv) {
+				output <- adv
+			}
+		}
+	}()
+	return output
 }

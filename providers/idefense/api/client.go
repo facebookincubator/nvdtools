@@ -103,7 +103,7 @@ func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible,
 	return output, nil
 }
 
-func (c Client) queryVulnerabilities(params map[string]interface{}) (*schema.IDefenseVulnerabilitySearchResults, error) {
+func (c Client) queryVulnerabilities(params map[string]interface{}) (*schema.VulnerabilitySearchResults, error) {
 	u, err := url.Parse(c.baseUrl + vulnerabilityEndpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse url")
@@ -125,7 +125,7 @@ func (c Client) queryVulnerabilities(params map[string]interface{}) (*schema.IDe
 	defer resp.Body.Close()
 
 	// decode into json
-	var result schema.IDefenseVulnerabilitySearchResults
+	var result schema.VulnerabilitySearchResults
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode response")

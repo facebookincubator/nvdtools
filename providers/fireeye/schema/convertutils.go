@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package converter
+package schema
 
 import (
 	"log"
@@ -21,22 +21,21 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
-	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
 )
 
-func extractCVSSBaseScore(item *schema.FireeyeVulnerability) float64 {
+func extractCVSSBaseScore(item *Vulnerability) float64 {
 	return strToFloat(item.CvssBaseScore)
 }
 
-func extractCVSSTemporalScore(item *schema.FireeyeVulnerability) float64 {
+func extractCVSSTemporalScore(item *Vulnerability) float64 {
 	return strToFloat(item.CvssTemporalScore)
 }
 
-func extractCVSSVectorString(item *schema.FireeyeVulnerability) string {
+func extractCVSSVectorString(item *Vulnerability) string {
 	return strings.Trim(item.CvssBaseVector, "()")
 }
 
-func extractCPEs(item *schema.FireeyeVulnerability) []string {
+func extractCPEs(item *Vulnerability) []string {
 	return strings.Split(item.CPE, ",")
 }
 
