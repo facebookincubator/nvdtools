@@ -14,58 +14,58 @@
 
 package schema
 
-// FireeyeReportIndexItem one item in array returned on /report/index
+// ReportIndexItem one item in array returned on /report/index
 // we only want the reportID so we can use it to get /report/{reportID}
-type FireeyeReportIndexItem struct {
+type ReportIndexItem struct {
 	ReportID string `json:"reportId"`
 }
 
-// FireeyeReportWrapper struct
-type FireeyeReportWrapper struct {
-	Report FireeyeReport `json:"report"`
+// ReportWrapper struct
+type ReportWrapper struct {
+	Report Report `json:"report"`
 }
 
-// FireeyeReport struct
-type FireeyeReport struct {
-	Audience            []string                  `json:"audience"`
-	Copyright           string                    `json:"copyright"`
-	CveIDs              *FireeyeReportCveIDs      `json:"cveIds"`
-	ExecSummary         string                    `json:"execSummary"`
-	IntelligenceType    string                    `json:"intelligenceType"`
-	PublishDate         string                    `json:"publishDate"`
-	ReportID            string                    `json:"reportId"`
-	ReportType          string                    `json:"reportType"`
-	TagSection          *FireeyeReportTagSection  `json:"tagSection"`
-	ThreatScape         *FireeyeReportThreatScape `json:"ThreatScape"`
-	Title               string                    `json:"title"`
-	Version             string                    `json:"version"`
-	Version1PublishDate string                    `json:"version1PublishDate"`
+// Report struct
+type Report struct {
+	Audience            []string           `json:"audience"`
+	Copyright           string             `json:"copyright"`
+	CveIDs              *ReportCveIDs      `json:"cveIds"`
+	ExecSummary         string             `json:"execSummary"`
+	IntelligenceType    string             `json:"intelligenceType"`
+	PublishDate         string             `json:"publishDate"`
+	ReportID            string             `json:"reportId"`
+	ReportType          string             `json:"reportType"`
+	TagSection          *ReportTagSection  `json:"tagSection"`
+	ThreatScape         *ReportThreatScape `json:"ThreatScape"`
+	Title               string             `json:"title"`
+	Version             string             `json:"version"`
+	Version1PublishDate string             `json:"version1PublishDate"`
 }
 
-// FireeyeReportCveIDs struct
-type FireeyeReportCveIDs struct {
+// ReportCveIDs struct
+type ReportCveIDs struct {
 	CveID []string `json:"cveId"`
 }
 
-// FireeyeReportTagSection struct
-type FireeyeReportTagSection struct {
-	Files    *FireeyeReportFiles    `json:"files"`
-	Main     *FireeyeReportMain     `json:"main"`
-	Networks *FireeyeReportNetworks `json:"networks"`
+// ReportTagSection struct
+type ReportTagSection struct {
+	Files    *ReportFiles    `json:"files"`
+	Main     *ReportMain     `json:"main"`
+	Networks *ReportNetworks `json:"networks"`
 }
 
-// FireeyeReportThreatScape struct
-type FireeyeReportThreatScape struct {
+// ReportThreatScape struct
+type ReportThreatScape struct {
 	Product []string `json:"product"`
 }
 
-// FireeyeReportFiles struct
-type FireeyeReportFiles struct {
-	File []*FireeyeReportFile `json:"file"`
+// ReportFiles struct
+type ReportFiles struct {
+	File []*ReportFile `json:"file"`
 }
 
-// FireeyeReportFile struct
-type FireeyeReportFile struct {
+// ReportFile struct
+type ReportFile struct {
 	Sha1       string `json:"sha1"`
 	Identifier string `json:"identifier"`
 	Actor      string `json:"actor"`
@@ -77,37 +77,37 @@ type FireeyeReportFile struct {
 	Md5        string `json:"md5"`
 }
 
-// FireeyeReportMain struct
-type FireeyeReportMain struct {
-	Actors               *FireeyeReportActors               `json:"actors"`
-	AffectedIndustries   *FireeyeReportAffectedIndustries   `json:"affectedIndustries"`
-	IntendedEffects      *FireeyeReportIntendedEffects      `json:"intendedEffects"`
-	MalwareFamilies      *FireeyeReportMalwareFamilies      `json:"malwareFamilies"`
-	Motivations          *FireeyeReportMotivations          `json:"motivations"`
-	SourceGeographies    *FireeyeReportSourceGeographies    `json:"sourceGeographies"`
-	TargetedInformations *FireeyeReportTargetedInformations `json:"targetedInformations"`
-	TargetGeographies    *FireeyeReportTargetGeographies    `json:"targetGeographies"`
-	Ttps                 *FireeyeReportTtps                 `json:"ttps"`
+// ReportMain struct
+type ReportMain struct {
+	Actors               *ReportActors               `json:"actors"`
+	AffectedIndustries   *ReportAffectedIndustries   `json:"affectedIndustries"`
+	IntendedEffects      *ReportIntendedEffects      `json:"intendedEffects"`
+	MalwareFamilies      *ReportMalwareFamilies      `json:"malwareFamilies"`
+	Motivations          *ReportMotivations          `json:"motivations"`
+	SourceGeographies    *ReportSourceGeographies    `json:"sourceGeographies"`
+	TargetedInformations *ReportTargetedInformations `json:"targetedInformations"`
+	TargetGeographies    *ReportTargetGeographies    `json:"targetGeographies"`
+	Ttps                 *ReportTtps                 `json:"ttps"`
 }
 
-// FireeyeReportActors struct
-type FireeyeReportActors struct {
-	Actor []*FireeyeReportActor `json:"actor"`
+// ReportActors struct
+type ReportActors struct {
+	Actor []*ReportActor `json:"actor"`
 }
 
-// FireeyeReportActor struct
-type FireeyeReportActor struct {
+// ReportActor struct
+type ReportActor struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-// FireeyeReportNetworks struct
-type FireeyeReportNetworks struct {
-	Networks []*FireeyeReportNetwork `json:"network"`
+// ReportNetworks struct
+type ReportNetworks struct {
+	Networks []*ReportNetwork `json:"network"`
 }
 
-// FireeyeReportNetwork struct
-type FireeyeReportNetwork struct {
+// ReportNetwork struct
+type ReportNetwork struct {
 	URL         string `json:"url"`
 	NetworkType string `json:"networkType"`
 	Identifier  string `json:"identifier"`
@@ -116,48 +116,48 @@ type FireeyeReportNetwork struct {
 	Domain      string `json:"domain"`
 }
 
-// FireeyeReportMotivations struct
-type FireeyeReportMotivations struct {
+// ReportMotivations struct
+type ReportMotivations struct {
 	Motivation []string `json:"motivation"`
 }
 
-// FireeyeReportSourceGeographies struct
-type FireeyeReportSourceGeographies struct {
+// ReportSourceGeographies struct
+type ReportSourceGeographies struct {
 	SourceGeography []string `json:"sourceGeography"`
 }
 
-// FireeyeReportAffectedIndustries struct
-type FireeyeReportAffectedIndustries struct {
+// ReportAffectedIndustries struct
+type ReportAffectedIndustries struct {
 	AffectedIndustry []string `json:"affectedIndustry"`
 }
 
-// FireeyeReportIntendedEffects struct
-type FireeyeReportIntendedEffects struct {
+// ReportIntendedEffects struct
+type ReportIntendedEffects struct {
 	IntendedEffect []string `json:"intendedEffect"`
 }
 
-// FireeyeReportTtps struct
-type FireeyeReportTtps struct {
+// ReportTtps struct
+type ReportTtps struct {
 	Ttp []string `json:"ttp"`
 }
 
-// FireeyeReportTargetGeographies struct
-type FireeyeReportTargetGeographies struct {
+// ReportTargetGeographies struct
+type ReportTargetGeographies struct {
 	TargetGeography []string `json:"targetGeography"`
 }
 
-// FireeyeReportTargetedInformations struct
-type FireeyeReportTargetedInformations struct {
+// ReportTargetedInformations struct
+type ReportTargetedInformations struct {
 	TargetedInformation []string `json:"targetedInformation"`
 }
 
-// FireeyeReportMalwareFamilies struct
-type FireeyeReportMalwareFamilies struct {
-	MalwareFamily []*FireeyeReportMalwareFamily `json:"malwareFamily"`
+// ReportMalwareFamilies struct
+type ReportMalwareFamilies struct {
+	MalwareFamily []*ReportMalwareFamily `json:"malwareFamily"`
 }
 
-// FireeyeReportMalwareFamily struct
-type FireeyeReportMalwareFamily struct {
+// ReportMalwareFamily struct
+type ReportMalwareFamily struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }

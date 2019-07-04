@@ -12,38 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package converter
+package schema
 
 import (
-	"log"
+	"fmt"
 
-	dstSchema "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
-	srcSchema "github.com/facebookincubator/nvdtools/providers/flexera/schema"
-
-	"github.com/pkg/errors"
+	nvd "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 )
 
 const (
 	cveDataVersion = "4.0"
 )
 
-// Convert converts Flexera advisories to NVD format
-func Convert(input <-chan *srcSchema.FlexeraAdvisory) *dstSchema.NVDCVEFeedJSON10 {
-	var feed dstSchema.NVDCVEFeedJSON10
-	for adv := range input {
-		converted, err := convert(adv)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		feed.CVEItems = append(feed.CVEItems, converted)
-	}
-	return &feed
-}
-
-func convert(item *srcSchema.FlexeraAdvisory) (*dstSchema.NVDCVEFeedJSON10DefCVEItem, error) {
+// Convert converts  advisories to NVD format
+func (item *Advisory) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
 	if item.Products == nil {
-		return nil, errors.New("No products associated with advisory")
+		return nil, fmt.Errorf("No products associated with advisory")
 	}
 
 	var cpes []string
@@ -53,7 +37,7 @@ func convert(item *srcSchema.FlexeraAdvisory) (*dstSchema.NVDCVEFeedJSON10DefCVE
 		}
 	}
 	if len(cpes) == 0 {
-		return nil, errors.New("No cpes associated with advisory")
+		return nil, fmt.Errorf("No cpes associated with advisory")
 	}
 
 	lastModifiedDate, err := convertTime(item.ModifiedDate)
@@ -66,37 +50,37 @@ func convert(item *srcSchema.FlexeraAdvisory) (*dstSchema.NVDCVEFeedJSON10DefCVE
 		return nil, err
 	}
 
-	return &dstSchema.NVDCVEFeedJSON10DefCVEItem{
-		CVE: &dstSchema.CVEJSON40{
-			CVEDataMeta: &dstSchema.CVEJSON40CVEDataMeta{
-				ID:       makeID(item),
+	return &nvd.NVDCVEFeedJSON10DefCVEItem{
+		CVE: &nvd.CVEJSON40{
+			CVEDataMeta: &nvd.CVEJSON40CVEDataMeta{
+				ID:       item.ID(),
 				ASSIGNER: "flexera",
 			},
 			DataFormat:  "MITRE",
 			DataType:    "CVE",
 			DataVersion: cveDataVersion,
-			Description: &dstSchema.CVEJSON40Description{
-				DescriptionData: []*dstSchema.CVEJSON40LangString{
+			Description: &nvd.CVEJSON40Description{
+				DescriptionData: []*nvd.CVEJSON40LangString{
 					{Lang: "en", Value: item.Description},
 				},
 			},
-			References: makeReferences(item),
+			References: item.makeReferences(),
 		},
 		Configurations:   makeConfigurations(cpes),
-		Impact:           makeImpact(item),
+		Impact:           item.makeImpact(),
 		LastModifiedDate: lastModifiedDate,
 		PublishedDate:    publishedDate,
 	}, nil
 }
 
-func makeID(item *srcSchema.FlexeraAdvisory) string {
+func (item *Advisory) ID() string {
 	return "flexera-" + item.AdvisoryIdentifier
 }
 
-func makeReferences(item *srcSchema.FlexeraAdvisory) *dstSchema.CVEJSON40References {
-	var refsData []*dstSchema.CVEJSON40Reference
+func (item *Advisory) makeReferences() *nvd.CVEJSON40References {
+	var refsData []*nvd.CVEJSON40Reference
 	addRef := func(name, url string) {
-		refsData = append(refsData, &dstSchema.CVEJSON40Reference{
+		refsData = append(refsData, &nvd.CVEJSON40Reference{
 			Name: name,
 			URL:  url,
 		})
@@ -114,24 +98,24 @@ func makeReferences(item *srcSchema.FlexeraAdvisory) *dstSchema.CVEJSON40Referen
 		}
 	}
 
-	return &dstSchema.CVEJSON40References{
+	return &nvd.CVEJSON40References{
 		ReferenceData: refsData,
 	}
 }
 
-func makeConfigurations(cpes []string) *dstSchema.NVDCVEFeedJSON10DefConfigurations {
-	matches := make([]*dstSchema.NVDCVEFeedJSON10DefCPEMatch, len(cpes))
+func makeConfigurations(cpes []string) *nvd.NVDCVEFeedJSON10DefConfigurations {
+	matches := make([]*nvd.NVDCVEFeedJSON10DefCPEMatch, len(cpes))
 	for i, cpe := range cpes {
-		matches[i] = &dstSchema.NVDCVEFeedJSON10DefCPEMatch{
+		matches[i] = &nvd.NVDCVEFeedJSON10DefCPEMatch{
 			Cpe22Uri:   cpe,
 			Vulnerable: true,
 		}
 	}
 
-	return &dstSchema.NVDCVEFeedJSON10DefConfigurations{
+	return &nvd.NVDCVEFeedJSON10DefConfigurations{
 		CVEDataVersion: cveDataVersion,
-		Nodes: []*dstSchema.NVDCVEFeedJSON10DefNode{
-			&dstSchema.NVDCVEFeedJSON10DefNode{
+		Nodes: []*nvd.NVDCVEFeedJSON10DefNode{
+			&nvd.NVDCVEFeedJSON10DefNode{
 				CPEMatch: matches,
 				Operator: "OR",
 			},
@@ -139,23 +123,23 @@ func makeConfigurations(cpes []string) *dstSchema.NVDCVEFeedJSON10DefConfigurati
 	}
 }
 
-func makeImpact(item *srcSchema.FlexeraAdvisory) *dstSchema.NVDCVEFeedJSON10DefImpact {
-	var cvssv2 dstSchema.CVSSV20
+func (item *Advisory) makeImpact() *nvd.NVDCVEFeedJSON10DefImpact {
+	var cvssv2 nvd.CVSSV20
 	if item.CvssInfo != nil {
 		cvssv2.BaseScore = item.CvssInfo.BaseScore
 		cvssv2.VectorString = item.CvssInfo.Vector
 	}
-	var cvssv3 dstSchema.CVSSV30
+	var cvssv3 nvd.CVSSV30
 	if item.Cvss3Info != nil {
 		cvssv3.BaseScore = item.Cvss3Info.BaseScore
 		cvssv3.VectorString = item.Cvss3Info.Vector
 	}
 
-	return &dstSchema.NVDCVEFeedJSON10DefImpact{
-		BaseMetricV2: &dstSchema.NVDCVEFeedJSON10DefImpactBaseMetricV2{
+	return &nvd.NVDCVEFeedJSON10DefImpact{
+		BaseMetricV2: &nvd.NVDCVEFeedJSON10DefImpactBaseMetricV2{
 			CVSSV2: &cvssv2,
 		},
-		BaseMetricV3: &dstSchema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+		BaseMetricV3: &nvd.NVDCVEFeedJSON10DefImpactBaseMetricV3{
 			CVSSV3: &cvssv3,
 		},
 	}

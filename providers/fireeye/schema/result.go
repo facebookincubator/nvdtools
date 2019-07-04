@@ -14,8 +14,8 @@
 
 package schema
 
-// FireeyeResult struct
-type FireeyeResult struct {
+// Result struct
+type Result struct {
 	Success bool        `json:"success"`
 	Message interface{} `json:"message"`
 }

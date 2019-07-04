@@ -16,94 +16,63 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"regexp"
-	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/fireeye/api"
-	"github.com/facebookincubator/nvdtools/providers/fireeye/converter"
-	"github.com/facebookincubator/nvdtools/stats"
+	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
+	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 )
 
 const (
-	baseURL          = "https://api.isightpartners.com"
-	defaultUserAgent = "fireeye2nvd"
+	baseURL   = "https://api.isightpartners.com"
+	userAgent = "fireeye2nvd"
 )
 
-var (
-	publicKey  string
-	privateKey string
-)
+func Read(r io.Reader, c chan runner.Convertible) error {
+	var vulns map[string]*schema.Vulnerability
+	if err := json.NewDecoder(r).Decode(&vulns); err != nil {
+		return fmt.Errorf("can't decode into vulns: %v", err)
+	}
 
-func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	publicKey = os.Getenv("FIREEYE_PUBLIC")
+	for _, vuln := range vulns {
+		c <- vuln
+	}
+
+	return nil
+}
+
+func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
+	publicKey := os.Getenv("FIREEYE_PUBLIC")
 	if publicKey == "" {
-		log.Fatalln("Please set FIREEYE_PUBLIC in environment")
+		return nil, fmt.Errorf("Please set FIREEYE_PUBLIC in environment")
 	}
-	privateKey = os.Getenv("FIREEYE_PRIVATE")
+	privateKey := os.Getenv("FIREEYE_PRIVATE")
 	if privateKey == "" {
-		log.Fatalln("Please set FIREEYE_PRIVATE in environment")
+		return nil, fmt.Errorf("Please set FIREEYE_PRIVATE in environment")
 	}
+
+	client, err := api.NewClient(baseURL, userAgent, publicKey, privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("can't create client")
+	}
+
+	return client.FetchAllVulnerabilities(since)
 }
 
 func main() {
-	baseURL := flag.String("base_url", baseURL, "API base URL")
-	userAgent := flag.String("user_agent", defaultUserAgent, "User agent to be used when sending requests")
-	sinceUnix := flag.Int64("since_unix", 0, "Unix timestamp since when should we download. If not set, downloads all available data")
-	sinceDuration := flag.String("since", "", "Golang duration string, overrides -since_unix flag")
-	dontConvert := flag.Bool("dont_convert", false, "Should the feed be converted to NVD format or not")
-	stats.AddFlags()
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
-	flag.Parse()
-	defer stats.WriteAndLogError()
-
-	since := *sinceUnix
-	if *sinceDuration != "" {
-		dur, err := time.ParseDuration("-" + *sinceDuration)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		since = time.Now().Add(dur).Unix()
+	r := runner.Runner{
+		Config: runner.Config{
+			BaseURL:   baseURL,
+			UserAgent: userAgent,
+		},
+		FetchSince: FetchSince,
+		Read:       Read,
 	}
 
-	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(*userAgent) {
-		log.Println("User-Agent contains non ascii characters, using default")
-		*userAgent = defaultUserAgent
-	}
-
-	// create the API
-	client, err := api.NewClient(*baseURL, *userAgent, publicKey, privateKey)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	stats.TrackTime("run.time", time.Now(), time.Second)
-	log.Printf("Downloading since %s\n", time.Unix(since, 0).Format(time.RFC1123))
-	vulns, err := client.FetchAllVulnerabilitiesSince(since)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	if *dontConvert {
-		writeOutput(vulns)
-	} else {
-		writeOutput(converter.Convert(vulns))
-	}
-}
-
-func writeOutput(output interface{}) {
-	if err := json.NewEncoder(os.Stdout).Encode(output); err != nil {
+	if err := r.Run(); err != nil {
 		log.Println(err)
 	}
 }

@@ -22,8 +22,10 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
+	"github.com/facebookincubator/nvdtools/stats"
 )
 
 // Convertible is any struct which knows how to convert itself to NVD CVE Item
@@ -57,12 +59,18 @@ type Runner struct {
 func (r *Runner) Run() error {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	r.Config.addFlags()
+	stats.AddFlags()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [flags]\n", os.Args[0])
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 	flag.Parse()
+
+	defer func(startTime time.Time) {
+		stats.TrackTime("run.time", startTime, time.Second)
+		stats.WriteAndLogError()
+	}(time.Now())
 
 	if err := r.Config.validate(); err != nil {
 		return fmt.Errorf("config is invalid: %v", err)
@@ -74,9 +82,8 @@ func (r *Runner) Run() error {
 	}
 
 	if r.Config.convert {
-		feed := getNVDFeed(vulns)
-		if err := json.NewEncoder(os.Stdout).Encode(feed); err != nil {
-			return fmt.Errorf("couldn't write NVD feed: %v", err)
+		if err := convert(vulns); err != nil {
+			return fmt.Errorf("failed to convert vulns: %v", err)
 		}
 		return nil
 	}
@@ -139,7 +146,8 @@ func (r *Runner) getVulnerabilities() (<-chan Convertible, error) {
 }
 
 // getNVDFeed will convert the vulns in channel to NVD Feed
-func getNVDFeed(vulns <-chan Convertible) *nvd.NVDCVEFeedJSON10 {
+func convert(vulns <-chan Convertible) error {
+	defer stats.TrackTime("convert.time", time.Now(), time.Second)
 	var feed nvd.NVDCVEFeedJSON10
 	for vuln := range vulns {
 		converted, err := vuln.Convert()
@@ -149,5 +157,9 @@ func getNVDFeed(vulns <-chan Convertible) *nvd.NVDCVEFeedJSON10 {
 		}
 		feed.CVEItems = append(feed.CVEItems, converted)
 	}
-	return &feed
+
+	if err := json.NewEncoder(os.Stdout).Encode(feed); err != nil {
+		return fmt.Errorf("couldn't write NVD feed: %v", err)
+	}
+	return nil
 }

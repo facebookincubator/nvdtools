@@ -46,7 +46,7 @@ func convertTime(idefenseTime string) (string, error) {
 	return t.Format(nvdcommon.TimeLayout), nil
 }
 
-func (item *IDefenseVulnerability) findConfigurations() []configuration {
+func (item *Vulnerability) findConfigurations() []configuration {
 	configMap := make(map[string]configuration)
 
 	if item.Affects == nil {

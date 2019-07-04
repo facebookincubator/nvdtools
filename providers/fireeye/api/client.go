@@ -101,11 +101,11 @@ func (c *Client) Request(endpoint string) (io.Reader, error) {
 		return nil, fmt.Errorf("%d - %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
-	// Fireeye response is always {success:boolean, message:something}
+	//  response is always {success:boolean, message:something}
 	// First we decode this from response, and fail fast if success = false
 	// Otherwise, we return the message only
 
-	var fireeyeResult schema.FireeyeResult
+	var fireeyeResult schema.Result
 	body := io.LimitReader(resp.Body, 2<<30) // 1 GB
 	if err := json.NewDecoder(body).Decode(&fireeyeResult); err != nil {
 		stats.IncrementCounter("request.feed.error")
@@ -120,7 +120,7 @@ func (c *Client) Request(endpoint string) (io.Reader, error) {
 
 	if !fireeyeResult.Success {
 		stats.IncrementCounter("request.feed.error")
-		var errorMessage schema.FireeyeResultErrorMessage
+		var errorMessage schema.ResultErrorMessage
 		if err := json.Unmarshal(buff.Bytes(), &errorMessage); err != nil {
 			return nil, errors.Wrap(err, "failed to decode error message")
 		}

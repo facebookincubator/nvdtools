@@ -25,7 +25,7 @@ const (
 )
 
 // Convert implements runner.Convertible interface
-func (item *IDefenseVulnerability) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
+func (item *Vulnerability) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
 	lastModifiedDate, err := convertTime(item.LastModified)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't convert last modified date")
@@ -87,11 +87,11 @@ func (item *IDefenseVulnerability) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, e
 	}, nil
 }
 
-func (item *IDefenseVulnerability) ID() string {
+func (item *Vulnerability) ID() string {
 	return "idefense-" + item.Key
 }
 
-func (item *IDefenseVulnerability) makeReferences() *nvd.CVEJSON40References {
+func (item *Vulnerability) makeReferences() *nvd.CVEJSON40References {
 	if len(item.SourcesExternal) == 0 {
 		return nil
 	}
@@ -124,7 +124,7 @@ func (item *IDefenseVulnerability) makeReferences() *nvd.CVEJSON40References {
 	}
 }
 
-func (item *IDefenseVulnerability) makeConfigurations() (*nvd.NVDCVEFeedJSON10DefConfigurations, error) {
+func (item *Vulnerability) makeConfigurations() (*nvd.NVDCVEFeedJSON10DefConfigurations, error) {
 	configs := item.findConfigurations()
 	if len(configs) == 0 {
 		return nil, errors.New("unable to find any configurations in data")

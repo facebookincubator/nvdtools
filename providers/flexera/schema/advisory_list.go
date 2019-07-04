@@ -14,16 +14,16 @@
 
 package schema
 
-// FlexeraAdvisoryListResult type
-type FlexeraAdvisoryListResult struct {
-	Count   int                           `json:"count"`
-	Next    string                        `json:"next"`
-	Previus string                        `json:"previous"`
-	Results []*FlexeraAdvisoryListElement `json:"results"`
+// AdvisoryListResult type
+type AdvisoryListResult struct {
+	Count   int                    `json:"count"`
+	Next    string                 `json:"next"`
+	Previus string                 `json:"previous"`
+	Results []*AdvisoryListElement `json:"results"`
 }
 
-// FlexeraAdvisoryListElement type
-type FlexeraAdvisoryListElement struct {
+// AdvisoryListElement type
+type AdvisoryListElement struct {
 	ID                 int64  `json:"id"`
 	AdvisoryIdentifier string `json:"advisory_identifier"`
 	Released           string `json:"released"`

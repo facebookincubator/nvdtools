@@ -25,7 +25,7 @@ import (
 )
 
 // FetchAllThreatReportsSince will fetch all vulnerabilities with specified parameters
-func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.FireeyeReport, error) {
+func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.Report, error) {
 	parameters := newParametersSince(since)
 	if err := parameters.validate(); err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.Fireeye
 
 	// fetch reports
 
-	reports := make(chan *schema.FireeyeReport)
+	reports := make(chan *schema.Report)
 	wgReports := sync.WaitGroup{}
 
 	for rID := range reportIDs {
@@ -91,7 +91,7 @@ func (c *Client) fetchReportIDs(parameters timeRangeParameters) ([]string, error
 		return nil, err
 	}
 
-	var reportIndex []*schema.FireeyeReportIndexItem
+	var reportIndex []*schema.ReportIndexItem
 	if err := json.NewDecoder(resp).Decode(&reportIndex); err != nil {
 		return nil, err
 	}
@@ -104,13 +104,13 @@ func (c *Client) fetchReportIDs(parameters timeRangeParameters) ([]string, error
 	return reportIDs, nil
 }
 
-func (c *Client) fetchReport(reportID string) (*schema.FireeyeReport, error) {
+func (c *Client) fetchReport(reportID string) (*schema.Report, error) {
 	resp, err := c.Request(fmt.Sprintf("/report/%s?detail=full", reportID))
 	if err != nil {
 		return nil, err
 	}
 
-	var wrapper schema.FireeyeReportWrapper
+	var wrapper schema.ReportWrapper
 	if err := json.NewDecoder(resp).Decode(&wrapper); err != nil {
 		return nil, err
 	}

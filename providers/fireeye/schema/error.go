@@ -14,8 +14,8 @@
 
 package schema
 
-// FireeyeResultErrorMessage struct
-type FireeyeResultErrorMessage struct {
+// ResultErrorMessage struct
+type ResultErrorMessage struct {
 	Error       string `json:"error"`
 	Description string `json:"description"`
 	URL         string `json:"url"`

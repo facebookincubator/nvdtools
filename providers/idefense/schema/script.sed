@@ -22,8 +22,6 @@ s/SearchResults«Vulnerability»/VulnerabilitySearchResults/g
 s/: Translatable.*$//g
 
 # add the IDefense prefix to all types
-s/(\W)Vulnerability/\1IDefenseVulnerability/g
-s/^Vulnerability/IDefenseVulnerability/g
 
 # create structs
 s/^(\w+) \{/\n\/\/ \1 struct\ntype \1 struct \{/g
@@ -34,7 +32,7 @@ s/integer/int/g
 s/number/float64/g
 
 # IDefense.. -> *IDefense
-s/IDefense/\*IDefense/g
+s/(\W)Vulnerability/\1\*Vulnerability/g
 s/type \*/type /g
 s|// \*|// |g
 

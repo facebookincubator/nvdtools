@@ -15,50 +15,79 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/snyk/schema"
 )
 
 type Client struct {
+	baseURL    string
+	userAgent  string
 	consumerID string
 	secret     string
-	userAgent  string
 }
 
-func NewClient(consumerID, secret, userAgent string) Client {
+func NewClient(baseURL, userAgent, consumerID, secret string) Client {
 	return Client{
 		consumerID: consumerID,
 		secret:     secret,
+		baseURL:    baseURL,
 		userAgent:  userAgent,
 	}
 }
 
-func (c Client) Get(url string) (io.ReadCloser, error) {
-	tok, err := c.createToken()
+func (c *Client) FetchAllVulnerabilities(since int64) (<-chan *schema.Advisory, error) {
+	// since is ignored, always download all from snyk
+	content, err := c.get("vulnerabilities.json")
 	if err != nil {
-		return nil, fmt.Errorf("cannot create jwt token: %v", err)
+		return nil, fmt.Errorf("can't get vulnerabilities: %v", err)
 	}
 
-	resp, err := download.Get(url, http.Header{
-		"User-Agent":    {c.userAgent},
-		"Authorization": {"Bearer" + tok},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get response from %s: %v", url, err)
-	}
+	output := make(chan *schema.Advisory)
+	go func() {
+		defer close(output)
+		defer content.Close()
+		var advisories schema.Advisories
+		if err := json.NewDecoder(content).Decode(&advisories); err != nil {
+			log.Printf("can't decode content into advisories: %v", err)
+			return
+		}
+		for _, advs := range advisories {
+			for _, adv := range advs {
+				output <- adv
+			}
+		}
+	}()
 
-	return resp.Body, nil
+	return output, nil
 }
 
-func (c *Client) createToken() (string, error) {
+func (c *Client) get(endpoint string) (io.ReadCloser, error) {
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
 		Issuer:   c.consumerID,
 		IssuedAt: time.Now().Unix(),
 	})
-	return tok.SignedString([]byte(c.secret))
+
+	token, err := tok.SignedString([]byte(c.secret))
+	if err != nil {
+		return nil, fmt.Errorf("cannot create jwt token: %v", err)
+	}
+
+	url := fmt.Sprintf("%s/%s", c.baseURL, endpoint)
+	resp, err := download.Get(url, http.Header{
+		"User-Agent":    {c.userAgent},
+		"Authorization": {"Bearer" + token},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vulnerabilities at %q: %v", url, err)
+	}
+
+	return resp.Body, nil
 }
