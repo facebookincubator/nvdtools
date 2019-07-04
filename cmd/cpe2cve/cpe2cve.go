@@ -121,14 +121,14 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 			continue
 		}
 		cpeList := strings.Split(rec[cpesAt], cfg.inRecSep)
-		cpes := make([]*wfn.Attributes, len(cpeList))
-		for i, uri := range cpeList {
+		cpes := make([]*wfn.Attributes, 0, len(cpeList))
+		for _, uri := range cpeList {
 			attr, err := wfn.Parse(uri)
 			if err != nil {
 				glog.Errorf("couldn't parse uri %q: %v", uri, err)
 				continue
 			}
-			cpes[i] = attr
+			cpes = append(cpes, attr)
 		}
 		rec[cpesAt] = strings.Join(cpeList, cfg.outRecSep)
 		for _, matches := range cache.Get(cpes) {
