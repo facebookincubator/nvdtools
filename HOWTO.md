@@ -23,7 +23,7 @@ Finally, use the [cpe2cve](https://github.com/facebookincubator/nvdtools/tree/ma
 ```bash
 rpm -qa | \
 rpm2cpe -rpm=1 -cpe=2 | \
-cpe2cve -cpe=2 -cve=3 -cwe=4 -feed=json /tmp/nvd/*.json.gz
+cpe2cve -cpe=2 -cve=3 -cwe=4 /tmp/nvd/*.json.gz
 ```
 
 The command above process each CPE individually and prints their respective CVEs. However, it's not uncommon in the NVD database to have more elaborate CVEs which affect a combination of CPEs, e.g. if A and B and not C. For this case, you could group your CPEs per host, for example, and process them in a single batch:
@@ -32,7 +32,7 @@ The command above process each CPE individually and prints their respective CVEs
 set -o pipefail
 (hostname
 rpm -qa | rpm2cpe -rpm=1 -cpe=2 -e=1 | sort -u | paste -s -d, | \
-cpe2cve -cpe=1 -cve=2 -e=1 -feed=json /tmp/nvd/*.json.gz | paste -s -d,) | paste -s -d'\t'
+cpe2cve -cpe=1 -cve=2 -e=1 /tmp/nvd/*.json.gz | paste -s -d,) | paste -s -d'\t'
 ```
 
 The command above prints a single line containing `<hostname> <tab> <comma-separated list of CVEs>` for your machine. Great, but is unrealistic to use in each machine in production systems. That's when things start to get more interesting. See the next section for how to decouple this pipeline from collection to processing and reporting.
@@ -329,7 +329,7 @@ All the collector examples in previous sections put their generated CPE (or comm
 With the examples above, an execution of the CVE processor could take CPE(s) from column 1 of the input, and insert CVE in the same column, pushing the original input one column forward:
 
 ```bash
-cat inventory.csv | cpe2cve -cpe=1 -cve=1 -feed=json /tmp/nvd/*.json.gz
+cat inventory.csv | cpe2cve -cpe=1 -cve=1 /tmp/nvd/*.json.gz
 ```
 
 Check out the [--help](https://github.com/facebookincubator/nvdtools/blob/master/cmd/cpe2cve/cpe2cve.go#L51) flag for all options related to input and output delimiters, lists, caching, and extra columns you may want to add to the output, such as CVSS score and CWE of each CVE.

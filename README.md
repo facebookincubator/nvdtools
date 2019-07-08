@@ -70,7 +70,7 @@ The column to which output the CVE and matches for that CVE can be configured wi
 #### Example 1: scan a software for vulnerabilities
 
 ```bash
-echo "cpe:/a:gnu:glibc:2.28" | cpe2cve -feed json -cpe 1 -e 1 -cve 1 nvdcve-1.0-*.json.gz
+echo "cpe:/a:gnu:glibc:2.28" | cpe2cve -cpe 1 -e 1 -cve 1 nvdcve-1.0-*.json.gz
 CVE-2009-4881
 CVE-2015-8985
 CVE-2016-4429
@@ -81,7 +81,7 @@ CVE-2010-4756
 #### Example 2: find vulnerabilities in software inventory per production host
 
 ```bash
-./cpe2cve -feed json -d ' ' -d2 , -o ' ' -o2 , -cpe 2 -e 2 -matches 3 -cve 2 nvdcve-1.0-*.json.gz << EOF
+./cpe2cve -d ' ' -d2 , -o ' ' -o2 , -cpe 2 -e 2 -matches 3 -cve 2 nvdcve-1.0-*.json.gz << EOF
 host1.foo.bar cpe:/a:gnu:glibc:2.28,cpe:/a:gnu:zlib:1.2.8
 host2.foo.bar cpe:/a:gnu:glibc:2.28,cpe:/a:haxx:curl:7.55.0
 EOF
