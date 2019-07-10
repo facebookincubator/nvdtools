@@ -6,5 +6,5 @@
 
 ```bash
 export FLEXERA_TOKEN=token
-./flexera2nvd -since 2h > vulns.json
+./flexera2nvd -download -since 2h > vulns.json
 ```

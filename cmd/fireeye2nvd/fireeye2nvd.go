@@ -45,13 +45,13 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 }
 
 func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
-	publicKey := os.Getenv("FIREEYE_PUBLIC")
+	publicKey := os.Getenv("FIREEYE_PUBLIC_KEY")
 	if publicKey == "" {
-		return nil, fmt.Errorf("Please set FIREEYE_PUBLIC in environment")
+		return nil, fmt.Errorf("Please set FIREEYE_PUBLIC_KEY in environment")
 	}
-	privateKey := os.Getenv("FIREEYE_PRIVATE")
+	privateKey := os.Getenv("FIREEYE_PRIVATE_KEY")
 	if privateKey == "" {
-		return nil, fmt.Errorf("Please set FIREEYE_PRIVATE in environment")
+		return nil, fmt.Errorf("Please set FIREEYE_PRIVATE_KEY in environment")
 	}
 
 	client, err := api.NewClient(baseURL, userAgent, publicKey, privateKey)
