@@ -5,7 +5,7 @@
 ## Example: download all vulnerabilities since 2h ago
 
 ```bash
-export FIREEYE_PUBLIC=public_key
-export FIREEYE_PRIVATE=private_key
-./fireeye2nvd -since 2h > vulns.json
+export FIREEYE_PUBLIC_KEY=public_key
+export FIREEYE_PRIVATE_KEY=private_key
+./fireeye2nvd -download -since 2h > vulns.json
 ```

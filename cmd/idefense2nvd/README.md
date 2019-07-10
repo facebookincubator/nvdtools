@@ -6,5 +6,5 @@
 
 ```bash
 export IDEFENSE_TOKEN=token
-./idefense2nvd -since 2h > vulns.json 
+./idefense2nvd -download -since 2h > vulns.json 
 ```

@@ -51,15 +51,15 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 }
 
 func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
-	token := os.Getenv("SNYK_TOKEN")
-	if token == "" {
-		return nil, fmt.Errorf("Please set SNYK_TOKEN in environment")
+	consumerID := os.Getenv("SNYK_ID")
+	if consumerID == "" {
+		return nil, fmt.Errorf("Please set SNYK_ID in environment")
 	}
-	parts := strings.SplitN(strings.TrimSuffix(token, "\n"), ":", 2)
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return nil, fmt.Errorf("malformed token: must contain 'consumer_id:secret'")
+	secret := os.Getenv("SNYK_READONLY_KEY")
+	if secret == "" {
+		return nil, fmt.Errorf("Please set SNYK_READONLY_KEY in environment")
 	}
-	consumerID, secret := parts[0], parts[1]
+	
 	client := api.NewClient(baseURL, userAgent, consumerID, secret)
 
 	advs, err := client.FetchAllVulnerabilities(since)

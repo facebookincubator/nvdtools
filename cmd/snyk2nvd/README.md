@@ -5,8 +5,8 @@
 ## Example: download all vulnerabilities and convert them
 
 ```bash
-SNYK_TOKEN=token ./snyk2nvd -download -dont_convert > snyk.json
-./snyk2nvd -languages=golang snyk.json > snyk_golang.json
-./snyk2nvd -languages=python snyk.json > snyk_python.json
+SNYK_ID=id SNYK_READONLY_KEY=key ./snyk2nvd -download > snyk.json
+./snyk2nvd -convert -language=golang snyk.json > snyk_golang.json
+./snyk2nvd -convert -language=python snyk.json > snyk_python.json
 ...
 ```
