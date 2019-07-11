@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -35,10 +36,12 @@ type SummaryExporter struct {
 
 // SummaryRecord represents a record of the `summary` query
 type SummaryRecord struct {
-	DataType string `sql:"data_type"`
-	Provider string `sql:"provider"`
-	Version  string `sql:"version"`
-	CVEs     int64  `sql:"cves"`
+	DataType  string    `sql:"data_type"`
+	Provider  string    `sql:"provider"`
+	Version   string    `sql:"version"`
+	CVEs      int64     `sql:"cves"`
+	Published time.Time `sql:"published"`
+	Modified  time.Time `sql:"modified"`
 }
 
 // SummaryRecords retrieves the summary from the DB and returns it as a list of records
@@ -91,6 +94,8 @@ func (exp SummaryExporter) CSV(ctx context.Context, w io.Writer, header bool) er
 			record.Provider,
 			record.Version,
 			strconv.FormatInt(record.CVEs, 10),
+			record.Published.Format(TimeLayout),
+			record.Modified.Format(TimeLayout),
 		})
 	}
 	return nil
@@ -102,7 +107,9 @@ const summaryQuery = `
 		'snooze'      AS data_type,
 		provider      AS provider,
 		'current'     AS version,
-		COUNT(cve_id) AS cves
+		COUNT(cve_id) AS cves,
+        NULL          AS published,
+		NULL          AS modified
 	FROM
 		snooze
 	GROUP BY
@@ -113,10 +120,12 @@ UNION ALL
 
 (
 	SELECT
-		'custom_data' AS data_type,
-		provider      AS provider,
-		'current'     AS version,
-		COUNT(cve_id) AS cves
+		'custom_data'  AS data_type,
+		provider       AS provider,
+		'current'      AS version,
+		COUNT(cve_id)  AS cves,
+		MAX(published) AS published,
+		MAX(modified)  AS modified
 	FROM
 		custom_data
 	GROUP BY
@@ -127,10 +136,12 @@ UNION ALL
 
 (
 	SELECT
-		'vendor_data'             AS data_type,
-		vendor.provider           AS provider,
-		vendor.version            AS version,
-		COUNT(vendor_data.cve_id) AS cves
+		'vendor_data'              AS data_type,
+		vendor.provider            AS provider,
+		vendor.version             AS version,
+		COUNT(vendor_data.cve_id)  AS cves,
+		MAX(vendor_data.published) AS published,
+		MAX(vendor_data.modified)  AS modified
 	FROM
 		vendor_data
 	LEFT JOIN
