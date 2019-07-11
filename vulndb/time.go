@@ -16,10 +16,12 @@ package vulndb
 
 import (
 	"time"
+
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 )
 
 // TimeLayout is the layout of NVD CVE JSON timestamps.
-const TimeLayout = "2006-01-02T15:04Z"
+const TimeLayout = nvdcommon.TimeLayout
 
 // ParseTime parses s using TimeLayout.
 func ParseTime(s string) (time.Time, error) {

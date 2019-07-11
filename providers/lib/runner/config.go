@@ -20,9 +20,9 @@ import (
 	"regexp"
 	"strconv"
 	"time"
-)
 
-const timeLayout = "2006-01-02T15:04:06Z"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
+)
 
 // Config is used to configure the execution of the converter
 type Config struct {
@@ -38,7 +38,7 @@ func (c *Config) addFlags() {
 	flag.StringVar(&c.UserAgent, "user_agent", c.UserAgent, "User agent to be used when sending requests")
 	flag.BoolVar(&c.download, "download", false, "Should the data be downloaded or read from stdin/files")
 	flag.BoolVar(&c.convert, "convert", false, "Should the feed be converted to NVD format or not")
-	flag.Var(&c.downloadSince, "since", fmt.Sprintf("Since when to download. It can be a timestamp, golang duration or time in %q format. Default is timestamp=0", timeLayout))
+	flag.Var(&c.downloadSince, "since", fmt.Sprintf("Since when to download. It can be a timestamp, golang duration or time in %q format. Default is timestamp=0", nvdcommon.TimeLayout))
 }
 
 func (c *Config) validate() error {
@@ -85,7 +85,7 @@ func (ts *sinceTS) Set(val string) error {
 		return nil
 	}
 
-	if t, err := time.Parse(timeLayout, val); err == nil {
+	if t, err := time.Parse(nvdcommon.TimeLayout, val); err == nil {
 		*ts = sinceTS(t.Unix())
 		return nil
 	}
