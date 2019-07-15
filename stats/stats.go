@@ -42,6 +42,13 @@ func New() *Stats {
 	return &s
 }
 
+// AreLogged returns whether this stats object is getting logged
+// can be used to determine whether to keep adding stuff to it or not
+// if it's not being logged, one shouldn't even increment counters
+func (s *Stats) AreLogged() bool {
+	return s.LogToStderr || s.OutputFile != ""
+}
+
 // AddFlags adds configuration flags for a stats object
 func (s *Stats) AddFlags() {
 	flag.StringVar(&s.OutputFile, "output_stats", "", "output stats to this file")
@@ -134,6 +141,11 @@ var (
 	// global is the global stats object. It can be used when you only need one stats object between multiple modules in a program
 	global = New()
 )
+
+// AreLogged returns whether global stats are getting logged
+func AreLogged() bool {
+	return global.AreLogged()
+}
 
 // AddFlags adds configuration flags for the global stats object
 func AddFlags() {
