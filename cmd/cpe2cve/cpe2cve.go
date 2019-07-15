@@ -31,6 +31,7 @@ import (
 	"github.com/golang/glog"
 
 	"github.com/facebookincubator/nvdtools/cvefeed"
+	"github.com/facebookincubator/nvdtools/stats"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -120,11 +121,20 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 			glog.Errorf("not enough fields in input (%d)", len(rec))
 			continue
 		}
+		if stats.AreLogged() {
+			stats.IncrementCounter("line.total")
+		}
 		cpeList := strings.Split(rec[cpesAt], cfg.inRecSep)
 		cpes := make([]*wfn.Attributes, 0, len(cpeList))
 		for _, uri := range cpeList {
+			if stats.AreLogged() {
+				stats.IncrementCounter("cpe.total")
+			}
 			attr, err := wfn.Parse(uri)
 			if err != nil {
+				if stats.AreLogged() {
+					stats.IncrementCounter("cpe.error")
+				}
 				glog.Errorf("couldn't parse uri %q: %v", uri, err)
 				continue
 			}
@@ -132,7 +142,14 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 		}
 		rec[cpesAt] = strings.Join(cpeList, cfg.outRecSep)
 		for _, matches := range cache.Get(cpes) {
-			matchingCPEs := make([]string, len(matches.CPEs))
+			ml := len(matches.CPEs)
+			if stats.AreLogged() {
+				stats.IncrementCounterBy("cpe.match", int64(ml))
+				if ml != 0 {
+					stats.IncrementCounter("line.match")
+				}
+			}
+			matchingCPEs := make([]string, ml)
 			for i, attr := range matches.CPEs {
 				if attr == nil {
 					glog.Errorf("%s matches nil CPE", matches.CVE.CVEID())
@@ -223,6 +240,9 @@ func processInput(in io.Reader, out io.Writer, cache *cvefeed.Cache, cfg config)
 	close(procIn)
 	procWG.Wait()
 	close(procOut)
+	if stats.AreLogged() {
+		stats.TrackTime("process.time", start, time.Second)
+	}
 	glog.V(1).Infof("processed %d lines in %v", linesProcessed, time.Since(start))
 	return done
 }
@@ -238,13 +258,27 @@ func init() {
 }
 
 func main() {
+	// we do it like this because if we exit in Main, deferred functions don't get called
+	os.Exit(Main())
+}
+
+func Main() int {
 	var cfg config
 	cfg.addFlags()
+	stats.AddFlags()
 	flag.Parse()
 	cfg.mustBeValid()
 
-	glog.V(1).Info("loading NVD feeds...")
 	start := time.Now()
+
+	if stats.AreLogged() {
+		defer func(start time.Time) {
+			stats.TrackTime("run.time", start, time.Second)
+			stats.WriteAndLogError()
+		}(start)
+	}
+
+	glog.V(1).Info("loading NVD feeds...")
 	var overrides cvefeed.Dictionary
 	dict, err := cvefeed.LoadJSONDictionary(flag.Args()...)
 	if err == nil {
@@ -254,8 +288,11 @@ func main() {
 		glog.Error(err)
 		if len(dict) == 0 {
 			glog.Error("dictionary is empty")
-			os.Exit(-1)
+			return -1
 		}
+	}
+	if stats.AreLogged() {
+		stats.TrackTime("dictionary.load", start, time.Second)
 	}
 	glog.V(1).Infof("...done in %v", time.Since(start))
 
@@ -263,6 +300,9 @@ func main() {
 		start = time.Now()
 		glog.V(1).Info("applying overrides...")
 		dict.Override(overrides)
+		if stats.AreLogged() {
+			stats.TrackTime("overrides.apply", start, time.Second)
+		}
 		glog.V(1).Infof("...done in %v", time.Since(start))
 	}
 
@@ -272,6 +312,9 @@ func main() {
 		start = time.Now()
 		glog.V(1).Info("indexing the dictionary...")
 		cache.Idx = cvefeed.NewIndex(dict)
+		if stats.AreLogged() {
+			stats.TrackTime("dictionary.index", start, time.Second)
+		}
 		glog.V(1).Infof("...done in %v", time.Since(start))
 		if glog.V(2) {
 			var named, total int
@@ -288,7 +331,8 @@ func main() {
 	if cfg.cpuProfile != "" {
 		f, err := os.Create(cfg.cpuProfile)
 		if err != nil {
-			glog.Fatal(err)
+			glog.Error(err)
+			return 1
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
@@ -299,7 +343,8 @@ func main() {
 	if cfg.memProfile != "" {
 		f, err := os.Create(cfg.memProfile)
 		if err != nil {
-			glog.Fatal(err)
+			glog.Error(err)
+			return 1
 		}
 		runtime.GC()
 		if err = pprof.WriteHeapProfile(f); err != nil {
@@ -309,4 +354,5 @@ func main() {
 	}
 
 	<-done
+	return 0
 }
