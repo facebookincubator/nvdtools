@@ -69,7 +69,7 @@ func extractNameAndVersion(product string) (name, version string, err error) {
 	if match := productRegex.FindStringSubmatch(product); match != nil {
 		return match[1], match[2], nil
 	}
-	return "", "", fmt.Errorf("Couldn't extract name and version using regex")
+	return "", "", fmt.Errorf("couldn't extract name and version using regex")
 }
 
 func createAttributes(part, product, version string) (*wfn.Attributes, error) {

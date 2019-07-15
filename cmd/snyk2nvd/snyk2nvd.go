@@ -53,13 +53,13 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
 	consumerID := os.Getenv("SNYK_ID")
 	if consumerID == "" {
-		return nil, fmt.Errorf("Please set SNYK_ID in environment")
+		return nil, fmt.Errorf("please set SNYK_ID in environment")
 	}
 	secret := os.Getenv("SNYK_READONLY_KEY")
 	if secret == "" {
-		return nil, fmt.Errorf("Please set SNYK_READONLY_KEY in environment")
+		return nil, fmt.Errorf("please set SNYK_READONLY_KEY in environment")
 	}
-	
+
 	client := api.NewClient(baseURL, userAgent, consumerID, secret)
 
 	advs, err := client.FetchAllVulnerabilities(since)

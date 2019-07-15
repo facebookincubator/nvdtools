@@ -46,7 +46,8 @@ func TestCacheEviction(t *testing.T) {
 			}
 			matches := cache.Get(inventory)
 			if len(matches) != 1 {
-				t.Fatalf("variant %d: cache.Get() returned wrong amount of matches (%d, 1 was expected)", variant, len(matches))
+				t.Errorf("variant %d: cache.Get() returned wrong amount of matches (%d, 1 was expected)", variant, len(matches))
+				return
 			}
 			if len(matches[0].CPEs) != 1 {
 				t.Errorf("variant %d: cache.Get() returned wrong a match with wrong number of CPEs (%d, 1 was expected)", variant, len(matches[0].CPEs))

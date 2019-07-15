@@ -108,10 +108,12 @@ func (s SnoozeGetter) CSV(ctx context.Context, w io.Writer, header bool) error {
 	}
 
 	if s.Provider != "" {
-		if cond != nil {
+		if cond == nil {
+			cond = sqlutil.Cond()
+		} else {
 			cond = cond.And()
 		}
-		cond = sqlutil.Cond().Equal("provider", s.Provider)
+		cond = cond.Equal("provider", s.Provider)
 	}
 
 	if len(s.FilterCVEs) > 0 {
