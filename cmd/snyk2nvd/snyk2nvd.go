@@ -59,7 +59,7 @@ func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertib
 	if secret == "" {
 		return nil, fmt.Errorf("Please set SNYK_READONLY_KEY in environment")
 	}
-	
+
 	client := api.NewClient(baseURL, userAgent, consumerID, secret)
 
 	advs, err := client.FetchAllVulnerabilities(since)
@@ -79,6 +79,7 @@ func main() {
 
 	if err := r.Run(); err != nil {
 		log.Println(err)
+		os.Exit(1)
 	}
 }
 

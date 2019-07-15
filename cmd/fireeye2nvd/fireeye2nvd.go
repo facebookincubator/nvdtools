@@ -74,5 +74,6 @@ func main() {
 
 	if err := r.Run(); err != nil {
 		log.Println(err)
+		os.Exit(1)
 	}
 }
