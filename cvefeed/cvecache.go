@@ -56,9 +56,7 @@ func NewIndex(d Dictionary) Index {
 
 func collectCPEs(dict []LogicalTest) (cpes []*wfn.Attributes) {
 	for _, d := range dict {
-		for _, cpe := range d.CPEs() {
-			cpes = append(cpes, cpe)
-		}
+		cpes = append(cpes, d.CPEs()...)
 		if children := d.InnerTests(); len(children) != 0 {
 			cpes = append(cpes, collectCPEs(children)...)
 		}

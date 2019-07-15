@@ -50,11 +50,11 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
 	clientID := os.Getenv("RBS_CLIENT_ID")
 	if clientID == "" {
-		return nil, fmt.Errorf("Please set RBS_CLIENT_ID in environment")
+		return nil, fmt.Errorf("please set RBS_CLIENT_ID in environment")
 	}
 	clientSecret := os.Getenv("RBS_CLIENT_SECRET")
 	if clientSecret == "" {
-		return nil, fmt.Errorf("Please set RBS_CLIENT_SECRET in environment")
+		return nil, fmt.Errorf("olease set RBS_CLIENT_SECRET in environment")
 	}
 
 	client, err := api.NewClient(clientID, clientSecret, tokenURL, baseURL, userAgent)

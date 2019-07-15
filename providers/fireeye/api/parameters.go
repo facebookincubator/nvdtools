@@ -46,13 +46,13 @@ func newParametersSince(since int64) timeRangeParameters {
 
 func (vp timeRangeParameters) validate() error {
 	if vp.StartDate < 0 {
-		return fmt.Errorf("Start date (%d) can't be < 0 ", vp.StartDate)
+		return fmt.Errorf("start date (%d) can't be < 0 ", vp.StartDate)
 	}
 	if vp.EndDate < 0 {
-		return fmt.Errorf("End date (%d) can't be < 0 ", vp.EndDate)
+		return fmt.Errorf("end date (%d) can't be < 0 ", vp.EndDate)
 	}
 	if vp.EndDate < vp.StartDate {
-		return fmt.Errorf("End date can't be < start date: %s", vp)
+		return fmt.Errorf("end date can't be < start date: %s", vp)
 	}
 	return nil
 }

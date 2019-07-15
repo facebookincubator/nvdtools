@@ -48,7 +48,7 @@ func NewClient(clientID, clientSecret, tokenURL, baseURL, userAgent string) (*Cl
 		return nil, fmt.Errorf("couldn't obtain http client: %v", err)
 	}
 
-	ctx := context.WithValue(oauth2.NoContext, oauth2.HTTPClient, httpClient)
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
 
 	conf := &clientcredentials.Config{
 		ClientID:     clientID,
@@ -75,8 +75,7 @@ func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible
 	from := time.Unix(since, 0)
 	getEndpoint := func() string {
 		// we need to recalculate hours ago on each request, if the fetching takes more than an hour
-		duration := time.Now().Sub(from)
-		u := fmt.Sprintf("find_by_time_full?hours_ago=%d", int(duration.Hours()))
+		u := fmt.Sprintf("find_by_time_full?hours_ago=%d", int(time.Since(from).Hours()))
 		return u
 	}
 	return c.fetchAllVulnerabilities(getEndpoint)

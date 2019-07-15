@@ -60,7 +60,7 @@ func MergeCVEItems(x, y CVEItem) CVEItem {
 
 	// CWE merging: append + unique
 	var cwes []string
-	var set map[string]bool
+	set := map[string]bool{}
 	for _, cwe := range x.ProblemTypes() {
 		set[cwe] = true
 	}

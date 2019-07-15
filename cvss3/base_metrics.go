@@ -173,16 +173,11 @@ const (
 )
 
 var (
-	weightsScope = []float64{0, 0.0, 0.0}
-	codeScope    = []string{"", "U", "C"}
+	codeScope = []string{"", "U", "C"}
 )
 
 func (s Scope) defined() bool {
 	return int(s) != 0
-}
-
-func (s Scope) weight() float64 {
-	return weightsScope[s]
 }
 
 func (s Scope) String() string {

@@ -228,52 +228,6 @@ func contains(in []string, s string) bool {
 	return false
 }
 
-var testDictXMLStr = `
-<?xml version='1.0' encoding='UTF-8'?>
-<nvd>
-  <entry id="CVE-2016-0165">
-    <vuln:vulnerable-configuration id="http://nvd.nist.gov/">
-      <cpe-lang:logical-test operator="OR" negate="false">
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_10:-"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_10:1511"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_7::sp1"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_8.1"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_rt_8.1:-"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_server_2008::sp2"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_server_2008:r2:sp1"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_server_2012:-"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_server_2012:r2"/>
-        <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_vista::sp2"/>
-      </cpe-lang:logical-test>
-    </vuln:vulnerable-configuration>
-  </entry>
-  <entry id="CVE-2666-1337">
-    <vuln:vulnerable-configuration id="http://nvd.nist.gov/">
-      <cpe-lang:logical-test operator="AND" negate="false">
-        <cpe-lang:logical-test operator="OR" negate="false">
-          <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_10"/>
-        </cpe-lang:logical-test>
-        <cpe-lang:logical-test operator="OR" negate="false">
-          <cpe-lang:fact-ref name="cpe:/a:adobe:flash_player:24.0.0.194"/>
-        </cpe-lang:logical-test>
-      </cpe-lang:logical-test>
-    </vuln:vulnerable-configuration>
-  </entry>
-  <entry id="CVE-2666-6969">
-    <vuln:vulnerable-configuration id="http://nvd.nist.gov/">
-      <cpe-lang:logical-test operator="AND" negate="false">
-        <cpe-lang:logical-test operator="OR" negate="false">
-          <cpe-lang:fact-ref name="cpe:/o:microsoft:windows_10"/>
-        </cpe-lang:logical-test>
-        <cpe-lang:logical-test operator="OR" negate="false">
-          <cpe-lang:fact-ref name="cpe:/a:adobe:flash_player:24.0.1"/>
-        </cpe-lang:logical-test>
-      </cpe-lang:logical-test>
-    </vuln:vulnerable-configuration>
-  </entry>
-</nvd>
-`
-
 var testDictJSONStr = `{
 "CVE_data_type" : "CVE",
 "CVE_data_format" : "MITRE",

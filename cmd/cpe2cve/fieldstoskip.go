@@ -47,9 +47,9 @@ func (fs fieldsToSkip) appendAt(to []string, args ...interface{}) []string {
 	keys := make([]int, 0, len(args)/2)
 	pos := -1
 	for _, arg := range args {
-		switch arg.(type) {
+		switch arg := arg.(type) {
 		case int:
-			pos = arg.(int)
+			pos = arg
 			if pos >= 0 {
 				keys = append(keys, pos)
 			}
@@ -57,7 +57,7 @@ func (fs fieldsToSkip) appendAt(to []string, args ...interface{}) []string {
 			if pos < 0 {
 				break
 			}
-			fields[pos] = arg.(string)
+			fields[pos] = arg
 			pos = -1
 		default:
 			panic(fmt.Sprintf("appendAt: unsupported type %T", arg))

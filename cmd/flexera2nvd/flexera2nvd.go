@@ -47,7 +47,7 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
 	apiKey := os.Getenv("FLEXERA_TOKEN")
 	if apiKey == "" {
-		return nil, fmt.Errorf("Please set FLEXERA_TOKEN in environment")
+		return nil, fmt.Errorf("please set FLEXERA_TOKEN in environment")
 	}
 
 	client := api.NewClient(baseURL, userAgent, apiKey)

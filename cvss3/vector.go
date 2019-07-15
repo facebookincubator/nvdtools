@@ -60,10 +60,7 @@ func (v Vector) String() string {
 // VectorFromString will parse a string into a Vector, or return an error if it can't be parsed
 func VectorFromString(str string) (Vector, error) {
 	// remove prefix if exists
-	str = strings.ToUpper(str)
-	if strings.HasPrefix(str, prefix) {
-		str = str[len(prefix):]
-	}
+	str = strings.TrimPrefix(strings.ToUpper(str), prefix)
 
 	var v Vector
 	parseables := v.parseables()

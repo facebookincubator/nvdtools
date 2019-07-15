@@ -27,7 +27,7 @@ const (
 // Convert converts  advisories to NVD format
 func (item *Advisory) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
 	if item.Products == nil {
-		return nil, fmt.Errorf("No products associated with advisory")
+		return nil, fmt.Errorf("no products associated with advisory")
 	}
 
 	var cpes []string
@@ -37,7 +37,7 @@ func (item *Advisory) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
 		}
 	}
 	if len(cpes) == 0 {
-		return nil, fmt.Errorf("No cpes associated with advisory")
+		return nil, fmt.Errorf("no cpes associated with advisory")
 	}
 
 	lastModifiedDate, err := convertTime(item.ModifiedDate)
