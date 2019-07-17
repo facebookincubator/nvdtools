@@ -134,8 +134,8 @@ func (c Client) Fetch(identifier string) (*schema.Advisory, error) {
 func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.AdvisoryListResult, error) {
 	var list schema.AdvisoryListResult
 	params := map[string]interface{}{
-		"released__gte": from,
-		"released__lt":  to,
+		"modified__gte": from,
+		"modified__lt":  to,
 		"page":          page,
 		"page_size":     pageSize,
 	}
@@ -148,8 +148,8 @@ func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.AdvisoryLis
 func (c Client) getNumberOfAdvisories(from, to int64) (int, error) {
 	var list schema.AdvisoryListResult
 	params := map[string]interface{}{
-		"released__gte": from,
-		"released__lt":  to,
+		"modified__gte": from,
+		"modified__lt":  to,
 		"page_size":     1,
 	}
 	if err := c.query(advisoriesEndpoint, params, &list); err != nil {

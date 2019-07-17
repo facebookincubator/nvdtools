@@ -55,8 +55,9 @@ func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible,
 	sinceStr := time.Unix(since, 0).Format("2006-01-02T15:04:05.000Z")
 
 	result, err := c.queryVulnerabilities(map[string]interface{}{
-		"last_published.from": sinceStr,
-		"page_size":           0,
+		"last_modified.from":      sinceStr,
+		"last_modified.inclusive": "true",
+		"page_size":               0,
 	})
 	if err != nil {
 		return nil, err
@@ -79,9 +80,10 @@ func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible,
 		go func() {
 			defer wg.Done()
 			result, err := c.queryVulnerabilities(map[string]interface{}{
-				"last_published.from": sinceStr,
-				"page_size":           pageSize,
-				"page":                page,
+				"last_modified.from":      sinceStr,
+				"last_modified.inclusive": "true",
+				"page_size":               pageSize,
+				"page":                    page,
 			})
 			if err != nil {
 				log.Printf("failed to get page %d: %v", page, err)

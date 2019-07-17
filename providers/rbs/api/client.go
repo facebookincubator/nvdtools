@@ -73,12 +73,10 @@ func (c *Client) FetchAllVulnerabilitiesAfterVulndbID(vulndbID int) (<-chan runn
 
 func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
 	from := time.Unix(since, 0)
-	getEndpoint := func() string {
+	return c.fetchAllVulnerabilities(func() string {
 		// we need to recalculate hours ago on each request, if the fetching takes more than an hour
-		u := fmt.Sprintf("find_by_time_full?hours_ago=%d", int(time.Since(from).Hours()))
-		return u
-	}
-	return c.fetchAllVulnerabilities(getEndpoint)
+		return fmt.Sprintf("find_by_time_full?hours_ago=%d", int(time.Since(from).Hours()))
+	})
 }
 
 func (c *Client) fetchAllVulnerabilities(getEndpoint func() string) (<-chan runner.Convertible, error) {
