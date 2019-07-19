@@ -35,87 +35,8 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-type config struct {
-	nProcessors                      int
-	cpesAt, cvesAt, matchesAt        int
-	cwesAt, cvss2at, cvss3at, cvssAt int
-	inFieldSep, inRecSep             string
-	outFieldSep, outRecSep           string
-	cpuProfile, memProfile           string
-	skip                             fieldsToSkip
-	indexedDict                      bool
-	requireVersion                   bool
-	cacheSize                        int64
-	overrides                        multiString
-	provider                         string
-	providerAt                       int
-}
-
-func (c *config) addFlags() {
-	flag.IntVar(&c.nProcessors, "nproc", 1, "number of concurrent goroutines that perform CVE lookup")
-	flag.IntVar(&c.cpesAt, "cpe", 0, "look for CPE names in input at this position (starts with 1)")
-	flag.IntVar(&c.cvesAt, "cve", 0, "output CVEs at this position (starts with 1)")
-	flag.IntVar(&c.cwesAt, "cwe", 0, "output problem types (CWEs) at this position (starts with 1)")
-	flag.IntVar(&c.cvssAt, "cvss", 0, "output CVSS base score (v3 if available, v2 otherwise) at this position (starts with 1)")
-	flag.IntVar(&c.cvss2at, "cvss2", 0, "output CVSS 2.0 base score at this position (starts with 1)")
-	flag.IntVar(&c.cvss3at, "cvss3", 0, "output CVSS 3.0 base score at this position (starts with 1)")
-	flag.IntVar(&c.matchesAt, "matches", 0, "output CPEs that matches CVE at this position; 0 disables the output")
-	flag.Int64Var(&c.cacheSize, "cache_size", 0, "limit the cache size to this amount in bytes; 0 removes the limit, -1 disables caching")
-	flag.StringVar(&c.inFieldSep, "d", "\t", "input columns delimiter")
-	flag.StringVar(&c.inRecSep, "d2", ",", "inner input columns delimiter: separates elements of list passed into a CSV columns")
-	flag.StringVar(&c.outFieldSep, "o", "\t", "output columns delimiter")
-	flag.StringVar(&c.outRecSep, "o2", ",", "inner output columns delimiter: separates elements of lists in output CSV columns")
-	flag.StringVar(&c.cpuProfile, "cpuprofile", "", "file to store CPU profile data to; empty value disables CPU profiling")
-	flag.StringVar(&c.memProfile, "memprofile", "", "file to store memory profile data to; empty value disables memory profiling")
-	flag.Var(&c.skip, "e", "comma separated list of fields to erase from output; starts at 1, supports ranges (e.g. 1-3); processed before the vulnerablitie field added")
-	flag.BoolVar(&c.indexedDict, "idxd", false, "build and use an index for CVE dictionary: increases the processing speed, but might miss some matches")
-	flag.BoolVar(&c.requireVersion, "require_version", false, "ignore matches of CPEs with version ANY")
-	flag.Var(&c.overrides, "r", "overRide: path to override feed, can be specified multiple times")
-	flag.StringVar(&c.provider, "provider", "", "feed provider. affects the output only when the provider_field is specified: adds the $provider into that field")
-	flag.IntVar(&c.providerAt, "provider_field", 0, "where should the provider be placed in the output (starts with 1). when using this, also specify the provider")
-}
-
-func (c *config) mustBeValid() {
-	if flag.NArg() < 1 {
-		glog.Error("feed file wasn't provided")
-		flag.Usage()
-	}
-	if c.cpesAt <= 0 {
-		glog.Error("-cpe flag wasn't provided")
-		flag.Usage()
-	}
-	if c.cvesAt <= 0 {
-		glog.Error("-cve flag wasn't provided")
-		flag.Usage()
-	}
-	if c.matchesAt < 0 {
-		glog.Errorf("-matches value is invalid %d", c.matchesAt)
-		flag.Usage()
-	}
-	if c.cwesAt < 0 {
-		glog.Errorf("-cwe value is invalid %d", c.cwesAt)
-		flag.Usage()
-	}
-	if c.cvss2at < 0 {
-		glog.Errorf("-cvss2 value is invalid %d", c.cvss2at)
-		flag.Usage()
-	}
-	if c.cvss3at < 0 {
-		glog.Errorf("-cvss2 value is invalid %d", c.cvss3at)
-		flag.Usage()
-	}
-	if c.cvssAt < 0 {
-		glog.Errorf("-cvss value is invalid %d", c.cvssAt)
-		flag.Usage()
-	}
-	if c.providerAt > 0 && c.provider == "" {
-		glog.Errorf("provider field was specified without the specifying the provider")
-		flag.Usage()
-	}
-}
-
-func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg config, nlines *uint64) {
-	cpesAt := cfg.cpesAt - 1
+func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvefeed.Cache, cfg config, nlines *uint64) {
+	cpesAt := cfg.CPEsAt - 1
 	for rec := range in {
 		if cpesAt >= len(rec) {
 			glog.Errorf("not enough fields in input (%d)", len(rec))
@@ -124,7 +45,7 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 		if stats.AreLogged() {
 			stats.IncrementCounter("line.total")
 		}
-		cpeList := strings.Split(rec[cpesAt], cfg.inRecSep)
+		cpeList := strings.Split(rec[cpesAt], cfg.InRecordSeparator)
 		cpes := make([]*wfn.Attributes, 0, len(cpeList))
 		for _, uri := range cpeList {
 			if stats.AreLogged() {
@@ -132,49 +53,60 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 			}
 			attr, err := wfn.Parse(uri)
 			if err != nil {
-				if stats.AreLogged() {
-					stats.IncrementCounter("cpe.error")
-				}
 				glog.Errorf("couldn't parse uri %q: %v", uri, err)
 				continue
 			}
 			cpes = append(cpes, attr)
 		}
-		rec[cpesAt] = strings.Join(cpeList, cfg.outRecSep)
-		for _, matches := range cache.Get(cpes) {
-			ml := len(matches.CPEs)
-			if stats.AreLogged() {
-				stats.IncrementCounterBy("cpe.match", int64(ml))
-				if ml != 0 {
-					stats.IncrementCounter("line.match")
+		rec[cpesAt] = strings.Join(cpeList, cfg.OutRecordSeparator)
+
+		// if performance seems to be the issue, we could try to make these cache.Get's concurrent:
+		//
+		// wg := sync.WaitGroup{}
+		// for provider, cache := range caches {
+		// 	provider, cache := provider, cache
+		// 	wg.Add(1)
+		// 	go func() {
+		// 		defer wg.Done()
+		// 		for _, matches := range cache.Get(cpes) {
+		// ...
+		for provider, cache := range caches {
+			for _, matches := range cache.Get(cpes) {
+				ml := len(matches.CPEs)
+				if stats.AreLogged() {
+					stats.IncrementCounterBy("cpe.match", int64(ml))
+					if ml != 0 {
+						stats.IncrementCounter("line.match")
+					}
 				}
-			}
-			matchingCPEs := make([]string, ml)
-			for i, attr := range matches.CPEs {
-				if attr == nil {
-					glog.Errorf("%s matches nil CPE", matches.CVE.CVEID())
-					continue
+				matchingCPEs := make([]string, ml)
+				for i, attr := range matches.CPEs {
+					if attr == nil {
+						glog.Errorf("%s matches nil CPE", matches.CVE.CVEID())
+						continue
+					}
+					matchingCPEs[i] = (*wfn.Attributes)(attr).BindToURI()
 				}
-				matchingCPEs[i] = (*wfn.Attributes)(attr).BindToURI()
+				rec2 := make([]string, len(rec))
+				copy(rec2, rec)
+				cvss := matches.CVE.CVSS30base()
+				if cvss == 0 {
+					cvss = matches.CVE.CVSS20base()
+				}
+				rec2 = cfg.EraseFields.appendAt(
+					rec2,
+					cfg.CVEsAt-1, matches.CVE.CVEID(),
+					cfg.MatchesAt-1, strings.Join(matchingCPEs, cfg.OutRecordSeparator),
+					cfg.CWEsAt-1, strings.Join(matches.CVE.ProblemTypes(), cfg.OutRecordSeparator),
+					cfg.CVSS2At-1, fmt.Sprintf("%.1f", matches.CVE.CVSS20base()),
+					cfg.CVSS3At-1, fmt.Sprintf("%.1f", matches.CVE.CVSS30base()),
+					cfg.CVSSAt-1, fmt.Sprintf("%.1f", cvss),
+					cfg.ProviderAt-1, provider,
+				)
+				out <- rec2
 			}
-			rec2 := make([]string, len(rec))
-			copy(rec2, rec)
-			cvss := matches.CVE.CVSS30base()
-			if cvss == 0 {
-				cvss = matches.CVE.CVSS20base()
-			}
-			rec2 = cfg.skip.appendAt(
-				rec2,
-				cfg.cvesAt-1, matches.CVE.CVEID(),
-				cfg.matchesAt-1, strings.Join(matchingCPEs, cfg.outRecSep),
-				cfg.cwesAt-1, strings.Join(matches.CVE.ProblemTypes(), cfg.outRecSep),
-				cfg.cvss2at-1, fmt.Sprintf("%.1f", matches.CVE.CVSS20base()),
-				cfg.cvss3at-1, fmt.Sprintf("%.1f", matches.CVE.CVSS30base()),
-				cfg.cvssAt-1, fmt.Sprintf("%.1f", cvss),
-				cfg.providerAt-1, cfg.provider,
-			)
-			out <- rec2
 		}
+
 		n := atomic.AddUint64(nlines, 1)
 		if n > 0 {
 			if n%10000 == 0 {
@@ -188,24 +120,24 @@ func process(in <-chan []string, out chan<- []string, cache *cvefeed.Cache, cfg 
 	}
 }
 
-func processInput(in io.Reader, out io.Writer, cache *cvefeed.Cache, cfg config) chan struct{} {
+func processInput(in io.Reader, out io.Writer, caches map[string]*cvefeed.Cache, cfg config) chan struct{} {
 	done := make(chan struct{})
 	procIn := make(chan []string)
 	procOut := make(chan []string)
 
 	r := csv.NewReader(in)
-	r.Comma = rune(cfg.inFieldSep[0])
+	r.Comma = rune(cfg.InFieldSeparator[0])
 
 	w := csv.NewWriter(out)
-	w.Comma = rune(cfg.outFieldSep[0])
+	w.Comma = rune(cfg.OutFieldSeparator[0])
 
 	// spawn processing goroutines
 	var linesProcessed uint64
 	var procWG sync.WaitGroup
-	procWG.Add(cfg.nProcessors)
-	for i := 0; i < cfg.nProcessors; i++ {
+	procWG.Add(cfg.NumProcessors)
+	for i := 0; i < cfg.NumProcessors; i++ {
 		go func() {
-			process(procIn, procOut, cache, cfg, &linesProcessed)
+			processAll(procIn, procOut, caches, cfg, &linesProcessed)
 			procWG.Done()
 		}()
 	}
@@ -240,9 +172,6 @@ func processInput(in io.Reader, out io.Writer, cache *cvefeed.Cache, cfg config)
 	close(procIn)
 	procWG.Wait()
 	close(procOut)
-	if stats.AreLogged() {
-		stats.TrackTime("process.time", start, time.Second)
-	}
 	glog.V(1).Infof("processed %d lines in %v", linesProcessed, time.Since(start))
 	return done
 }
@@ -252,6 +181,9 @@ func init() {
 		fmt.Fprintf(os.Stderr, "usage: %s [flags] nvd_feed.xml.gz...\n", path.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "flags:\n")
 		flag.PrintDefaults()
+		if glog.V(1) {
+			writeConfigFileDefinition(os.Stderr)
+		}
 		os.Exit(1)
 	}
 	flag.Set("logtostderr", "true")
@@ -266,8 +198,30 @@ func Main() int {
 	var cfg config
 	cfg.addFlags()
 	stats.AddFlags()
+	provider := flag.String("provider", "", "feed provider. used as a provider name for the feeds passed in through the command line")
+	cfgFile := flag.String("config", "", "path to a config file (JSON or TOML); see usage to see how it's configured (pass -v=1 flag for verbose help). Mutually exclusive with command line flags => when used, other flags are ignored")
 	flag.Parse()
-	cfg.mustBeValid()
+
+	var err error
+	if *cfgFile != "" {
+		// override config from config file
+		cfg, err = readConfigFile(*cfgFile)
+	}
+	if err != nil {
+		// add all feeds from cmdline
+		cfg.addFeedsFromArgs(*provider, flag.Args()...)
+	}
+	if err != nil {
+		glog.Error(err)
+		flag.Usage()
+	}
+
+	// setup done
+
+	if err := cfg.validate(); err != nil {
+		glog.Error(err)
+		flag.Usage()
+	}
 
 	start := time.Now()
 
@@ -279,57 +233,72 @@ func Main() int {
 	}
 
 	glog.V(1).Info("loading NVD feeds...")
+
 	var overrides cvefeed.Dictionary
-	dict, err := cvefeed.LoadJSONDictionary(flag.Args()...)
-	if err == nil {
-		overrides, err = cvefeed.LoadJSONDictionary(cfg.overrides...)
+	dicts := map[string]cvefeed.Dictionary{} // provider -> dictionary
+	for provider, files := range cfg.Feeds {
+		dict, err := cvefeed.LoadJSONDictionary(files...)
+		if err != nil {
+			glog.Errorf("failed to load dictionary for provider %s: %v", provider, err)
+		}
+		dicts[provider] = dict
 	}
-	if err != nil {
-		glog.Error(err)
-		if len(dict) == 0 {
-			glog.Error("dictionary is empty")
-			return -1
+
+	allEmpty := true
+	for _, dict := range dicts {
+		if len(dict) != 0 {
+			allEmpty = false
+			break
 		}
 	}
-	if stats.AreLogged() {
-		stats.TrackTime("dictionary.load", start, time.Second)
+	if allEmpty {
+		glog.Error(fmt.Errorf("all dictionaries are empty"))
+		return -1
 	}
+	
+	overrides, err = cvefeed.LoadJSONDictionary(cfg.FeedOverrides...)
+	if err != nil {
+		glog.Error(err)
+		return -1
+	}
+
 	glog.V(1).Infof("...done in %v", time.Since(start))
 
 	if len(overrides) != 0 {
 		start = time.Now()
 		glog.V(1).Info("applying overrides...")
-		dict.Override(overrides)
-		if stats.AreLogged() {
-			stats.TrackTime("overrides.apply", start, time.Second)
+		for _, dict := range dicts {
+			dict.Override(overrides)
 		}
 		glog.V(1).Infof("...done in %v", time.Since(start))
 	}
 
-	cache := cvefeed.NewCache(dict).SetRequireVersion(cfg.requireVersion).SetMaxSize(cfg.cacheSize)
+	caches := map[string]*cvefeed.Cache{}
+	for provider, dict := range dicts {
+		caches[provider] = cvefeed.NewCache(dict).SetRequireVersion(cfg.RequireVersion).SetMaxSize(cfg.CacheSize)
+	}
 
-	if cfg.indexedDict {
+	if cfg.IndexDict {
 		start = time.Now()
-		glog.V(1).Info("indexing the dictionary...")
-		cache.Idx = cvefeed.NewIndex(dict)
-		if stats.AreLogged() {
-			stats.TrackTime("dictionary.index", start, time.Second)
+		glog.V(1).Info("indexing dictionaries...")
+		for provider, cache := range caches {
+			cache.Idx = cvefeed.NewIndex(dicts[provider])
+			if glog.V(2) {
+				var named, total int
+				for k, v := range cache.Idx {
+					if k != wfn.Any {
+						named += len(v)
+					}
+					total += len(v)
+				}
+				glog.Infof("%d out of %d records are named", named, total)
+			}
 		}
 		glog.V(1).Infof("...done in %v", time.Since(start))
-		if glog.V(2) {
-			var named, total int
-			for k, v := range cache.Idx {
-				if k != wfn.Any {
-					named += len(v)
-				}
-				total += len(v)
-			}
-			glog.Infof("%d out of %d records are named", named, total)
-		}
 	}
 
-	if cfg.cpuProfile != "" {
-		f, err := os.Create(cfg.cpuProfile)
+	if cfg.CPUProfile != "" {
+		f, err := os.Create(cfg.CPUProfile)
 		if err != nil {
 			glog.Error(err)
 			return 1
@@ -338,10 +307,10 @@ func Main() int {
 		defer pprof.StopCPUProfile()
 	}
 
-	done := processInput(os.Stdin, os.Stdout, cache, cfg)
+	done := processInput(os.Stdin, os.Stdout, caches, cfg)
 
-	if cfg.memProfile != "" {
-		f, err := os.Create(cfg.memProfile)
+	if cfg.MemoryProfile != "" {
+		f, err := os.Create(cfg.MemoryProfile)
 		if err != nil {
 			glog.Error(err)
 			return 1

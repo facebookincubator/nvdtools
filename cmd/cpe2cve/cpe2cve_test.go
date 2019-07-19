@@ -78,17 +78,17 @@ func TestProcessInput(t *testing.T) {
 	}
 	cacheJSON := cvefeed.NewCache(testDictJSON)
 	cfg := config{
-		nProcessors: 2,
-		cpesAt:      4,
-		cvesAt:      6,
-		matchesAt:   7,
-		inFieldSep:  ",",
-		outFieldSep: "|",
-		inRecSep:    "+",
-		outRecSep:   "&",
-		cpuProfile:  "",
-		memProfile:  "",
-		skip:        getSkip([]int{1, 3}),
+		NumProcessors:      2,
+		CPEsAt:             4,
+		CVEsAt:             6,
+		MatchesAt:          7,
+		InFieldSeparator:   ",",
+		OutFieldSeparator:  "|",
+		InRecordSeparator:  "+",
+		OutRecordSeparator: "&",
+		CPUProfile:         "",
+		MemoryProfile:      "",
+		EraseFields:        getSkip([]int{1, 3}),
 	}
 	for cacheID, cache := range []*cvefeed.Cache{cacheJSON} {
 		for i, c := range cases {
@@ -96,7 +96,7 @@ func TestProcessInput(t *testing.T) {
 			t.Run(fmt.Sprintf("cache#%d case #%d", cacheID+1, i+1), func(t *testing.T) {
 				var w bytes.Buffer
 				r := strings.NewReader(c.in)
-				done := processInput(r, &w, cache, cfg)
+				done := processInput(r, &w, singleCache(cache), cfg)
 				<-done
 				got := strings.Split(strings.TrimSpace(w.String()), "\n")
 				if len(got) != len(c.out) {
@@ -129,18 +129,18 @@ func TestProcessInputFalsePositives(t *testing.T) {
 	}
 	cache := cvefeed.NewCache(dict)
 	cfg := config{
-		nProcessors: 2,
-		cpesAt:      1,
-		cvesAt:      3,
-		matchesAt:   2,
-		inFieldSep:  ",",
-		inRecSep:    ";",
-		outFieldSep: ",",
-		outRecSep:   ";",
+		NumProcessors:      2,
+		CPEsAt:             1,
+		CVEsAt:             3,
+		MatchesAt:          2,
+		InFieldSeparator:   ",",
+		OutFieldSeparator:  ";",
+		InRecordSeparator:  ",",
+		OutRecordSeparator: ";",
 	}
 	var w bytes.Buffer
 	r := strings.NewReader(in)
-	done := processInput(r, &w, cache, cfg)
+	done := processInput(r, &w, singleCache(cache), cfg)
 	<-done
 	out := strings.TrimSpace(w.String())
 	if out != "" {
@@ -158,19 +158,19 @@ func TestProcessInputRequireVersion(t *testing.T) {
 	}
 	cache := cvefeed.NewCache(dict).SetRequireVersion(true)
 	cfg := config{
-		nProcessors:    2,
-		cpesAt:         1,
-		cvesAt:         3,
-		matchesAt:      2,
-		inFieldSep:     ",",
-		inRecSep:       ";",
-		outFieldSep:    ",",
-		outRecSep:      ";",
-		requireVersion: true,
+		NumProcessors:      2,
+		CPEsAt:             1,
+		CVEsAt:             3,
+		MatchesAt:          2,
+		InFieldSeparator:   ",",
+		OutFieldSeparator:  ";",
+		InRecordSeparator:  ",",
+		OutRecordSeparator: ";",
+		RequireVersion:     true,
 	}
 	var w bytes.Buffer
 	r := strings.NewReader(in)
-	done := processInput(r, &w, cache, cfg)
+	done := processInput(r, &w, singleCache(cache), cfg)
 	<-done
 	out := strings.TrimSpace(w.String())
 	if out != "" {
@@ -191,30 +191,28 @@ func BenchmarkProcessInputJSON(t *testing.B) {
 	}
 	cache := cvefeed.NewCache(testDict)
 	cfg := config{
-		nProcessors: 1,
-		cpesAt:      4,
-		cvesAt:      5,
-		matchesAt:   6,
-		inFieldSep:  ";",
-		outFieldSep: "|",
-		inRecSep:    ",",
-		outRecSep:   "&",
-		cpuProfile:  "",
-		memProfile:  "",
+		NumProcessors:      1,
+		CPEsAt:             4,
+		CVEsAt:             5,
+		MatchesAt:          6,
+		InFieldSeparator:   ";",
+		OutFieldSeparator:  "|",
+		InRecordSeparator:  ",",
+		OutRecordSeparator: "&",
 	}
 	t.ResetTimer()
 	for i := 0; i < t.N; i++ {
 		var w bytes.Buffer
 		r := strings.NewReader(in)
-		done := processInput(r, &w, cache, cfg)
+		done := processInput(r, &w, singleCache(cache), cfg)
 		<-done
 	}
 }
 
 func getSkip(ff []int) fieldsToSkip {
-	set := make(map[int]struct{})
+	set := make(map[int]bool)
 	for _, f := range ff {
-		set[f-1] = struct{}{}
+		set[f-1] = true
 	}
 	return fieldsToSkip(set)
 }
@@ -226,6 +224,10 @@ func contains(in []string, s string) bool {
 		}
 	}
 	return false
+}
+
+func singleCache(cache *cvefeed.Cache) map[string]*cvefeed.Cache {
+	return map[string]*cvefeed.Cache{"test": cache}
 }
 
 var testDictJSONStr = `{
