@@ -24,13 +24,13 @@ import (
 // filedsToSkip is a custom type to be recognized by flag.Parse().
 // It maps comma-separated numbers from command line option to a set of integers.
 // It also provides methods for dropping configured indices from a slice.
-type fieldsToSkip map[int]struct{}
+type fieldsToSkip map[int]bool
 
 // skipFields removes elements from  fields slice as per config
 func (fs fieldsToSkip) skipFields(fields []string) []string {
 	j := 0
 	for i := 0; i < len(fields); i++ {
-		if _, ok := fs[i]; ok {
+		if fs[i] {
 			continue
 		}
 		fields[j] = fields[i]
@@ -105,7 +105,7 @@ func (fs *fieldsToSkip) Set(val string) error {
 			if n < 1 {
 				return fmt.Errorf("illegal field index %d", n)
 			}
-			(*fs)[n-1] = struct{}{}
+			(*fs)[n-1] = true
 		}
 	}
 	return nil
