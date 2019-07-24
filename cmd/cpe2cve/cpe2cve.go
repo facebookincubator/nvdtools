@@ -207,18 +207,12 @@ func Main() int {
 		// override config from config file
 		cfg, err = readConfigFile(*cfgFile)
 	}
-	if err != nil {
+	if err == nil {
 		// add all feeds from cmdline
 		cfg.addFeedsFromArgs(*provider, flag.Args()...)
+		err = cfg.validate()
 	}
 	if err != nil {
-		glog.Error(err)
-		flag.Usage()
-	}
-
-	// setup done
-
-	if err := cfg.validate(); err != nil {
 		glog.Error(err)
 		flag.Usage()
 	}
