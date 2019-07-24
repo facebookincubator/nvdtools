@@ -207,7 +207,7 @@ func Main() int {
 		// override config from config file
 		cfg, err = readConfigFile(*cfgFile)
 	}
-	if err != nil {
+	if err == nil {
 		// add all feeds from cmdline
 		cfg.addFeedsFromArgs(*provider, flag.Args()...)
 	}
@@ -255,7 +255,7 @@ func Main() int {
 		glog.Error(fmt.Errorf("all dictionaries are empty"))
 		return -1
 	}
-	
+
 	overrides, err = cvefeed.LoadJSONDictionary(cfg.FeedOverrides...)
 	if err != nil {
 		glog.Error(err)
