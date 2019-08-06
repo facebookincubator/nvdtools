@@ -12,6 +12,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+CREATE DATABASE IF NOT EXISTS vulndb;
+
+USE vulndb;
+
 DROP TABLE IF EXISTS
 	`snooze`,
 	`custom_data`,
