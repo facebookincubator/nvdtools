@@ -17,7 +17,7 @@ package schema
 import (
 	"fmt"
 
-	nvd "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
+	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 )
 
 const (

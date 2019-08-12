@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
+	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 )
 
 func extractCVSSBaseScore(item *Vulnerability) float64 {
@@ -40,7 +40,7 @@ func extractCPEs(item *Vulnerability) []string {
 }
 
 func convertTime(fireeyeTime int64) string {
-	return time.Unix(fireeyeTime, 0).Format(nvdcommon.TimeLayout)
+	return time.Unix(fireeyeTime, 0).Format(nvd.TimeLayout)
 }
 
 func strToFloat(str string) float64 {

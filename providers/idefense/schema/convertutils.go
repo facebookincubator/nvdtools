@@ -18,7 +18,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
+	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -43,7 +43,7 @@ func convertTime(idefenseTime string) (string, error) {
 	if err != nil { // should be parsable
 		return "", err
 	}
-	return t.Format(nvdcommon.TimeLayout), nil
+	return t.Format(nvd.TimeLayout), nil
 }
 
 func (item *Vulnerability) findConfigurations() []configuration {

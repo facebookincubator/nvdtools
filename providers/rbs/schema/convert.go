@@ -19,10 +19,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
+	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
-
-	nvd "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
 )
 
 const (
@@ -171,7 +169,7 @@ func convertTime(rbsTime string) (string, error) {
 	if err != nil { // should be parsable
 		return "", err
 	}
-	return t.Format(nvdcommon.TimeLayout), nil
+	return t.Format(nvd.TimeLayout), nil
 }
 
 func normalizeCPE(cpe string) (string, error) {
