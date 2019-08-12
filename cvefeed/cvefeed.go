@@ -21,41 +21,42 @@ package cvefeed
 import (
 	"bufio"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"strings"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdjson"
-	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvd"
 )
 
-// CVEItem is an interface that provides access to CVE data from vulnerability feed
-//	type CVEItem interface {
-//		CVE() string
-//		Configuration() []LogicalTest
-//	}
-type CVEItem = nvdcommon.CVEItem
-
-// LogicalTest describes logical test performed during matching
-// type LogicalTest interface {
-// 	LogicalOperator() string // "and", "or", "eq"
-// 	NegateIfNeeded(bool) bool
-// 	InnerTests() []LogicalTest
-// 	MatchPlatform(platform *wfn.Attributes, requireVersion bool) bool
-// 	CPEs() []*wfn.Attributes
-// }
-type LogicalTest = nvdcommon.LogicalTest
-
-// ParseJSON loads CVE feed from JSON
-func ParseJSON(in io.Reader) ([]CVEItem, error) {
-	feed, err := setupReader(in)
+// ParseJSON parses JSON dictionary from NVD vulnerability feed
+func ParseJSON(in io.Reader) ([]Vuln, error) {
+	feed, err := getFeed(in)
 	if err != nil {
-		return nil, fmt.Errorf("cvefeed.ParseJSON: read error: %v", err)
+		return nil, fmt.Errorf("cvefeed.ParseJSON: %v", err)
 	}
-	defer feed.Close()
-	return nvdjson.Parse(feed)
+
+	vulns := make([]Vuln, 0, len(feed.CVEItems))
+	for _, cve := range feed.CVEItems {
+		if cve != nil && cve.Configurations != nil {
+			vulns = append(vulns, cve.Vuln())
+		}
+	}
+	return vulns, nil
+}
+
+func getFeed(in io.Reader) (*nvd.NVDCVEFeedJSON10, error) {
+	reader, err := setupReader(in)
+	if err != nil {
+		return nil, fmt.Errorf("can't setup reader: %v", err)
+	}
+	defer reader.Close()
+
+	var feed nvd.NVDCVEFeedJSON10
+	if err := json.NewDecoder(reader).Decode(&feed); err != nil {
+		return nil, err
+	}
+	return &feed, nil
 }
 
 func setupReader(in io.Reader) (src io.ReadCloser, err error) {
@@ -76,45 +77,4 @@ func setupReader(in io.Reader) (src io.ReadCloser, err error) {
 	}
 	// TODO: maybe support .zip
 	return src, nil
-}
-
-// Match matches list of software in inventory to a number of rules;
-// returns the CPE names that matched and the boolean result of the match.
-// If requireVersion is true, the function ignores rules with no Version attribute.
-func Match(inventory []*wfn.Attributes, rules []LogicalTest, requireVersion bool) ([]*wfn.Attributes, bool) {
-	matches := make([]*wfn.Attributes, 0, len(inventory))
-	matched := false
-	for _, op := range rules {
-		matched = matched || matchLogicalTest(&matches, inventory, op, requireVersion)
-	}
-	if matched {
-		return append([]*wfn.Attributes{}, matches...), true
-	}
-	return nil, false
-}
-
-func matchLogicalTest(matches *[]*wfn.Attributes, inventory []*wfn.Attributes, op LogicalTest, requireVersion bool) bool {
-	matched := false
-	switch strings.ToLower(op.LogicalOperator()) {
-	case "or":
-		for _, o := range op.InnerTests() {
-			if matchLogicalTest(matches, inventory, o, requireVersion) {
-				return op.NegateIfNeeded(true)
-			}
-		}
-	case "and":
-		for _, o := range op.InnerTests() {
-			if !matchLogicalTest(matches, inventory, o, requireVersion) {
-				return op.NegateIfNeeded(false)
-			}
-			matched = true
-		}
-	}
-	for _, name := range inventory {
-		if op.MatchPlatform(name, requireVersion) {
-			*matches = append(*matches, name)
-			matched = true
-		}
-	}
-	return op.NegateIfNeeded(matched)
 }

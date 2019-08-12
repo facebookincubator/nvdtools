@@ -27,14 +27,14 @@ import (
 const cacheEvictPercentage = 0.1 // every eviction cycle invalidates this part of cache size at once
 
 // Index maps the CPEs to the entries in the NVD feed they mentioned in
-type Index map[string][]CVEItem
+type Index map[string][]Vuln
 
 // NewIndex creates new Index from a slice of CVE entries
 func NewIndex(d Dictionary) Index {
 	idx := Index{}
 	for _, entry := range d {
 		set := map[string]bool{}
-		for _, cpe := range collectCPEs(entry.Config()) {
+		for _, cpe := range entry.Attrs() {
 			// Can happen, for instance, when the feed contains illegal binding of CPE name. Unfortunately, it happens to NVD,
 			// e.g. embedded ? in cpe:2.3:a:disney:where\\'s_my_perry?_free:1.5.1:*:*:*:*:android:*:* of CVE-2014-5606
 			if cpe == nil {
@@ -54,19 +54,9 @@ func NewIndex(d Dictionary) Index {
 	return idx
 }
 
-func collectCPEs(dict []LogicalTest) (cpes []*wfn.Attributes) {
-	for _, d := range dict {
-		cpes = append(cpes, d.CPEs()...)
-		if children := d.InnerTests(); len(children) != 0 {
-			cpes = append(cpes, collectCPEs(children)...)
-		}
-	}
-	return cpes
-}
-
 // MatchResult stores CVE and a slice of CPEs that matched it
 type MatchResult struct {
-	CVE  CVEItem
+	CVE  Vuln
 	CPEs []*wfn.Attributes
 }
 
@@ -191,7 +181,7 @@ func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
 		return nil
 	}
 	d := Dictionary{}
-	knownEntries := map[CVEItem]bool{}
+	knownEntries := map[Vuln]bool{}
 	for _, cpe := range cpes {
 		if cpe == nil { // should never happen
 			glog.Warning("nil CPE in list")
@@ -209,7 +199,7 @@ func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
 				continue
 			}
 			knownEntries[e] = true
-			d[e.CVEID()] = e
+			d[e.ID()] = e
 		}
 	}
 	for _, e := range c.Idx[wfn.Any] {
@@ -217,7 +207,7 @@ func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
 			continue
 		}
 		knownEntries[e] = true
-		d[e.CVEID()] = e
+		d[e.ID()] = e
 	}
 	return d
 }
@@ -225,10 +215,8 @@ func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
 // match matches the CPE names against internal vulnerability dictionary and returns a slice of matching resutls
 func (c *Cache) match(cpes []*wfn.Attributes, dict Dictionary) (result []MatchResult) {
 	for _, v := range dict {
-		if mm, ok := Match(cpes, v.Config(), c.RequireVersion); ok {
-			mm = uniq(mm)
-			result = append(result, MatchResult{v, mm})
-		}
+		matches := wfn.Matches(v, cpes, c.RequireVersion)
+		result = append(result, MatchResult{v, uniq(matches)})
 	}
 	return result
 }
