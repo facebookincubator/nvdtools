@@ -16,70 +16,47 @@ package wfn
 
 // Matcher knows whether it matches some attributes
 type Matcher interface {
-	// Match returns whether attributes can be matches to it
+	// Match returns attributes which match it
 	// if require version, then Matcher which matches all versions should return false
-	Match(attrs *Attributes, requireVersion bool) bool
-	// Attrs returns all attributes that are used by in the matching process
-	Attrs() []*Attributes
-}
-
-// Matches returns all attributes which the given matcher matched
-func Matches(m Matcher, attrss []*Attributes, requireVersion bool) (matches []*Attributes) {
-	for _, attrs := range attrss {
-		if m.Match(attrs, requireVersion) {
-			matches = append(matches, attrs)
-		}
-	}
-	return matches
+	Match(attrs []*Attributes, requireVersion bool) (matches []*Attributes)
+	// Config returns all attributes that are used by in the matching process
+	Config() []*Attributes
 }
 
 // Attrs is part of the Matcher interface
-func (a *Attributes) Attrs() []*Attributes {
+func (a *Attributes) Config() []*Attributes {
 	return []*Attributes{a}
 }
 
-// Match is part of the Matcher interface
-func (a *Attributes) Match(attrs *Attributes, requireVersion bool) bool {
-	if a == nil || attrs == nil {
-		return a == attrs // both are nil
+// MatchOnlyVersion checks whether version matches
+func (a *Attributes) MatchOnlyVersion(attr *Attributes) bool {
+	if a == nil || attr == nil {
+		return a == attr // both are nil
 	}
-
-	if requireVersion {
-		if a.Version == Any {
-			return false
-		}
-	}
-
-	return a.MatchWithoutVersion(attrs) && a.MatchOnlyVersion(attrs)
+	return matchAttr(a.Version, attr.Version)
 }
 
-func (a *Attributes) MatchOnlyVersion(attrs *Attributes) bool {
-	if a == nil || attrs == nil {
-		return a == attrs // both are nil
+// MatchWithoutVersion checks whether everything else besides the version matches
+func (a *Attributes) MatchWithoutVersion(attr *Attributes) bool {
+	if a == nil || attr == nil {
+		return a == attr // both are nil
 	}
-	return matchAttr(a.Version, attrs.Version)
-}
-
-func (a *Attributes) MatchWithoutVersion(attrs *Attributes) bool {
-	if a == nil || attrs == nil {
-		return a == attrs // both are nil
-	}
-	return matchAttr(a.Product, attrs.Product) &&
-		matchAttr(a.Vendor, attrs.Vendor) && matchAttr(a.Part, attrs.Part) &&
-		matchAttr(a.Update, attrs.Update) && matchAttr(a.Edition, attrs.Edition) &&
-		matchAttr(a.Language, attrs.Language) && matchAttr(a.SWEdition, attrs.SWEdition) &&
-		matchAttr(a.TargetHW, attrs.TargetHW) && matchAttr(a.TargetSW, attrs.TargetSW) &&
-		matchAttr(a.Other, attrs.Other)
+	return matchAttr(a.Product, attr.Product) &&
+		matchAttr(a.Vendor, attr.Vendor) && matchAttr(a.Part, attr.Part) &&
+		matchAttr(a.Update, attr.Update) && matchAttr(a.Edition, attr.Edition) &&
+		matchAttr(a.Language, attr.Language) && matchAttr(a.SWEdition, attr.SWEdition) &&
+		matchAttr(a.TargetHW, attr.TargetHW) && matchAttr(a.TargetSW, attr.TargetSW) &&
+		matchAttr(a.Other, attr.Other)
 }
 
 // MatchAll returns a Matcher which matches only if all matchers match
 func MatchAll(ms ...Matcher) Matcher {
-	return andMatcher(ms)
+	return &multiMatcher{ms, true}
 }
 
 // MatchAll returns a Matcher which matches if any of the matchers match
 func MatchAny(ms ...Matcher) Matcher {
-	return orMatcher(ms)
+	return &multiMatcher{ms, false}
 }
 
 // DontMatch returns a Matcher which matches if the given matchers doesn't
@@ -87,38 +64,42 @@ func DontMatch(m Matcher) Matcher {
 	return notMatcher{m}
 }
 
-type andMatcher []Matcher
+type multiMatcher struct {
+	matchers []Matcher
+	// if true, match will only return something if all matchers matched at least something
+	allMatch bool
+}
 
 // Match is part of the Matcher interface
-func (am andMatcher) Match(attrs *Attributes, requireVersion bool) bool {
-	for _, m := range am {
-		if !m.Match(attrs, requireVersion) {
-			return false
+func (mm *multiMatcher) Match(attrs []*Attributes, requireVersion bool) []*Attributes {
+	matched := make(map[*Attributes]bool)
+	for _, matcher := range mm.matchers {
+		matches := matcher.Match(attrs, requireVersion)
+		if mm.allMatch && len(matches) == 0 {
+			// all matchers need to match at least one attr
+			return nil
+		}
+		for _, m := range matches {
+			matched[m] = true
 		}
 	}
-	return true
+
+	matches := make([]*Attributes, len(matched))
+	i := 0
+	for m := range matched {
+		matches[i] = m
+		i++
+	}
+	return matches
 }
 
 // Attrs is part of the Matcher interface
-func (am andMatcher) Attrs() []*Attributes {
-	return collectAttrs(am)
-}
-
-type orMatcher []Matcher
-
-// Match is part of the Matcher interface
-func (om orMatcher) Match(attrs *Attributes, requireVersion bool) bool {
-	for _, m := range om {
-		if m.Match(attrs, requireVersion) {
-			return true
-		}
+func (mm *multiMatcher) Config() []*Attributes {
+	var attrs []*Attributes
+	for _, matcher := range mm.matchers {
+		attrs = append(attrs, matcher.Config()...)
 	}
-	return false
-}
-
-// Attrs is part of the Matcher interface
-func (om orMatcher) Attrs() []*Attributes {
-	return collectAttrs(om)
+	return attrs
 }
 
 type notMatcher struct {
@@ -126,14 +107,16 @@ type notMatcher struct {
 }
 
 // Match is part of the Matcher interface
-func (nm notMatcher) Match(attrs *Attributes, requireVersion bool) bool {
-	return !nm.Matcher.Match(attrs, requireVersion)
-}
-
-func collectAttrs(mm []Matcher) []*Attributes {
-	var attrs []*Attributes
-	for _, m := range mm {
-		attrs = append(attrs, m.Attrs()...)
+func (nm notMatcher) Match(attrs []*Attributes, requireVersion bool) (matches []*Attributes) {
+	matched := make(map[*Attributes]bool)
+	for _, m := range nm.Matcher.Match(attrs, requireVersion) {
+		matched[m] = true
 	}
-	return attrs
+
+	for _, a := range attrs {
+		if !matched[a] {
+			matches = append(matches, a)
+		}
+	}
+	return matches
 }

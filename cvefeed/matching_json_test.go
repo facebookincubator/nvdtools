@@ -37,19 +37,16 @@ func TestMatchJSON(t *testing.T) {
 		Rule      int
 		Inventory []*wfn.Attributes
 		Matches   []*wfn.Attributes
-		Expect    bool
 	}{
 		{
 			Rule:      0,
 			Inventory: []*wfn.Attributes{},
-			Expect:    false,
 		},
 		{
 			Inventory: []*wfn.Attributes{
 				{Part: "o", Vendor: "linux", Product: "linux_kernel", Version: "2\\.6\\.1"},
 				{Part: "a", Vendor: "djvulibre_project", Product: "djvulibre", Version: "3\\.5\\.11"},
 			},
-			Expect: false,
 		},
 		{
 			Rule: 0,
@@ -62,7 +59,6 @@ func TestMatchJSON(t *testing.T) {
 				{Part: "o", Vendor: "microsoft", Product: "windows_xp", Update: "sp3"},
 				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "6\\.0"},
 			},
-			Expect: true,
 		},
 		{
 			Rule: 1,
@@ -76,14 +72,12 @@ func TestMatchJSON(t *testing.T) {
 				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "4\\.0"},
 				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "5\\.4"},
 			},
-			Expect: true,
 		},
 		{
 			Rule: 2,
 			Inventory: []*wfn.Attributes{
 				{Part: "a", Vendor: "mozilla", Product: "firefox", Version: "64\\.0"},
 			},
-			Expect: false,
 		},
 	}
 	items, err := ParseJSON(bytes.NewBufferString(testJSONdict))
@@ -92,11 +86,11 @@ func TestMatchJSON(t *testing.T) {
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			mm, ok := Match(c.Inventory, items[c.Rule].Config(), false)
-			if ok != c.Expect {
-				t.Fatalf("expected %t, got %t", c.Expect, ok)
+			mm := items[c.Rule].Match(c.Inventory, false)
+			if len(mm) != len(c.Matches) {
+				t.Fatalf("expected %d matches, got %d matches", len(mm), len(c.Matches))
 			}
-			if ok && !matchesAll(mm, c.Matches) {
+			if len(mm) > 0 && !matchesAll(mm, c.Matches) {
 				t.Fatalf("wrong match: expected %v, got %v", c.Matches, mm)
 			}
 		})
@@ -111,7 +105,7 @@ func TestMatchJSONrequireVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse the dictionary: %v", err)
 	}
-	if _, ok := Match(inventory, items[1].Config(), true); ok {
+	if mm := items[1].Match(inventory, true); len(mm) != 0 {
 		t.Fatal("platform was expected to be ignored because of absence of version, but matched")
 	}
 }
@@ -124,7 +118,7 @@ func TestMatchJSONsmartVersionMatching(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse the dictionary: %v", err)
 	}
-	if _, ok := Match(inventory, items[1].Config(), true); ok {
+	if mm := items[1].Match(inventory, true); len(mm) != 0 {
 		t.Errorf("version %q unexpectedly matched", inventory[0].Version)
 	}
 }
@@ -141,7 +135,7 @@ func BenchmarkMatchJSON(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, ok := Match(inventory, items[0].Config(), false); !ok {
+		if mm := items[0].Match(inventory, false); len(mm) == 0 {
 			b.Fatal("expected Match to match, it did not")
 		}
 	}

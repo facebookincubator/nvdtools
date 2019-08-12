@@ -16,7 +16,6 @@ package cvefeed
 
 import (
 	"bytes"
-	"sort"
 	"sync"
 	"unsafe"
 
@@ -34,21 +33,20 @@ func NewIndex(d Dictionary) Index {
 	idx := Index{}
 	for _, entry := range d {
 		set := map[string]bool{}
-		for _, cpe := range entry.Attrs() {
+		for _, cpe := range entry.Config() {
 			// Can happen, for instance, when the feed contains illegal binding of CPE name. Unfortunately, it happens to NVD,
 			// e.g. embedded ? in cpe:2.3:a:disney:where\\'s_my_perry?_free:1.5.1:*:*:*:*:android:*:* of CVE-2014-5606
 			if cpe == nil {
 				continue
 			}
 			product := cpe.Product
-			if product == wfn.Any || wfn.HasWildcard(product) {
-				set[wfn.Any] = true
-				continue
+			if wfn.HasWildcard(product) {
+				product = wfn.Any
 			}
-			set[product] = true
-		}
-		for product := range set {
-			idx[product] = append(idx[product], entry)
+			if !set[product] {
+				set[product] = true
+				idx[product] = append(idx[product], entry)
+			}
 		}
 	}
 	return idx
@@ -131,10 +129,7 @@ func (c *Cache) SetMaxSize(size int64) *Cache {
 func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
 	// negative max size of the cache disables caching
 	if c.MaxSize < 0 {
-		if c.Idx == nil {
-			return c.match(cpes, c.Dict)
-		}
-		return c.match(cpes, c.dictFromIndex(cpes))
+		return c.match(cpes)
 	}
 
 	// otherwise, let's get to the business
@@ -158,11 +153,7 @@ func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
 	c.data[key] = cves
 	c.mu.Unlock()
 	// now other requests for same key wait on the channel, and the requests for the different keys aren't blocked
-	if c.Idx == nil {
-		cves.res = c.match(cpes, c.Dict)
-	} else {
-		cves.res = c.match(cpes, c.dictFromIndex(cpes))
-	}
+	cves.res = c.match(cpes)
 	cves.updateResSize(key)
 	c.mu.Lock()
 	c.size += cves.size
@@ -175,50 +166,54 @@ func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
 	return cves.res
 }
 
+// match will return all match results based on the given cpes
+func (c *Cache) match(cpes []*wfn.Attributes) []MatchResult {
+	d := c.Dict
+	if c.Idx != nil {
+		d = c.dictFromIndex(cpes)
+	}
+	return c.matchDict(cpes, d)
+}
+
 // dictFromIndex creates CVE dictionary from entries indexed by CPE names
 func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
-	if c.Idx == nil {
-		return nil
-	}
 	d := Dictionary{}
+	if c.Idx == nil {
+		return d
+	}
+
 	knownEntries := map[Vuln]bool{}
+	addVulns := func(product string) {
+		for _, vuln := range c.Idx[product] {
+			if !knownEntries[vuln] {
+				knownEntries[vuln] = true
+				d[vuln.ID()] = vuln
+			}
+		}
+	}
+
 	for _, cpe := range cpes {
 		if cpe == nil { // should never happen
 			glog.Warning("nil CPE in list")
 			continue
 		}
-		product := cpe.Product
-		if product == wfn.Any {
-			continue
-		}
-		if _, ok := c.Idx[product]; !ok {
-			continue
-		}
-		for _, e := range c.Idx[product] {
-			if _, ok := knownEntries[e]; ok {
-				continue
-			}
-			knownEntries[e] = true
-			d[e.ID()] = e
+		if cpe.Product != wfn.Any {
+			addVulns(cpe.Product)
 		}
 	}
-	for _, e := range c.Idx[wfn.Any] {
-		if _, ok := knownEntries[e]; ok {
-			continue
-		}
-		knownEntries[e] = true
-		d[e.ID()] = e
-	}
+	addVulns(wfn.Any)
+
 	return d
 }
 
 // match matches the CPE names against internal vulnerability dictionary and returns a slice of matching resutls
-func (c *Cache) match(cpes []*wfn.Attributes, dict Dictionary) (result []MatchResult) {
+func (c *Cache) matchDict(cpes []*wfn.Attributes, dict Dictionary) (results []MatchResult) {
 	for _, v := range dict {
-		matches := wfn.Matches(v, cpes, c.RequireVersion)
-		result = append(result, MatchResult{v, uniq(matches)})
+		if matches := v.Match(cpes, c.RequireVersion); len(matches) > 0 {
+			results = append(results, MatchResult{v, matches})
+		}
 	}
-	return result
+	return results
 }
 
 // evict the least recently used records untile nbytes of capacity is achieved or no more records left.
@@ -265,28 +260,4 @@ func cacheKey(cpes []*wfn.Attributes) string {
 		out.WriteByte('#')
 	}
 	return out.String()
-}
-
-func uniq(nn []*wfn.Attributes) []*wfn.Attributes {
-	if len(nn) == 0 {
-		return nn
-	}
-	sort.Slice(nn, func(i, j int) bool {
-		a, b := nn[i], nn[j]
-		if b == nil {
-			return false
-		}
-		return a == nil || a.Part < b.Part || a.Vendor < b.Vendor || a.Product < b.Product ||
-			a.Version < b.Version || a.Update < b.Update || a.Edition < b.Edition ||
-			a.SWEdition < b.SWEdition || a.TargetSW < b.TargetSW || a.TargetHW < b.TargetHW ||
-			a.Other < b.Other || a.Language < b.Language
-	})
-	j := 1
-	for i := 1; i < len(nn); i++ {
-		if nn[i] != nn[i-1] {
-			nn[j] = nn[i]
-			j++
-		}
-	}
-	return nn[:j]
 }

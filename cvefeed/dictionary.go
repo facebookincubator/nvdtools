@@ -36,7 +36,7 @@ func (d *Dictionary) Override(d2 Dictionary) {
 	}
 	for k, cve := range d2 {
 		if _, ok := (*d)[k]; ok {
-			(*d)[k] = MergeVulns((*d)[k], cve)
+			(*d)[k] = OverrideVuln((*d)[k], cve)
 		}
 	}
 }

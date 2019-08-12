@@ -70,7 +70,7 @@ func TestProcessInput(t *testing.T) {
 		},
 		// TODO: add more test cases
 	}
-	testDictJSON, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+	testDictJSON, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.Vuln, error) {
 		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr))
 	}, "")
 	if err != nil {
@@ -121,7 +121,7 @@ func TestProcessInput(t *testing.T) {
 // This used to cause false postives, added this test during the debug session
 func TestProcessInputFalsePositives(t *testing.T) {
 	in := "cpe:/a::glibc:2.27-1"
-	dict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+	dict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.Vuln, error) {
 		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr2))
 	}, "")
 	if err != nil {
@@ -150,7 +150,7 @@ func TestProcessInputFalsePositives(t *testing.T) {
 
 func TestProcessInputRequireVersion(t *testing.T) {
 	in := "cpe:/h:huaweidevice:d100:1.33.7"
-	dict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+	dict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.Vuln, error) {
 		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr2))
 	}, "")
 	if err != nil {
@@ -183,7 +183,7 @@ func BenchmarkProcessInputJSON(t *testing.B) {
 1;2;3;cpe:/o::centos_linux:7.5.1804,cpe:/a::chardet:2.2.1,cpe:/a::javapackages:1.0.0,cpe:/a::kitchen:1.1.1,cpe:/a::nose:1.3.7,cpe:/a::python-dateutil:1.5,cpe:/a::pytz:2016.10,cpe:/a::setuptools:0.9.8,cpe:/a::chardet:2.2.1,cpe:/a::javapackages:1.0.0,cpe:/a::kitchen:1.1.1,cpe:/a::nose:1.3.7,cpe:/a::python-dateutil:1.5,cpe:/a::pytz:2016.10,cpe:/a::setuptools:0.9.8
 1;2;3;cpe:/o::centos_linux:7.5.1804,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1,cpe:/a::chardet:2.2.1,cpe:/a::kitchen:1.1.1
 `
-	testDict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.CVEItem, error) {
+	testDict, err := cvefeed.LoadFeed(func(_ string) ([]cvefeed.Vuln, error) {
 		return cvefeed.ParseJSON(bytes.NewBufferString(testDictJSONStr))
 	}, "")
 	if err != nil {

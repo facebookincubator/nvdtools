@@ -1,3 +1,17 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package nvd
 
 import (
@@ -10,6 +24,7 @@ import (
 // cpeMatch is a wrapper around the actual NVDCVEFeedJSON10DefCPEMatch
 type cpeMatch struct {
 	*wfn.Attributes
+	vulnerable            bool
 	versionEndExcluding   string
 	versionEndIncluding   string
 	versionStartExcluding string
@@ -27,7 +42,7 @@ func cpeMatcher(nvdMatch *schema.NVDCVEFeedJSON10DefCPEMatch) (wfn.Matcher, erro
 	}
 
 	// parse
-	var match cpeMatch
+	match := cpeMatch{vulnerable: nvdMatch.Vulnerable}
 	var err error
 	if match.Attributes, err = parse(nvdMatch.Cpe23Uri); err != nil {
 		if match.Attributes, err = parse(nvdMatch.Cpe22Uri); err != nil {
@@ -48,15 +63,25 @@ func cpeMatcher(nvdMatch *schema.NVDCVEFeedJSON10DefCPEMatch) (wfn.Matcher, erro
 	return &match, nil
 }
 
+// Match is part of the Matcher interface
+func (cm *cpeMatch) Match(attrs []*wfn.Attributes, requireVersion bool) (matches []*wfn.Attributes) {
+	for _, attr := range attrs {
+		if cm.match(attr, requireVersion) == cm.vulnerable {
+			matches = append(matches, attr)
+		}
+	}
+	return matches
+}
+
 // Match implements wfn.Matcher interface
-func (match *cpeMatch) Match(attrs *wfn.Attributes, requireVersion bool) bool {
-	if match == nil || match.Attributes == nil {
+func (cm *cpeMatch) match(attr *wfn.Attributes, requireVersion bool) bool {
+	if cm == nil || cm.Attributes == nil {
 		return false
 	}
 
 	if requireVersion {
 		// if we require version, then we need either version ranges or version not to be *
-		if !match.hasVersionRanges && match.Attributes.Version == wfn.Any {
+		if !cm.hasVersionRanges && cm.Attributes.Version == wfn.Any {
 			return false
 		}
 	}
@@ -64,31 +89,44 @@ func (match *cpeMatch) Match(attrs *wfn.Attributes, requireVersion bool) bool {
 	// here we have a version: either actual one or ranges
 
 	// check whether everything except for version matches
-	if !match.Attributes.MatchWithoutVersion(attrs) {
+	if !cm.Attributes.MatchWithoutVersion(attr) {
 		return false
 	}
 
-	// check whether version matches
-	if match.Attributes.MatchOnlyVersion(attrs) {
-		return true
+	if cm.Attributes.Version == wfn.Any {
+		if !cm.hasVersionRanges {
+			// if version is any and doesn't have version ranges, then it matches any
+			return !requireVersion
+		} // otherwise we try to match it at the end of the function
+	} else if cm.Attributes.MatchOnlyVersion(attr) {
+		return true // version matched
 	}
 
 	// if it got to here, it means:
-	//	- matched attrs without version
+	//	- matched attr without version
+	//  - didn't match version, or require version was set and version was *
 
-	// match version to ranges
-	ver := wfn.StripSlashes(attrs.Version)
-
-	switch {
-	case match.versionStartIncluding != "" && smartVerCmp(ver, match.versionStartIncluding) >= 0:
-		return true
-	case match.versionStartExcluding != "" && smartVerCmp(ver, match.versionStartExcluding) > 0:
-		return true
-	case match.versionEndIncluding != "" && smartVerCmp(ver, match.versionEndIncluding) <= 0:
-		return true
-	case match.versionEndExcluding != "" && smartVerCmp(ver, match.versionEndExcluding) < 0:
-		return true
+	if !cm.hasVersionRanges {
+		return false
 	}
 
-	return false
+	// match version to ranges
+	ver := wfn.StripSlashes(attr.Version)
+
+	matches := true
+
+	if cm.versionStartIncluding != "" {
+		matches = matches && smartVerCmp(ver, cm.versionStartIncluding) >= 0
+	}
+	if cm.versionStartExcluding != "" {
+		matches = matches && smartVerCmp(ver, cm.versionStartExcluding) > 0
+	}
+	if cm.versionEndIncluding != "" {
+		matches = matches && smartVerCmp(ver, cm.versionEndIncluding) <= 0
+	}
+	if cm.versionEndExcluding != "" {
+		matches = matches && smartVerCmp(ver, cm.versionEndExcluding) < 0
+	}
+
+	return matches
 }
