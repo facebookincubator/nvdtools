@@ -25,6 +25,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/facebookincubator/nvdtools/wfn"
+
 	"github.com/facebookincubator/nvdtools/cpeparse"
 )
 
@@ -126,8 +128,9 @@ func processRecord(fields []string, cfg config) ([]string, error) {
 	if cfg.rpmField > len(fields) {
 		return nil, fmt.Errorf("not enough fields (%d)", len(fields))
 	}
-	attr, err := cpeparse.FromRPMName(fields[cfg.rpmField-1])
-	if err != nil {
+	attr := wfn.NewAttributesWithNA()
+	attr.Vendor = wfn.Any
+	if err := cpeparse.FromRPMName(attr, fields[cfg.rpmField-1]); err != nil {
 		return nil, fmt.Errorf("couldn't parse RPM name from field %q: %v", fields[cfg.rpmField-1], err)
 	}
 	cpe := attr.BindToURI()
