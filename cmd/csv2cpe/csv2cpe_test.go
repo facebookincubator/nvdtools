@@ -85,13 +85,19 @@ func TestProcessor(t *testing.T) {
 			[]string{"-cpe_product=1", "-cpe_version=2"},
 			NewIntSet(1, 2, 3),
 			"Foo\t1.0...\tdelet\ta\nbar\t2.0\tdelet\tb",
-			"a,cpe:/::foo:1.0\nb,cpe:/::bar:2.0\n",
+			"a,cpe:/-:-:foo:1.0:-:-:-\nb,cpe:/-:-:bar:2.0:-:-:-\n",
 		},
 		{
 			[]string{"-cpe_part=1", "-cpe_product=2", "-cpe_product=4"},
 			NewIntSet(1, 2, 3),
 			"a\tb\tc\n",
-			"cpe:/a\n",
+			"cpe:/a:-:-:-:-:-:-\n",
+		},
+		{
+			[]string{"-cpe_part=1", "-cpe_product=2", "-cpe_version=3"},
+			NewIntSet(1, 2, 3),
+			"a\tbash\t4.4\n",
+			"cpe:/a:-:bash:4.4:-:-:-\n",
 		},
 	}
 

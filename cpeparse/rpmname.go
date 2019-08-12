@@ -66,23 +66,22 @@ func FieldsFromRPMName(s string) (name, ver, rel, arch string, err error) {
 }
 
 // FromRPMName parses CPE name from RPM package name
-func FromRPMName(s string) (*wfn.Attributes, error) {
+func FromRPMName(attr *wfn.Attributes, s string) error {
 	var err error
 	name, ver, rel, arch, err := FieldsFromRPMName(s)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if name == wfn.Any {
-		return nil, fmt.Errorf("no name found in RPM name %q", s)
+		return fmt.Errorf("no name found in RPM name %q", s)
 	}
 	if ver == wfn.Any {
-		return nil, fmt.Errorf("no version found in RPM name %q", s)
+		return fmt.Errorf("no version found in RPM name %q", s)
 	}
-	return &wfn.Attributes{
-		Part:     "a", // TODO: figure out the way to properly detect os packages (linux_kernel or smth)
-		Product:  name,
-		Version:  ver,
-		Update:   rel,
-		TargetHW: arch,
-	}, nil
+	attr.Part = "a" // TODO: figure out the way to properly detect os packages (linux_kernel or smth)
+	attr.Product = name
+	attr.Version = ver
+	attr.Update = rel
+	attr.TargetHW = arch
+	return nil
 }

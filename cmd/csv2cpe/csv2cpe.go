@@ -159,7 +159,7 @@ func (acm *AttributeColumnMap) AddFlags(fs *flag.FlagSet) {
 // CPE returns a CPE by mapping cols to the configured column indices.
 func (acm *AttributeColumnMap) CPE(cols []string, lower bool) (string, error) {
 	var err error
-	var attr wfn.Attributes
+	attr := wfn.NewAttributesWithNA()
 
 	m := map[int]*string{
 		acm.Part:      &attr.Part,

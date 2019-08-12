@@ -59,8 +59,12 @@ func TestProcessRecord(t *testing.T) {
 		fail bool
 	}{
 		{"", "", true},
-		{"0,name-1.0-1.noarch.rpm", "name-1.0-1.noarch.rpm;cpe:/a::name:1.0:1", false},
-		{"0,name-1.0-1.i386.rpm,2,3,4,5,6", "name-1.0-1.i386.rpm;2;4;5;cpe:/a::name:1.0:1:~~~~i386~;6", false},
+		{"0,name-1.0-1.noarch.rpm", "name-1.0-1.noarch.rpm;cpe:/a::name:1.0:1:~-~-~-~~-:-", false},
+		{
+			"0,name-1.0-1.i386.rpm,2,3,4,5,6",
+			"name-1.0-1.i386.rpm;2;4;5;cpe:/a::name:1.0:1:~-~-~-~i386~-:-;6",
+			false,
+		},
 	}
 	cfg := config{
 		rpmField:    2,
@@ -83,7 +87,7 @@ func TestProcessRecord(t *testing.T) {
 		}
 		out := strings.Join(record, cfg.outFieldSep)
 		if c.out != out {
-			t.Errorf("line %q: expected %q, got %q", c.in, c.out, out)
+			t.Errorf("line %q:\nhave: %q\nwant: %q", c.in, c.out, out)
 		}
 	}
 }

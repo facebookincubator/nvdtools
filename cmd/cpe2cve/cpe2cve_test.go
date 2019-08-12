@@ -60,11 +60,11 @@ func TestProcessInput(t *testing.T) {
 			in: "1,2,3,cpe:/o:microsoft:windows_10:-::~~~~x64~+cpe:/a:adobe:flash_player:24.0.0.194,5,6,7,8,9,10",
 			out: [][]string{
 				{
-					"2|cpe:/o:microsoft:windows_10:-::~~~~x64~&cpe:/a:adobe:flash_player:24.0.0.194|5|6|7|CVE-2016-0165|cpe:/o:microsoft:windows_10:::~~~~x64~|8|9|10",
+					"2|cpe:/o:microsoft:windows_10:-::~~~~x64~&cpe:/a:adobe:flash_player:24.0.0.194|5|6|7|CVE-2016-0165|cpe:/o:microsoft:windows_10:-::~~~~x64~|8|9|10",
 				},
 				{
-					"2|cpe:/o:microsoft:windows_10:-::~~~~x64~&cpe:/a:adobe:flash_player:24.0.0.194|5|6|7|CVE-2666-1337|cpe:/o:microsoft:windows_10:::~~~~x64~&cpe:/a:adobe:flash_player:24.0.0.194|8|9|10",
-					"2|cpe:/o:microsoft:windows_10:-::~~~~x64~&cpe:/a:adobe:flash_player:24.0.0.194|5|6|7|CVE-2666-1337|cpe:/a:adobe:flash_player:24.0.0.194&cpe:/o:microsoft:windows_10:::~~~~x64~|8|9|10",
+					"2|cpe:/o:microsoft:windows_10:-::~~~~x64~&cpe:/a:adobe:flash_player:24.0.0.194|5|6|7|CVE-2666-1337|cpe:/o:microsoft:windows_10:-::~~~~x64~&cpe:/a:adobe:flash_player:24.0.0.194|8|9|10",
+					"2|cpe:/o:microsoft:windows_10:-::~~~~x64~&cpe:/a:adobe:flash_player:24.0.0.194|5|6|7|CVE-2666-1337|cpe:/a:adobe:flash_player:24.0.0.194&cpe:/o:microsoft:windows_10:-::~~~~x64~|8|9|10",
 				},
 			},
 		},
@@ -110,7 +110,7 @@ func TestProcessInput(t *testing.T) {
 						}
 					}
 					if !found {
-						t.Fatalf("got:\n%q\nexpected one of:%v", s, c.out)
+						t.Fatalf("got:\n%q\nexpected one of:\n%#v", s, c.out)
 					}
 				}
 			})

@@ -14,7 +14,11 @@
 
 package cpeparse
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/facebookincubator/nvdtools/wfn"
+)
 
 func TestFromRPMName(t *testing.T) {
 	cases := []struct {
@@ -30,7 +34,8 @@ func TestFromRPMName(t *testing.T) {
 		{"NaMe-1.0-1.src.rpm", "cpe:2.3:a:*:name:1.0:1:*:*:*:*:*:*", false},
 	}
 	for _, c := range cases {
-		attr, err := FromRPMName(c.pkgName)
+		var attr wfn.Attributes
+		err := FromRPMName(&attr, c.pkgName)
 		if err != nil {
 			if !c.fail {
 				t.Errorf("%q: unexpected failure: %v", c.pkgName, err)
@@ -49,7 +54,8 @@ func TestFromRPMName(t *testing.T) {
 
 func BenchmarkFromRPMName(t *testing.B) {
 	for i := 0; i < t.N; i++ {
-		FromRPMName("NaMe-1.0-1.i386.rpm")
+		var attr wfn.Attributes
+		FromRPMName(&attr, "NaMe-1.0-1.i386.rpm")
 	}
 }
 
