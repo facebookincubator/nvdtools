@@ -3,6 +3,7 @@ package nvd
 import (
 	"fmt"
 
+	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -17,7 +18,7 @@ type cpeMatch struct {
 }
 
 // Matcher returns an object which knows how to match attributes
-func (nvdMatch *NVDCVEFeedJSON10DefCPEMatch) Matcher() (wfn.Matcher, error) {
+func cpeMatcher(nvdMatch *schema.NVDCVEFeedJSON10DefCPEMatch) (wfn.Matcher, error) {
 	parse := func(uri string) (*wfn.Attributes, error) {
 		if uri == "" {
 			return nil, fmt.Errorf("can't parse empty uri")

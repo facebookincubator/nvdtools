@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nvd
+package schema
 
 // TimeLayout is the layout of NVD CVE timestamps.
 const TimeLayout = "2006-01-02T15:04Z"

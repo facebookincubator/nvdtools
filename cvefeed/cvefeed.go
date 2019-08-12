@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 )
 
 // ParseJSON parses JSON dictionary from NVD vulnerability feed
@@ -39,20 +40,20 @@ func ParseJSON(in io.Reader) ([]Vuln, error) {
 	vulns := make([]Vuln, 0, len(feed.CVEItems))
 	for _, cve := range feed.CVEItems {
 		if cve != nil && cve.Configurations != nil {
-			vulns = append(vulns, cve.Vuln())
+			vulns = append(vulns, nvd.ToVuln(cve))
 		}
 	}
 	return vulns, nil
 }
 
-func getFeed(in io.Reader) (*nvd.NVDCVEFeedJSON10, error) {
+func getFeed(in io.Reader) (*schema.NVDCVEFeedJSON10, error) {
 	reader, err := setupReader(in)
 	if err != nil {
 		return nil, fmt.Errorf("can't setup reader: %v", err)
 	}
 	defer reader.Close()
 
-	var feed nvd.NVDCVEFeedJSON10
+	var feed schema.NVDCVEFeedJSON10
 	if err := json.NewDecoder(reader).Decode(&feed); err != nil {
 		return nil, err
 	}

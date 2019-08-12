@@ -1,36 +1,38 @@
 package nvd
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
+	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
 // Matcher returns an object which knows how to match attributes
-func (node *NVDCVEFeedJSON10DefNode) Matcher() wfn.Matcher {
+func nodeMatcher(node *schema.NVDCVEFeedJSON10DefNode) (wfn.Matcher, error) {
 	if node == nil {
-		return nil
+		return nil, fmt.Errorf("node is nil")
 	}
 
 	var ms []wfn.Matcher
-	for _, cm := range node.CPEMatch {
-		if cm != nil {
-			if m, err := cm.Matcher(); err == nil {
+	for _, match := range node.CPEMatch {
+		if match != nil {
+			if m, err := cpeMatcher(match); err == nil {
 				ms = append(ms, m)
 			}
 		}
 	}
 	for _, child := range node.Children {
 		if child != nil {
-			if m := child.Matcher(); m != nil {
+			if m, err := nodeMatcher(child); err == nil {
 				ms = append(ms, m)
 			}
 		}
 	}
 
 	if len(ms) == 0 {
-		return nil
+		return nil, fmt.Errorf("empty configuration for node")
 	}
 
 	var m wfn.Matcher
@@ -49,5 +51,5 @@ func (node *NVDCVEFeedJSON10DefNode) Matcher() wfn.Matcher {
 		m = wfn.DontMatch(m)
 	}
 
-	return m
+	return m, nil
 }

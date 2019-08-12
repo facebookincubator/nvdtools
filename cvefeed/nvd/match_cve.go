@@ -3,35 +3,36 @@ package nvd
 import (
 	"regexp"
 
+	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
 var cveRegex = regexp.MustCompile("CVE-[0-9]{4}-[0-9]{4,}")
 
-func (cve *NVDCVEFeedJSON10DefCVEItem) Vuln() *nvdVuln {
+func ToVuln(cve *schema.NVDCVEFeedJSON10DefCVEItem) *Vuln {
 	var ms []wfn.Matcher
 	for _, node := range cve.Configurations.Nodes {
 		if node != nil {
-			if m := node.Matcher(); m != nil {
+			if m, err := nodeMatcher(node); err == nil {
 				ms = append(ms, m)
 			}
 		}
 	}
 
-	return &nvdVuln{
+	return &Vuln{
 		cveItem: cve,
 		Matcher: wfn.MatchAny(ms...),
 	}
 }
 
-// nvdVuln implements the cvefeed.Vuln interface
-type nvdVuln struct {
-	cveItem *NVDCVEFeedJSON10DefCVEItem
+// Vuln implements the cvefeed.Vuln interface
+type Vuln struct {
+	cveItem *schema.NVDCVEFeedJSON10DefCVEItem
 	wfn.Matcher
 }
 
 // ID is a part of the cvefeed.Vuln Interface
-func (v *nvdVuln) ID() string {
+func (v *Vuln) ID() string {
 	if v == nil || v.cveItem == nil || v.cveItem.CVE == nil || v.cveItem.CVE.CVEDataMeta == nil {
 		return ""
 	}
@@ -39,7 +40,7 @@ func (v *nvdVuln) ID() string {
 }
 
 // CVEs is a part of the cvefeed.Vuln Interface
-func (v *nvdVuln) CVEs() []string {
+func (v *Vuln) CVEs() []string {
 	if v == nil || v.cveItem == nil || v.cveItem.CVE == nil {
 		return nil
 	}
@@ -70,7 +71,7 @@ func (v *nvdVuln) CVEs() []string {
 }
 
 // CWEs is a part of the cvefeed.Vuln Interface
-func (v *nvdVuln) CWEs() []string {
+func (v *Vuln) CWEs() []string {
 	if v == nil || v.cveItem == nil || v.cveItem.CVE == nil || v.cveItem.CVE.Problemtype == nil {
 		return nil
 	}
@@ -93,7 +94,7 @@ func (v *nvdVuln) CWEs() []string {
 }
 
 // CVSSv2BaseScore is a part of the cvefeed.Vuln Interface
-func (v *nvdVuln) CVSSv2BaseScore() float64 {
+func (v *Vuln) CVSSv2BaseScore() float64 {
 	if c := v.cvssv2(); c != nil {
 		return c.BaseScore
 	}
@@ -101,7 +102,7 @@ func (v *nvdVuln) CVSSv2BaseScore() float64 {
 }
 
 // CVSSv2Vector is a part of the cvefeed.Vuln Interface
-func (v *nvdVuln) CVSSv2Vector() string {
+func (v *Vuln) CVSSv2Vector() string {
 	if c := v.cvssv2(); c != nil {
 		return c.VectorString
 	}
@@ -109,7 +110,7 @@ func (v *nvdVuln) CVSSv2Vector() string {
 }
 
 // CVSSv3BaseScore is a part of the cvefeed.Vuln Interface
-func (v *nvdVuln) CVSSv3BaseScore() float64 {
+func (v *Vuln) CVSSv3BaseScore() float64 {
 	if c := v.cvssv3(); c != nil {
 		return c.BaseScore
 	}
@@ -117,7 +118,7 @@ func (v *nvdVuln) CVSSv3BaseScore() float64 {
 }
 
 // CVSSv3Vector is a part of the cvefeed.Vuln Interface
-func (v *nvdVuln) CVSSv3Vector() string {
+func (v *Vuln) CVSSv3Vector() string {
 	if c := v.cvssv3(); c != nil {
 		return c.VectorString
 	}
@@ -138,7 +139,7 @@ func unique(ss []string) []string {
 }
 
 // just a helper to return the cvssv2 data
-func (v *nvdVuln) cvssv2() *CVSSV20 {
+func (v *Vuln) cvssv2() *schema.CVSSV20 {
 	if v == nil || v.cveItem == nil || v.cveItem.Impact == nil || v.cveItem.Impact.BaseMetricV2 == nil {
 		return nil
 	}
@@ -146,7 +147,7 @@ func (v *nvdVuln) cvssv2() *CVSSV20 {
 }
 
 // just a helper to return the cvssv3 data
-func (v *nvdVuln) cvssv3() *CVSSV30 {
+func (v *Vuln) cvssv3() *schema.CVSSV30 {
 	if v == nil || v.cveItem == nil || v.cveItem.Impact == nil || v.cveItem.Impact.BaseMetricV3 == nil {
 		return nil
 	}
