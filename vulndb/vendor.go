@@ -129,30 +129,67 @@ func (v VendorDataImporter) newVersion(ctx context.Context, owner, provider stri
 	return &vendor, nil
 }
 
+func (v VendorDataImporter) replaceVendorData(ctx context.Context, records sqlutil.Records) error {
+	q := sqlutil.Replace().
+		Into("vendor_data").
+		Fields(records.Fields()...).
+		Values(records...)
+
+	query, args := q.String(), q.QueryArgs()
+
+	if debug.V(2) {
+		log.Printf("running: %q", query)
+	}
+
+	_, err := v.DB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return errors.Wrap(err, "cannot insert vendor data records")
+	}
+	return nil
+}
+
+func (v VendorDataImporter) replaceVendorDataBatch(ctx context.Context, records sqlutil.Records) error {
+	// when sub-batch gets inserted, but some other fails, don't insert the succeeded one
+	from := 0
+
+OuterLoop:
+	// start with full size and gradually double the size down
+	for batchSize := len(records); batchSize > 0; batchSize /= 2 {
+		for idx := from; idx < len(records); idx += batchSize {
+			limit := idx + batchSize
+			if limit > len(records) {
+				limit = len(records)
+			}
+			if err := v.replaceVendorData(ctx, records[idx:limit]); err != nil {
+				continue OuterLoop
+			}
+			// succeeded, move the from to the new location
+			from = limit
+		}
+		// if it didn't continue before here, then all inserted
+		return nil
+	}
+
+	// if it came to here, means it didn't insert
+	return errors.New("can't insert batch")
+}
+
 func (v VendorDataImporter) importData(ctx context.Context, data []VendorDataRecord) error {
-	r := sqlutil.NewRecords(data)
+	records := sqlutil.NewRecords(data)
 
-	const batchSize = 10
-	for i := 0; i < len(data); i += batchSize {
-		lim := i + batchSize
-		if lim > len(data) {
-			lim = len(data)
+	const batchSize = 100
+
+	// the next few lines insert records into vendor_data in batches
+	// if inserting a batch fails, then we subdivide the batch into half and try to insert that
+	// repeat the process until the batch size comes to 0
+
+	for i := 0; i < len(records); i += batchSize {
+		limit := i + batchSize
+		if limit > len(records) {
+			limit = len(records)
 		}
 
-		s := r[i:lim]
-		q := sqlutil.Replace().
-			Into("vendor_data").
-			Fields(s.Fields()...).
-			Values(s...)
-
-		query, args := q.String(), q.QueryArgs()
-
-		if debug.V(2) {
-			log.Printf("running: %q", query)
-		}
-
-		_, err := v.DB.ExecContext(ctx, query, args...)
-		if err != nil {
+		if err := v.replaceVendorDataBatch(ctx, records[i:limit]); err != nil {
 			return errors.Wrap(err, "cannot insert vendor data records")
 		}
 	}
