@@ -23,7 +23,7 @@ import (
 )
 
 func TestCacheEviction(t *testing.T) {
-	items, err := LoadFeed(func(_ string) ([]CVEItem, error) {
+	items, err := LoadFeed(func(_ string) ([]Vuln, error) {
 		return ParseJSON(bytes.NewBufferString(testJSONdict))
 	}, "")
 	if err != nil {

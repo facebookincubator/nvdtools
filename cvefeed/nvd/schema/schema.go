@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package jsonschema was auto-generated.
-// Command: jsonschema2go -gen=go -gopkg=jsonschema -gofmt -goptr https://csrc.nist.gov/schema/nvd/feed/1.0/nvd_cve_feed_json_1.0.schema
-package jsonschema
+package schema
+
+// TimeLayout is the layout of NVD CVE timestamps.
+const TimeLayout = "2006-01-02T15:04Z"
 
 // NVDCVEFeedJSON10DefCPEName was auto-generated.
 // CPE name.

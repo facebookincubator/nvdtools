@@ -82,24 +82,24 @@ func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvef
 				matchingCPEs := make([]string, ml)
 				for i, attr := range matches.CPEs {
 					if attr == nil {
-						glog.Errorf("%s matches nil CPE", matches.CVE.CVEID())
+						glog.Errorf("%s matches nil CPE", matches.CVE.ID())
 						continue
 					}
 					matchingCPEs[i] = (*wfn.Attributes)(attr).BindToURI()
 				}
 				rec2 := make([]string, len(rec))
 				copy(rec2, rec)
-				cvss := matches.CVE.CVSS30base()
+				cvss := matches.CVE.CVSSv3BaseScore()
 				if cvss == 0 {
-					cvss = matches.CVE.CVSS20base()
+					cvss = matches.CVE.CVSSv2BaseScore()
 				}
 				rec2 = cfg.EraseFields.appendAt(
 					rec2,
-					cfg.CVEsAt-1, matches.CVE.CVEID(),
+					cfg.CVEsAt-1, matches.CVE.ID(),
 					cfg.MatchesAt-1, strings.Join(matchingCPEs, cfg.OutRecordSeparator),
-					cfg.CWEsAt-1, strings.Join(matches.CVE.ProblemTypes(), cfg.OutRecordSeparator),
-					cfg.CVSS2At-1, fmt.Sprintf("%.1f", matches.CVE.CVSS20base()),
-					cfg.CVSS3At-1, fmt.Sprintf("%.1f", matches.CVE.CVSS30base()),
+					cfg.CWEsAt-1, strings.Join(matches.CVE.CWEs(), cfg.OutRecordSeparator),
+					cfg.CVSS2At-1, fmt.Sprintf("%.1f", matches.CVE.CVSSv2BaseScore()),
+					cfg.CVSS3At-1, fmt.Sprintf("%.1f", matches.CVE.CVSSv3BaseScore()),
 					cfg.CVSSAt-1, fmt.Sprintf("%.1f", cvss),
 					cfg.ProviderAt-1, provider,
 				)
@@ -249,7 +249,7 @@ func Main() int {
 		glog.Error(fmt.Errorf("all dictionaries are empty"))
 		return -1
 	}
-	
+
 	overrides, err = cvefeed.LoadJSONDictionary(cfg.FeedOverrides...)
 	if err != nil {
 		glog.Error(err)

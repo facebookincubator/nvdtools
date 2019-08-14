@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	nvd "github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
+	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/stats"
 )
 

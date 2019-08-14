@@ -38,33 +38,34 @@ func TestMatchOverrides(t *testing.T) {
 			{Part: "a", Vendor: "microsoft", Product: "ie", Version: "5\\.0", Update: "patched"},
 		},
 	}
-	dict, err := LoadFeed(func(_ string) ([]CVEItem, error) {
+	dict, err := LoadFeed(func(_ string) ([]Vuln, error) {
 		return ParseJSON(bytes.NewBufferString(testJSONdict))
 	}, "")
 	if err != nil {
 		t.Fatalf("could not load test JSON feed: %v", err)
 	}
-	original, _ := LoadFeed(func(_ string) ([]CVEItem, error) {
+	original, _ := LoadFeed(func(_ string) ([]Vuln, error) {
 		return ParseJSON(bytes.NewBufferString(testJSONdict))
 	}, "")
-	overrides, err := LoadFeed(func(_ string) ([]CVEItem, error) {
+	overrides, err := LoadFeed(func(_ string) ([]Vuln, error) {
 		return ParseJSON(bytes.NewBufferString(testJSONoverride))
 	}, "")
 	if err != nil {
 		t.Fatalf("could not load test overrides: %v", err)
 	}
 	dict.Override(overrides)
+
 	for n, c := range cases {
 		c := c
 		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
 			var matchOriginal, matchOverride, matchDict bool
-			if _, m := Match(c, dict["TESTVE-2018-0002"].Config(), false); m {
+			if m := dict["TESTVE-2018-0002"].Match(c, false); len(m) > 0 {
 				matchDict = true
 			}
-			if _, m := Match(c, original["TESTVE-2018-0002"].Config(), false); m {
+			if m := original["TESTVE-2018-0002"].Match(c, false); len(m) > 0 {
 				matchOriginal = true
 			}
-			if _, m := Match(c, overrides["TESTVE-2018-0002"].Config(), false); m {
+			if m := overrides["TESTVE-2018-0002"].Match(c, false); len(m) > 0 {
 				matchOverride = true
 			}
 			if matchOriginal && matchDict && matchOverride {

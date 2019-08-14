@@ -18,7 +18,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
+	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 )
 
 var snykLayouts = []string{
@@ -33,7 +33,7 @@ func snykTimeToNVD(s string) string {
 	for _, layout := range snykLayouts {
 		t, err = time.Parse(layout, s)
 		if err == nil {
-			return t.Format(nvdcommon.TimeLayout)
+			return t.Format(nvd.TimeLayout)
 		}
 	}
 

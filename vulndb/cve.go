@@ -26,15 +26,15 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/facebookincubator/nvdtools/cvefeed/jsonschema"
+	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 )
 
 type cveFile struct {
-	items []*jsonschema.NVDCVEFeedJSON10DefCVEItem
+	items []*nvd.NVDCVEFeedJSON10DefCVEItem
 }
 
 func (c *cveFile) Add(cve string, nvdjson []byte) error {
-	var item jsonschema.NVDCVEFeedJSON10DefCVEItem
+	var item nvd.NVDCVEFeedJSON10DefCVEItem
 	err := json.Unmarshal(nvdjson, &item)
 	if err != nil {
 		return errors.Wrapf(err, "%s json payload is corrupted: %v", cve, err)
@@ -44,7 +44,7 @@ func (c *cveFile) Add(cve string, nvdjson []byte) error {
 }
 
 func (c *cveFile) EncodeJSON(w io.Writer) error {
-	err := json.NewEncoder(w).Encode(&jsonschema.NVDCVEFeedJSON10{
+	err := json.NewEncoder(w).Encode(&nvd.NVDCVEFeedJSON10{
 		CVEItems: c.items,
 	})
 	if err != nil {
@@ -72,7 +72,7 @@ func (c *cveFile) EncodeIndentedJSON(w io.Writer, prefix, indent string) error {
 
 // cveItem is a helper for extracting information from CVE items.
 type cveItem struct {
-	item *jsonschema.NVDCVEFeedJSON10DefCVEItem
+	item *nvd.NVDCVEFeedJSON10DefCVEItem
 }
 
 func (c cveItem) ID() string {
@@ -133,7 +133,7 @@ func (c cveItem) JSON() []byte {
 	return b
 }
 
-func readNVDCVEJSON(filename string) (*jsonschema.NVDCVEFeedJSON10, error) {
+func readNVDCVEJSON(filename string) (*nvd.NVDCVEFeedJSON10, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func readNVDCVEJSON(filename string) (*jsonschema.NVDCVEFeedJSON10, error) {
 }
 
 // parseNVDCVEJSON parses NVD CVE JSON data from r, decompressing as needed.
-func parseNVDCVEJSON(r io.Reader) (*jsonschema.NVDCVEFeedJSON10, error) {
+func parseNVDCVEJSON(r io.Reader) (*nvd.NVDCVEFeedJSON10, error) {
 	br := bufio.NewReader(r)
 	b, err := br.Peek(2)
 	if err != nil {
@@ -167,7 +167,7 @@ func parseNVDCVEJSON(r io.Reader) (*jsonschema.NVDCVEFeedJSON10, error) {
 		return nil, errors.Wrap(err, "cannot read NVD CVE JSON feed")
 	}
 
-	var f jsonschema.NVDCVEFeedJSON10
+	var f nvd.NVDCVEFeedJSON10
 	err = json.NewDecoder(bytes.NewReader(b)).Decode(&f)
 	if err != nil {
 		if jsonErr, ok := err.(*json.SyntaxError); ok {

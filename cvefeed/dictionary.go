@@ -20,12 +20,10 @@ import (
 	"os"
 	"strings"
 	"sync"
-
-	"github.com/facebookincubator/nvdtools/cvefeed/nvdcommon"
 )
 
 // Dictionary is a slice of entries
-type Dictionary map[string]CVEItem
+type Dictionary map[string]Vuln
 
 // Override amends entries in Dictionary with configurations from Dictionary d2;
 // CVE will be matched if it matches the original config of d and does not match the config of d2.
@@ -38,7 +36,7 @@ func (d *Dictionary) Override(d2 Dictionary) {
 	}
 	for k, cve := range d2 {
 		if _, ok := (*d)[k]; ok {
-			(*d)[k] = nvdcommon.MergeCVEItems((*d)[k], cve)
+			(*d)[k] = OverrideVuln((*d)[k], cve)
 		}
 	}
 }
@@ -49,12 +47,12 @@ func LoadJSONDictionary(paths ...string) (Dictionary, error) {
 }
 
 // LoadFeed calls loadFunc for each file in paths and returns the combined outputs in a Dictionary.
-func LoadFeed(loadFunc func(string) ([]CVEItem, error), paths ...string) (Dictionary, error) {
+func LoadFeed(loadFunc func(string) ([]Vuln, error), paths ...string) (Dictionary, error) {
 	dict := make(Dictionary)
 	var wg sync.WaitGroup
 	done := make(chan struct{})
 	errDone := make(chan struct{})
-	dictChan := make(chan []CVEItem, 1)
+	dictChan := make(chan []Vuln, 1)
 	errChan := make(chan error, 1)
 	for _, path := range paths {
 		wg.Add(1)
@@ -71,7 +69,7 @@ func LoadFeed(loadFunc func(string) ([]CVEItem, error), paths ...string) (Dictio
 	go func() {
 		for d := range dictChan {
 			for _, cve := range d {
-				if cveid := cve.CVEID(); cveid != "" {
+				if cveid := cve.ID(); cveid != "" {
 					dict[cveid] = cve
 				}
 			}
@@ -97,7 +95,7 @@ func LoadFeed(loadFunc func(string) ([]CVEItem, error), paths ...string) (Dictio
 }
 
 // loadJSONFile parses dictionary from NVD vulnerability feed JSON file
-func loadJSONFile(path string) ([]CVEItem, error) {
+func loadJSONFile(path string) ([]Vuln, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("dictionary: failed to load feed %q: %v", path, err)
