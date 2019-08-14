@@ -20,8 +20,7 @@ import (
 	"os"
 
 	"github.com/facebookincubator/nvdtools/providers/rustsec"
-
-	"github.com/golang/glog"
+	"github.com/facebookincubator/flog"
 )
 
 func main() {
@@ -35,11 +34,11 @@ func main() {
 
 	feed, err := rustsec.Convert(os.Args[1])
 	if err != nil {
-		glog.Fatal(err)
+		flog.Fatal(err)
 	}
 
 	err = json.NewEncoder(os.Stdout).Encode(feed)
 	if err != nil {
-		glog.Fatal(err)
+		flog.Fatal(err)
 	}
 }

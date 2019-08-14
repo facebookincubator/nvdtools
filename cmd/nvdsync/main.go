@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/nvd"
-	"github.com/golang/glog"
+	"github.com/facebookincubator/flog"
 )
 
 func init() {
@@ -64,9 +64,9 @@ func main() {
 	// determine User-Agent header
 	// check if it's only ascii characters
 	if err := nvd.SetUserAgent(userAgent); err != nil {
-		glog.Warningf("could not set User-Agent HTTP header, using default: %v", err)
+		flog.Warningf("could not set User-Agent HTTP header, using default: %v", err)
 	}
-	glog.Infof("Using http User-Agent: %s", nvd.UserAgent())
+	flog.Infof("Using http User-Agent: %s", nvd.UserAgent())
 
 	dfs := nvd.Sync{
 		Feeds:    []nvd.Syncer{cvefeed, cpefeed},
@@ -78,6 +78,6 @@ func main() {
 	defer cancel()
 
 	if err := dfs.Do(ctx); err != nil {
-		glog.Fatal(err)
+		flog.Fatal(err)
 	}
 }

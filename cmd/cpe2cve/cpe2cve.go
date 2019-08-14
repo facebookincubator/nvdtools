@@ -28,18 +28,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/golang/glog"
-
 	"github.com/facebookincubator/nvdtools/cvefeed"
 	"github.com/facebookincubator/nvdtools/stats"
 	"github.com/facebookincubator/nvdtools/wfn"
+	"github.com/facebookincubator/flog"
 )
 
 func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvefeed.Cache, cfg config, nlines *uint64) {
 	cpesAt := cfg.CPEsAt - 1
 	for rec := range in {
 		if cpesAt >= len(rec) {
-			glog.Errorf("not enough fields in input (%d)", len(rec))
+			flog.Errorf("not enough fields in input (%d)", len(rec))
 			continue
 		}
 		if stats.AreLogged() {
@@ -53,7 +52,7 @@ func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvef
 			}
 			attr, err := wfn.Parse(uri)
 			if err != nil {
-				glog.Errorf("couldn't parse uri %q: %v", uri, err)
+				flog.Errorf("couldn't parse uri %q: %v", uri, err)
 				continue
 			}
 			cpes = append(cpes, attr)
@@ -82,7 +81,7 @@ func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvef
 				matchingCPEs := make([]string, ml)
 				for i, attr := range matches.CPEs {
 					if attr == nil {
-						glog.Errorf("%s matches nil CPE", matches.CVE.ID())
+						flog.Errorf("%s matches nil CPE", matches.CVE.ID())
 						continue
 					}
 					matchingCPEs[i] = (*wfn.Attributes)(attr).BindToURI()
@@ -110,11 +109,11 @@ func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvef
 		n := atomic.AddUint64(nlines, 1)
 		if n > 0 {
 			if n%10000 == 0 {
-				glog.V(1).Infoln(n, "lines processed")
+				flog.V(1).Infoln(n, "lines processed")
 			} else if n%1000 == 0 {
-				glog.V(2).Infoln(n, "lines processed")
+				flog.V(2).Infoln(n, "lines processed")
 			} else if n%100 == 0 {
-				glog.V(3).Infoln(n, "lines processed")
+				flog.V(3).Infoln(n, "lines processed")
 			}
 		}
 	}
@@ -146,12 +145,12 @@ func processInput(in io.Reader, out io.Writer, caches map[string]*cvefeed.Cache,
 	go func() {
 		for rec := range procOut {
 			if err := w.Write(rec); err != nil {
-				glog.Errorf("write error: %v", err)
+				flog.Errorf("write error: %v", err)
 			}
 			w.Flush()
 		}
 		if err := w.Error(); err != nil {
-			glog.Errorf("write error: %v", err)
+			flog.Errorf("write error: %v", err)
 		}
 		close(done)
 	}()
@@ -164,7 +163,7 @@ func processInput(in io.Reader, out io.Writer, caches map[string]*cvefeed.Cache,
 			if err == io.EOF {
 				break
 			}
-			glog.Errorf("read error at line %d: %v", line, err)
+			flog.Errorf("read error at line %d: %v", line, err)
 		}
 		procIn <- rec
 	}
@@ -172,7 +171,7 @@ func processInput(in io.Reader, out io.Writer, caches map[string]*cvefeed.Cache,
 	close(procIn)
 	procWG.Wait()
 	close(procOut)
-	glog.V(1).Infof("processed %d lines in %v", linesProcessed, time.Since(start))
+	flog.V(1).Infof("processed %d lines in %v", linesProcessed, time.Since(start))
 	return done
 }
 
@@ -181,7 +180,7 @@ func init() {
 		fmt.Fprintf(os.Stderr, "usage: %s [flags] nvd_feed.xml.gz...\n", path.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "flags:\n")
 		flag.PrintDefaults()
-		if glog.V(1) {
+		if flog.V(1) {
 			writeConfigFileDefinition(os.Stderr)
 		}
 		os.Exit(1)
@@ -213,7 +212,7 @@ func Main() int {
 		err = cfg.validate()
 	}
 	if err != nil {
-		glog.Error(err)
+		flog.Error(err)
 		flag.Usage()
 	}
 
@@ -226,14 +225,14 @@ func Main() int {
 		}(start)
 	}
 
-	glog.V(1).Info("loading NVD feeds...")
+	flog.V(1).Info("loading NVD feeds...")
 
 	var overrides cvefeed.Dictionary
 	dicts := map[string]cvefeed.Dictionary{} // provider -> dictionary
 	for provider, files := range cfg.Feeds {
 		dict, err := cvefeed.LoadJSONDictionary(files...)
 		if err != nil {
-			glog.Errorf("failed to load dictionary for provider %s: %v", provider, err)
+			flog.Errorf("failed to load dictionary for provider %s: %v", provider, err)
 		}
 		dicts[provider] = dict
 	}
@@ -246,25 +245,25 @@ func Main() int {
 		}
 	}
 	if allEmpty {
-		glog.Error(fmt.Errorf("all dictionaries are empty"))
+		flog.Error(fmt.Errorf("all dictionaries are empty"))
 		return -1
 	}
 
 	overrides, err = cvefeed.LoadJSONDictionary(cfg.FeedOverrides...)
 	if err != nil {
-		glog.Error(err)
+		flog.Error(err)
 		return -1
 	}
 
-	glog.V(1).Infof("...done in %v", time.Since(start))
+	flog.V(1).Infof("...done in %v", time.Since(start))
 
 	if len(overrides) != 0 {
 		start = time.Now()
-		glog.V(1).Info("applying overrides...")
+		flog.V(1).Info("applying overrides...")
 		for _, dict := range dicts {
 			dict.Override(overrides)
 		}
-		glog.V(1).Infof("...done in %v", time.Since(start))
+		flog.V(1).Infof("...done in %v", time.Since(start))
 	}
 
 	caches := map[string]*cvefeed.Cache{}
@@ -274,10 +273,10 @@ func Main() int {
 
 	if cfg.IndexDict {
 		start = time.Now()
-		glog.V(1).Info("indexing dictionaries...")
+		flog.V(1).Info("indexing dictionaries...")
 		for provider, cache := range caches {
 			cache.Idx = cvefeed.NewIndex(dicts[provider])
-			if glog.V(2) {
+			if flog.V(2) {
 				var named, total int
 				for k, v := range cache.Idx {
 					if k != wfn.Any {
@@ -285,16 +284,16 @@ func Main() int {
 					}
 					total += len(v)
 				}
-				glog.Infof("%d out of %d records are named", named, total)
+				flog.Infof("%d out of %d records are named", named, total)
 			}
 		}
-		glog.V(1).Infof("...done in %v", time.Since(start))
+		flog.V(1).Infof("...done in %v", time.Since(start))
 	}
 
 	if cfg.CPUProfile != "" {
 		f, err := os.Create(cfg.CPUProfile)
 		if err != nil {
-			glog.Error(err)
+			flog.Error(err)
 			return 1
 		}
 		pprof.StartCPUProfile(f)
@@ -306,12 +305,12 @@ func Main() int {
 	if cfg.MemoryProfile != "" {
 		f, err := os.Create(cfg.MemoryProfile)
 		if err != nil {
-			glog.Error(err)
+			flog.Error(err)
 			return 1
 		}
 		runtime.GC()
 		if err = pprof.WriteHeapProfile(f); err != nil {
-			glog.Errorf("couldn't write heap profile: %v", err)
+			flog.Errorf("couldn't write heap profile: %v", err)
 		}
 		f.Close()
 	}
