@@ -26,7 +26,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/glog"
+	"github.com/facebookincubator/flog"
 )
 
 // CPE defines the CPE data feed for synchronization.
@@ -166,7 +166,7 @@ func (cf cpeFile) Sync(ctx context.Context, src SourceConfig, localdir string) e
 }
 
 func (cf cpeFile) needsUpdate(ctx context.Context, targetURL, localdir string) (bool, error) {
-	glog.V(1).Infof("checking etag for %q", targetURL)
+	flog.V(1).Infof("checking etag for %q", targetURL)
 	req, err := httpNewRequestContext(ctx, "HEAD", targetURL)
 	if err != nil {
 		return false, err
@@ -185,12 +185,12 @@ func (cf cpeFile) needsUpdate(ctx context.Context, targetURL, localdir string) (
 	}
 	etagBytes, err := ioutil.ReadFile(filepath.Join(localdir, cf.EtagFile))
 	if err != nil {
-		glog.V(1).Infof("etag file %q for not exist in %q, needs sync", cf.EtagFile, localdir)
+		flog.V(1).Infof("etag file %q for not exist in %q, needs sync", cf.EtagFile, localdir)
 		return true, nil
 	}
 	localEtag := string(etagBytes)
 	if localEtag != remoteEtag {
-		glog.V(1).Infof("data file %q needs update in %q: hash mismatch %q != %q", cf.DataFile, localdir, localEtag, remoteEtag)
+		flog.V(1).Infof("data file %q needs update in %q: hash mismatch %q != %q", cf.DataFile, localdir, localEtag, remoteEtag)
 		return true, nil
 	}
 	return false, nil
@@ -198,7 +198,7 @@ func (cf cpeFile) needsUpdate(ctx context.Context, targetURL, localdir string) (
 
 // download file from targetURL, returns etag and path to local file.
 func (cf cpeFile) download(ctx context.Context, targetURL string) (string, string, error) {
-	glog.V(1).Infof("downloading data file %q", targetURL)
+	flog.V(1).Infof("downloading data file %q", targetURL)
 	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
 		return "", "", err

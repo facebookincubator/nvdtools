@@ -34,7 +34,7 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/lib/download"
-	"github.com/golang/glog"
+	"github.com/facebookincubator/flog"
 )
 
 // CVE defines the CVE data feed for synchronization.
@@ -228,7 +228,7 @@ func (cf cveFile) Sync(ctx context.Context, src SourceConfig, localdir string) e
 		return err
 	}
 	remoteMetaURL := baseURL + cf.MetaFile
-	glog.V(1).Infof("checking meta file %q for updates to %q", cf.MetaFile, cf.DataFile)
+	flog.V(1).Infof("checking meta file %q for updates to %q", cf.MetaFile, cf.DataFile)
 	remoteMeta, needsUpdate, err := cf.needsUpdate(ctx, remoteMetaURL, localdir)
 	if err != nil {
 		return err
@@ -263,14 +263,14 @@ func (cf cveFile) Sync(ctx context.Context, src SourceConfig, localdir string) e
 }
 
 func (cf cveFile) needsUpdate(ctx context.Context, remoteMetaURL, localdir string) (*metaFile, bool, error) {
-	glog.V(1).Infof("downloading meta file %q", remoteMetaURL)
+	flog.V(1).Infof("downloading meta file %q", remoteMetaURL)
 	remoteMeta, err := newMetaFromURL(ctx, remoteMetaURL)
 	if err != nil {
 		return nil, false, err
 	}
 	metaFilename := filepath.Join(localdir, cf.MetaFile)
 	if _, err := os.Stat(metaFilename); os.IsNotExist(err) {
-		glog.V(1).Infof("meta file %q does not exist in %q, needs sync", cf.MetaFile, localdir)
+		flog.V(1).Infof("meta file %q does not exist in %q, needs sync", cf.MetaFile, localdir)
 		return &remoteMeta, true, nil
 	}
 	localMeta, err := newMetaFromFile(metaFilename)
@@ -278,14 +278,14 @@ func (cf cveFile) needsUpdate(ctx context.Context, remoteMetaURL, localdir strin
 		return nil, false, err
 	}
 	if !localMeta.Equal(remoteMeta) {
-		glog.V(1).Infof("data file %q needs update in %q: local%+v != remote%+v", cf.DataFile, localdir, localMeta, remoteMeta)
+		flog.V(1).Infof("data file %q needs update in %q: local%+v != remote%+v", cf.DataFile, localdir, localMeta, remoteMeta)
 		return &remoteMeta, true, nil
 	}
 	dataFilename := filepath.Join(localdir, cf.DataFile)
 	fi, err := os.Stat(dataFilename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			glog.V(1).Infof("data file %q does not exist in %q, needs sync", cf.DataFile, localdir)
+			flog.V(1).Infof("data file %q does not exist in %q, needs sync", cf.DataFile, localdir)
 			return &remoteMeta, true, nil
 		}
 		return nil, false, err
@@ -301,7 +301,7 @@ func (cf cveFile) needsUpdate(ctx context.Context, remoteMetaURL, localdir strin
 		hashFunc = unzipFileAndComputeSHA256
 	}
 	if !sizeOK {
-		glog.V(1).Infof("data file %q needs update in %q: size mismatch", cf.DataFile, localdir)
+		flog.V(1).Infof("data file %q needs update in %q: size mismatch", cf.DataFile, localdir)
 		return &remoteMeta, true, nil
 	}
 	hash, err := hashFunc(dataFilename)
@@ -309,7 +309,7 @@ func (cf cveFile) needsUpdate(ctx context.Context, remoteMetaURL, localdir strin
 		return nil, false, err
 	}
 	if hash != localMeta.SHA256 {
-		glog.V(1).Infof("data file %q needs update in %q: hash mismatch %q != %q", cf.DataFile, localdir, hash, localMeta.SHA256)
+		flog.V(1).Infof("data file %q needs update in %q: hash mismatch %q != %q", cf.DataFile, localdir, hash, localMeta.SHA256)
 		return &remoteMeta, true, nil
 	}
 	return &remoteMeta, false, nil
@@ -322,7 +322,7 @@ func (cf cveFile) downloadAndVerify(ctx context.Context, m *metaFile, remoteFile
 	if err != nil {
 		return "", err
 	}
-	glog.V(1).Infof("downloading data file %q", remoteFileURL)
+	flog.V(1).Infof("downloading data file %q", remoteFileURL)
 	client, err := download.Client()
 	if err != nil {
 		return "", fmt.Errorf("can't obtain http client: %v", err)

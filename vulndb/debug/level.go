@@ -21,7 +21,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// poor man's glog verbosity
+// poor man's flog verbosity
 
 // LevelFlag represents the verbosity level.
 type LevelFlag int8
