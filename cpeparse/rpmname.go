@@ -21,57 +21,73 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
+// split a string into two parts based on given index
+func split(s string, idx int) (left, right string) {
+	return s[:idx], s[idx+1:]
+}
+
 // FieldsFromRPMName returns name, version, release and acrhitecture parsed from RPM package name
-func FieldsFromRPMName(s string) (name, ver, rel, arch string, err error) {
-	pkg := s
+// NEVRA: https://blog.jasonantman.com/2014/07/how-yum-and-rpm-compare-versions/
+func FieldsFromRPMName(pkg string) (name, epoch, version, release, arch string, err error) {
+	// pkg should be name-(epoch:)version-release.arch.rpm
+
 	// extension
 	if strings.HasSuffix(pkg, ".rpm") {
 		pkg = pkg[:len(pkg)-4]
 	}
-	// architecture
-	if i := strings.LastIndexByte(pkg, '.'); i != -1 {
-		if arch, err = wfn.WFNize(pkg[i+1:]); err != nil {
-			err = fmt.Errorf("couldn't parse architecture from RPM package name %q: %v", s, err)
-			return
-		}
-		if arch == "noarch" || arch == "src" {
-			arch = wfn.Any
-		}
-		pkg = pkg[:i]
-	}
-	// release
-	if i := strings.LastIndexByte(pkg, '-'); i != -1 {
-		if rel, err = wfn.WFNize(pkg[i+1:]); err != nil {
-			err = fmt.Errorf("couldn't parse release from RPM package name %q: %v", s, err)
-			return
-		}
-		pkg = pkg[:i]
-	}
-	// version
-	if i := strings.LastIndexByte(pkg, '-'); i != -1 {
-		if ver, err = wfn.WFNize(pkg[i+1:]); err != nil {
-			err = fmt.Errorf("couldn't parse version from RPM package name %q: %v", s, err)
-			return
-		}
-		pkg = pkg[:i]
-	}
-	// epoch -- we don't use it
-	i := strings.IndexByte(pkg, ':')
+
+	var i int
+
 	// name
-	if name, err = wfn.WFNize(strings.ToLower(pkg[i+1:])); err != nil {
-		err = fmt.Errorf("couldn't parse name from RPM package name %q", s)
+	if i = strings.IndexByte(pkg, '-'); i == -1 {
+		err = fmt.Errorf("can't split %q on '-' to find a name", pkg)
 		return
 	}
+	name, pkg = split(pkg, i)
+	name = strings.ToLower(name)
+
+	// epoch? and version
+	if i = strings.IndexByte(pkg, '-'); i == -1 {
+		err = fmt.Errorf("can't split %q on '-' to find a version", pkg)
+		return
+	}
+	version, pkg = split(pkg, i)
+	if i = strings.IndexByte(version, ':'); i != -1 {
+		epoch, version = split(version, i)
+	}
+
+	// release and arch
+	if i = strings.IndexByte(pkg, '.'); i == -1 {
+		err = fmt.Errorf("can't split %q on '-' to find release", pkg)
+		return
+	}
+	release, arch = split(pkg, i)
+	if arch == "src" || arch == "noarch" {
+		arch = wfn.Any
+	}
+
 	return
 }
 
 // FromRPMName parses CPE name from RPM package name
 func FromRPMName(attr *wfn.Attributes, s string) error {
 	var err error
-	name, ver, rel, arch, err := FieldsFromRPMName(s)
+	name, _, ver, rel, arch, err := FieldsFromRPMName(s)
 	if err != nil {
-		return err
+		return fmt.Errorf("can't get fields from %q: %v", s, err)
 	}
+
+	for n, addr := range map[string]*string{
+		"name":    &name,
+		"version": &ver,
+		"release": &rel,
+		"arch":    &arch,
+	} {
+		if *addr, err = wfn.WFNize(*addr); err != nil {
+			err = fmt.Errorf("couldn't wfnize %s %q: %v", n, *addr, err)
+		}
+	}
+
 	if name == wfn.Any {
 		return fmt.Errorf("no name found in RPM name %q", s)
 	}
