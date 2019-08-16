@@ -113,7 +113,7 @@ binary_rpm: archive_tar
 	rpmbuild -ba \
 		--define="_topdir $(PWD)/build/rpm" \
 		--define="_version $(VERSION)" \
-		rpm/nvdtools.spec
+		nvdtools.spec
 
 # release_tar creates tarball releases.
 release_tar:

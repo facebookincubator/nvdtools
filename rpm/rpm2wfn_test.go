@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cpeparse
+package rpm
 
 import (
 	"testing"
@@ -20,7 +20,7 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-func TestFromRPMName(t *testing.T) {
+func TestToWFN(t *testing.T) {
 	cases := []struct {
 		pkgName string
 		cpe     string
@@ -35,7 +35,7 @@ func TestFromRPMName(t *testing.T) {
 	}
 	for _, c := range cases {
 		var attr wfn.Attributes
-		err := FromRPMName(&attr, c.pkgName)
+		err := ToWFN(&attr, c.pkgName)
 		if err != nil {
 			if !c.fail {
 				t.Errorf("%q: unexpected failure: %v", c.pkgName, err)
@@ -52,15 +52,9 @@ func TestFromRPMName(t *testing.T) {
 	}
 }
 
-func BenchmarkFromRPMName(t *testing.B) {
+func BenchmarkToWFN(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		var attr wfn.Attributes
-		FromRPMName(&attr, "NaMe-1.0-1.i386.rpm")
-	}
-}
-
-func BenchmarkFieldsFromRPMName(t *testing.B) {
-	for i := 0; i < t.N; i++ {
-		FieldsFromRPMName("NaMe-1.0-1.i386.rpm")
+		ToWFN(&attr, "NaMe-1.0-1.i386.rpm")
 	}
 }

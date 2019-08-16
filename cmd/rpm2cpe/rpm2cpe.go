@@ -27,7 +27,7 @@ import (
 
 	"github.com/facebookincubator/nvdtools/wfn"
 
-	"github.com/facebookincubator/nvdtools/cpeparse"
+	"github.com/facebookincubator/nvdtools/rpm"
 )
 
 var progname = path.Base(os.Args[0])
@@ -130,7 +130,7 @@ func processRecord(fields []string, cfg config) ([]string, error) {
 	}
 	attr := wfn.NewAttributesWithNA()
 	attr.Vendor = wfn.Any
-	if err := cpeparse.FromRPMName(attr, fields[cfg.rpmField-1]); err != nil {
+	if err := rpm.ToWFN(attr, fields[cfg.rpmField-1]); err != nil {
 		return nil, fmt.Errorf("couldn't parse RPM name from field %q: %v", fields[cfg.rpmField-1], err)
 	}
 	cpe := attr.BindToURI()
