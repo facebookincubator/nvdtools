@@ -78,26 +78,37 @@ func TestProcessor(t *testing.T) {
 	cases := []struct {
 		flags []string
 		skips IntSet
+		na    bool
 		in    string
 		out   string
 	}{
 		{
 			[]string{"-cpe_product=1", "-cpe_version=2"},
 			NewIntSet(1, 2, 3),
+			true,
 			"Foo\t1.0...\tdelet\ta\nbar\t2.0\tdelet\tb",
 			"a,cpe:/-:-:foo:1.0:-:-:-\nb,cpe:/-:-:bar:2.0:-:-:-\n",
 		},
 		{
 			[]string{"-cpe_part=1", "-cpe_product=2", "-cpe_product=4"},
 			NewIntSet(1, 2, 3),
+			true,
 			"a\tb\tc\n",
 			"cpe:/a:-:-:-:-:-:-\n",
 		},
 		{
 			[]string{"-cpe_part=1", "-cpe_product=2", "-cpe_version=3"},
 			NewIntSet(1, 2, 3),
+			true,
 			"a\tbash\t4.4\n",
 			"cpe:/a:-:bash:4.4:-:-:-\n",
+		},
+		{
+			[]string{"-cpe_part=1", "-cpe_product=2", "-cpe_version=3"},
+			NewIntSet(1, 2, 3),
+			false,
+			"a\tbash\t4.4\n",
+			"cpe:/a::bash:4.4\n",
 		},
 	}
 
@@ -121,6 +132,7 @@ func TestProcessor(t *testing.T) {
 				CPEToLower:        true,
 				CPEOutputColumn:   2,
 				EraseInputColumns: c.skips,
+				DefaultNA:         c.na,
 			}
 
 			stdin.Write([]byte(c.in))

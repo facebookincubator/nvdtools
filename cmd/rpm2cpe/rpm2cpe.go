@@ -82,6 +82,7 @@ type config struct {
 	inFieldSep  string
 	outFieldSep string
 	skip        fieldsToSkip
+	defaultNA   bool
 }
 
 func (c *config) addFlags() {
@@ -91,6 +92,7 @@ func (c *config) addFlags() {
 	flag.StringVar(&c.outFieldSep, "o", "\t", "output column delimiter")
 	flag.Var(&c.skip, "e", "optional comma-separated list of input fields that should be dropped from output (starts with 1) "+
 		"rpm name is extracted before dropping fields, CPE is added after that")
+	flag.BoolVar(&c.defaultNA, "na", false, "if set, unknown CPE attributes are set to N/A, otherwise to ANY")
 }
 
 func sayErr(status int, msg string, args ...interface{}) {
@@ -128,7 +130,12 @@ func processRecord(fields []string, cfg config) ([]string, error) {
 	if cfg.rpmField > len(fields) {
 		return nil, fmt.Errorf("not enough fields (%d)", len(fields))
 	}
-	attr := wfn.NewAttributesWithNA()
+	var attr *wfn.Attributes
+	if cfg.defaultNA {
+		attr = wfn.NewAttributesWithNA()
+	} else {
+		attr = wfn.NewAttributesWithAny()
+	}
 	attr.Vendor = wfn.Any
 	if err := rpm.ToWFN(attr, fields[cfg.rpmField-1]); err != nil {
 		return nil, fmt.Errorf("couldn't parse RPM name from field %q: %v", fields[cfg.rpmField-1], err)
