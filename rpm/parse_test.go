@@ -114,6 +114,18 @@ func TestParse(t *testing.T) {
 				Arch: "xx",
 			},
 		},
+		{
+			pkgStr: "MySQL-python-1.2.5-1.el7.src.rpm",
+			pkg: Package{
+				Name: "mysql-python",
+				Label: Label{
+					Epoch:   "",
+					Version: "1.2.5",
+					Release: "1.el7",
+				},
+				Arch: "",
+			},
+		},
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
