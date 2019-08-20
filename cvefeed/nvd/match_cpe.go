@@ -66,7 +66,7 @@ func cpeMatcher(nvdMatch *schema.NVDCVEFeedJSON10DefCPEMatch) (wfn.Matcher, erro
 // Match is part of the Matcher interface
 func (cm *cpeMatch) Match(attrs []*wfn.Attributes, requireVersion bool) (matches []*wfn.Attributes) {
 	for _, attr := range attrs {
-		if cm.match(attr, requireVersion) == cm.vulnerable {
+		if cm.match(attr, requireVersion) {
 			matches = append(matches, attr)
 		}
 	}
