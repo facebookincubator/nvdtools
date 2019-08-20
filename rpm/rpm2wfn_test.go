@@ -28,7 +28,6 @@ func TestToWFN(t *testing.T) {
 	}{
 		{"", "", true},
 		{"-1.0.1.x86_64", "", true},
-		{"name-1.0.1.rmp", "", true},
 		{"name-1.0-1.noarch.rpm", "cpe:2.3:a:*:name:1.0:1:*:*:*:*:*:*", false},
 		{"NaMe-1.0-1.i386.rpm", "cpe:2.3:a:*:name:1.0:1:*:*:*:*:i386:*", false},
 		{"NaMe-1.0-1.src.rpm", "cpe:2.3:a:*:name:1.0:1:*:*:*:*:*:*", false},

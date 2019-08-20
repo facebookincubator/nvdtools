@@ -36,7 +36,7 @@ type Label struct {
 // FieldsFromRPMName returns name, version, release and architecture parsed from RPM package name
 // NEVRA: https://blog.jasonantman.com/2014/07/how-yum-and-rpm-compare-versions/
 func Parse(pkg string) (*Package, error) {
-	// pkg should be name-(epoch:)version-release.arch.rpm
+	// pkg should be name-(epoch:)version[-release].arch.rpm
 
 	// extension
 	if strings.HasSuffix(pkg, ".rpm") {
@@ -44,31 +44,36 @@ func Parse(pkg string) (*Package, error) {
 	}
 
 	var p Package
-	var parts []string
 
 	// name
-	if parts = strings.SplitN(pkg, "-", 2); len(parts) != 2 {
+	if parts := strings.SplitN(pkg, "-", 2); len(parts) == 2 {
+		p.Name, pkg = strings.ToLower(parts[0]), parts[1]
+	} else {
 		return nil, fmt.Errorf("can't split %q on '-' to find a name", pkg)
 	}
-	p.Name, pkg = strings.ToLower(parts[0]), parts[1]
 
-	// epoch? and version
-	if parts = strings.SplitN(pkg, "-", 2); len(parts) != 2 {
-		return nil, fmt.Errorf("can't split %q on '-' to find a version", pkg)
-	}
-	p.Label.Version, pkg = parts[0], parts[1]
-	if parts = strings.SplitN(p.Label.Version, ":", 2); len(parts) == 2 {
-		p.Label.Epoch, p.Label.Version = parts[0], parts[1]
+	// arch
+	if i := strings.LastIndexByte(pkg, '.'); i >= 0 {
+		pkg, p.Arch = pkg[:i], pkg[i+1:]
+		if p.Arch == "src" || p.Arch == "noarch" {
+			p.Arch = ""
+		}
+	} else {
+		return nil, fmt.Errorf("can't find arch in pkg %q", pkg)
 	}
 
-	// release and arch
-	if parts = strings.SplitN(pkg, ".", 2); len(parts) != 2 {
-		return nil, fmt.Errorf("can't split %q on '-' to find releakse", pkg)
+	// label = [epoch:]version[-release]
+
+	// check if there's epoch
+	if parts := strings.SplitN(pkg, ":", 2); len(parts) == 2 {
+		p.Label.Epoch, pkg = parts[0], parts[1]
 	}
-	p.Label.Release, p.Arch = parts[0], parts[1]
-	if p.Arch == "src" || p.Arch == "noarch" {
-		p.Arch = ""
+
+	// check if there's release
+	if parts := strings.SplitN(pkg, "-", 2); len(parts) == 2 {
+		pkg, p.Label.Release = parts[0], parts[1]
 	}
+	p.Label.Version = pkg
 
 	return &p, nil
 }
