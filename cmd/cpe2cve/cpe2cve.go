@@ -28,10 +28,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/cvefeed"
 	"github.com/facebookincubator/nvdtools/stats"
 	"github.com/facebookincubator/nvdtools/wfn"
-	"github.com/facebookincubator/flog"
 )
 
 func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvefeed.Cache, cfg config, nlines *uint64) {
@@ -176,6 +176,8 @@ func processInput(in io.Reader, out io.Writer, caches map[string]*cvefeed.Cache,
 }
 
 func init() {
+	flog.AddFlags(flag.CommandLine, nil)
+	stats.AddFlags()
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: %s [flags] nvd_feed.xml.gz...\n", path.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "flags:\n")
@@ -196,7 +198,6 @@ func main() {
 func Main() int {
 	var cfg config
 	cfg.addFlags()
-	stats.AddFlags()
 	provider := flag.String("provider", "", "feed provider. used as a provider name for the feeds passed in through the command line")
 	cfgFile := flag.String("config", "", "path to a config file (JSON or TOML); see usage to see how it's configured (pass -v=1 flag for verbose help). Mutually exclusive with command line flags => when used, other flags are ignored")
 	flag.Parse()

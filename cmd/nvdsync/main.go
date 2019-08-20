@@ -22,11 +22,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/providers/nvd"
 	"github.com/facebookincubator/flog"
+	"github.com/facebookincubator/nvdtools/providers/nvd"
 )
 
 func init() {
+	flog.AddFlags(flag.CommandLine, nil)
 	flag.Set("logtostderr", "true")
 }
 

@@ -33,8 +33,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/facebookincubator/nvdtools/providers/lib/download"
 	"github.com/facebookincubator/flog"
+	"github.com/facebookincubator/nvdtools/providers/lib/download"
 )
 
 // CVE defines the CVE data feed for synchronization.
