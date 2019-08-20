@@ -102,6 +102,18 @@ func TestParse(t *testing.T) {
 				Arch: "",
 			},
 		},
+		{
+			pkgStr: "name-e.2:ve.rsi.on-r.el7.xx.rpm",
+			pkg: Package{
+				Name: "name",
+				Label: Label{
+					Epoch:   "e.2",
+					Version: "ve.rsi.on",
+					Release: "r.el7",
+				},
+				Arch: "xx",
+			},
+		},
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
