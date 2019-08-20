@@ -37,6 +37,7 @@ func main() {
 	erase := flag.String("e", "", "comma separated list of columns to erase, optional")
 	unmap := flag.Bool("x", false, "erase all columns mapped from -cpe_{field}, optional")
 	lower := flag.Bool("lower", false, "force cpe output to be lower case, optional")
+	defaultNA := flag.Bool("na", false, "if set, unknown CPE attributes are set to N/A, otherwise to ANY")
 
 	flag.Parse()
 
@@ -69,6 +70,7 @@ func main() {
 		InputComma:        rune((*idelim)[0]),
 		OutputComma:       rune((*odelim)[0]),
 		CPEToLower:        *lower,
+		DefaultNA:         *defaultNA,
 		CPEOutputColumn:   *idx,
 		EraseInputColumns: eraseCols,
 	}
@@ -85,6 +87,7 @@ type Processor struct {
 	InputComma        rune   // input comma character
 	OutputComma       rune   // output comma character
 	CPEToLower        bool   // whether the output cpe should be forced lower case
+	DefaultNA         bool   // true -> default attribute value is NA, false -> ANY
 	CPEOutputColumn   int    // index to add cpe column in the output, after erases
 	EraseInputColumns IntSet // input columns to erase before output
 }
@@ -112,7 +115,7 @@ func (p *Processor) Process(acm *AttributeColumnMap, r io.Reader, w io.Writer) e
 			return fmt.Errorf("error parsing line %d: %v", line, err)
 		}
 
-		cpe, err := acm.CPE(cols, p.CPEToLower)
+		cpe, err := acm.CPE(cols, p.CPEToLower, p.DefaultNA)
 		if err != nil {
 			return fmt.Errorf("error parsing columns in line %d: %v", line, err)
 		}
@@ -157,9 +160,14 @@ func (acm *AttributeColumnMap) AddFlags(fs *flag.FlagSet) {
 }
 
 // CPE returns a CPE by mapping cols to the configured column indices.
-func (acm *AttributeColumnMap) CPE(cols []string, lower bool) (string, error) {
+func (acm *AttributeColumnMap) CPE(cols []string, lower, na bool) (string, error) {
 	var err error
-	attr := wfn.NewAttributesWithNA()
+	var attr *wfn.Attributes
+	if na {
+		attr = wfn.NewAttributesWithNA()
+	} else {
+		attr = wfn.NewAttributesWithAny()
+	}
 
 	m := map[int]*string{
 		acm.Part:      &attr.Part,

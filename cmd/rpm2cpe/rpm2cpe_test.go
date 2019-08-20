@@ -54,16 +54,16 @@ func TestSkipFields(t *testing.T) {
 
 func TestProcessRecord(t *testing.T) {
 	cases := []struct {
-		in   string
-		out  string
-		fail bool
+		in, out   string
+		defaultNA bool
+		fail      bool
 	}{
-		{"", "", true},
-		{"0,name-1.0-1.noarch.rpm", "name-1.0-1.noarch.rpm;cpe:/a::name:1.0:1:~-~-~-~~-:-", false},
+		{"", "", false, true},
+		{"0,name-1.0-1.noarch.rpm", "name-1.0-1.noarch.rpm;cpe:/a::name:1.0:1:~-~-~-~~-:-", true, false},
 		{
-			"0,name-1.0-1.i386.rpm,2,3,4,5,6",
-			"name-1.0-1.i386.rpm;2;4;5;cpe:/a::name:1.0:1:~-~-~-~i386~-:-;6",
-			false,
+			in:        "0,name-1.0-1.i386.rpm,2,3,4,5,6",
+			out:       "name-1.0-1.i386.rpm;2;4;5;cpe:/a::name:1.0:1:~-~-~-~i386~-:-;6",
+			defaultNA: true,
 		},
 	}
 	cfg := config{
@@ -74,6 +74,7 @@ func TestProcessRecord(t *testing.T) {
 		skip:        fieldsToSkip(map[int]struct{}{0: {}, 3: {}}),
 	}
 	for _, c := range cases {
+		cfg.defaultNA = c.defaultNA
 		record, err := processRecord(strings.Split(c.in, cfg.inFieldSep), cfg)
 		if err != nil {
 			if !c.fail {
