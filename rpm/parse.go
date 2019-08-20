@@ -36,7 +36,7 @@ type Label struct {
 // FieldsFromRPMName returns name, version, release and architecture parsed from RPM package name
 // NEVRA: https://blog.jasonantman.com/2014/07/how-yum-and-rpm-compare-versions/
 func Parse(pkg string) (*Package, error) {
-	// pkg should be name-(epoch:)version[-release].arch.rpm
+	// pkg should be name-[epoch:]version-release.arch.rpm
 
 	// extension
 	if strings.HasSuffix(pkg, ".rpm") {
@@ -44,13 +44,6 @@ func Parse(pkg string) (*Package, error) {
 	}
 
 	var p Package
-
-	// name
-	if parts := strings.SplitN(pkg, "-", 2); len(parts) == 2 {
-		p.Name, pkg = strings.ToLower(parts[0]), parts[1]
-	} else {
-		return nil, fmt.Errorf("can't split %q on '-' to find a name", pkg)
-	}
 
 	// arch
 	if i := strings.LastIndexByte(pkg, '.'); i >= 0 {
@@ -62,18 +55,27 @@ func Parse(pkg string) (*Package, error) {
 		return nil, fmt.Errorf("can't find arch in pkg %q", pkg)
 	}
 
-	// label = [epoch:]version[-release]
-
-	// check if there's epoch
-	if parts := strings.SplitN(pkg, ":", 2); len(parts) == 2 {
-		p.Label.Epoch, pkg = parts[0], parts[1]
+	// release
+	if i := strings.LastIndexByte(pkg, '-'); i >= 0 {
+		pkg, p.Label.Release = pkg[:i], pkg[i+1:]
+	} else {
+		return nil, fmt.Errorf("can't find release in pkg %q", pkg)
 	}
 
-	// check if there's release
-	if parts := strings.SplitN(pkg, "-", 2); len(parts) == 2 {
-		pkg, p.Label.Release = parts[0], parts[1]
+	// version and epoch
+	if i := strings.LastIndexByte(pkg, '-'); i >= 0 {
+		var ver string
+		pkg, ver = pkg[:i], pkg[i+1:]
+		// check if there's epoch
+		if i := strings.IndexByte(ver, ':'); i >= 0 {
+			p.Label.Epoch, ver = ver[:i], ver[i+1:]
+		}
+		p.Label.Version = ver
+	} else {
+		return nil, fmt.Errorf("can't find version in pkg %q", pkg)
 	}
-	p.Label.Version = pkg
+
+	p.Name = strings.ToLower(pkg)
 
 	return &p, nil
 }
