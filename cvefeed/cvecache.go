@@ -19,8 +19,8 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/facebookincubator/nvdtools/wfn"
 	"github.com/facebookincubator/flog"
+	"github.com/facebookincubator/nvdtools/wfn"
 )
 
 const cacheEvictPercentage = 0.1 // every eviction cycle invalidates this part of cache size at once

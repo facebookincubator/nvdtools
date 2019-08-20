@@ -16,12 +16,17 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 
-	"github.com/facebookincubator/nvdtools/providers/rustsec"
 	"github.com/facebookincubator/flog"
+	"github.com/facebookincubator/nvdtools/providers/rustsec"
 )
+
+func init() {
+	flog.AddFlags(flag.CommandLine, nil)
+}
 
 func main() {
 	if len(os.Args) != 2 {
