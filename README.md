@@ -19,6 +19,7 @@ The [HOWTO](HOWTO.md) provides a broader view on how to effectively use these to
   * [nvdsync](#nvdsync)
   * [rpm2cpe](#rpm2cpe)
   * [rustsec2nvd](#rustsec2nvd)
+  * [vfeed2nvd](#vfeed2nvd)
   * [vulndb](#vulndb)
 * [Libraries](#libraries)
   * [cvss2](#cvss2)
@@ -156,6 +157,10 @@ cpe:/a::openoffice-eu-writer:4.1.5:9789:~~~~i586~
 ### `snyk2nvd`
 
 *snyk2nvd* downloads the vulnerability data from [Snyk](https://snyk.io/) and converts it into NVD format. The resulting file can be used as a feed in [`cpe2cve`](#cpe2cve) processor
+
+### `vfeed2nvd`
+
+*vfeed2nvd* converts the vulnerability data from [vFeed](https://vfeed.io/) into NVD format. The resulting file can be used as a feed in [`cpe2cve`](#cpe2cve) processor
 
 ### `vulndb`
 
