@@ -63,18 +63,6 @@ func (c allChecker) Check(pkg *Package, distro *wfn.Attributes, cve string) bool
 	return true
 }
 
-// MapChecker implements the Checker interface
-// calls the checker which is mapped to checked CVE
-type MapChecker map[string]Checker // CVE -> Checker
-
-// Check is part of the Checker interface
-func (c MapChecker) Check(pkg *Package, distro *wfn.Attributes, cve string) bool {
-	if chk, ok := c[cve]; ok {
-		return chk.Check(pkg, distro, cve)
-	}
-	return false
-}
-
 // Check will parse package and distro and call given checker to return
 func Check(chk Checker, pkg, distro, cve string) (bool, error) {
 	p, err := Parse(pkg)
@@ -88,4 +76,29 @@ func Check(chk Checker, pkg, distro, cve string) (bool, error) {
 	}
 
 	return chk.Check(p, d, cve), nil
+}
+
+// FilterPackages will return those packages which haven't been fixed already on the given distro and for a given cve
+// if some package can't be parsed as an rpm package, it will not be checked and will be included in the output list
+func FilterFixedPackages(chk Checker, pkgs []string, distro, cve string) ([]string, error) {
+	d, err := wfn.Parse(distro)
+	if err != nil {
+		return nil, fmt.Errorf("can't parse distro cpe %q: %v", distro, err)
+	}
+
+	var filtered []string
+
+	for _, pkg := range pkgs {
+		p, err := Parse(pkg)
+		if err != nil {
+			filtered = append(filtered, pkg)
+			continue
+		}
+		if !chk.Check(p, d, cve) {
+			// if it hasn't been fixed for the given checker, append it
+			filtered = append(filtered, pkg)
+		}
+	}
+
+	return filtered, nil
 }
