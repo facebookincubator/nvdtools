@@ -206,7 +206,7 @@ func (ps *PackageState) createNode() (*nvd.NVDCVEFeedJSON10DefNode, error) {
 			{
 				Cpe22Uri:   pkgAttrs.BindToURI(),
 				Cpe23Uri:   pkgAttrs.BindToFmtString(),
-				Vulnerable: !IsFixed(ps.FixState),
+				Vulnerable: IsVulnerable(ps.FixState),
 			},
 			// distribution
 			{

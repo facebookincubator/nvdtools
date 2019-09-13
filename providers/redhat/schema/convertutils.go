@@ -48,7 +48,7 @@ func findCWEs(s string) []string {
 	return cweRegex.FindAllString(s, -1)
 }
 
-func IsFixed(fixState string) bool {
+func IsVulnerable(fixState string) bool {
 	// $ jq 'to_entries | .[].value.package_state' redhat.json | grep fix_state | sort -u
 	// "fix_state": "Affected",
 	// "fix_state": "Fix deferred",
@@ -60,12 +60,12 @@ func IsFixed(fixState string) bool {
 
 	switch strings.TrimSpace(strings.ToLower(fixState)) {
 	case "affected", "fix deferred", "new", "out of support scope", "will not fix":
-		return false
-	case "not affected", "under investigation":
 		return true
+	case "not affected", "under investigation":
+		return false
 	default:
 		log.Printf("unknown fix state: %q", fixState)
-		return true
+		return false
 	}
 }
 
