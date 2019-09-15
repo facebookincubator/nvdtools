@@ -56,8 +56,8 @@ func (c affectedReleasePkgChecker) checkPkg(pkg *rpm.Package) bool {
 }
 
 type singleChecker struct {
-	distro *wfn.Attributes
-	pkgCheck
+	distro     *wfn.Attributes
+	pkgChecker pkgCheck
 }
 
 func (c *singleChecker) Check(pkg *rpm.Package, distro *wfn.Attributes, cve string) bool {
@@ -65,7 +65,7 @@ func (c *singleChecker) Check(pkg *rpm.Package, distro *wfn.Attributes, cve stri
 		// just a sanity check, shouldn't even be called with nil
 		return false
 	}
-	if !c.checkPkg(pkg) {
+	if !c.pkgChecker.checkPkg(pkg) {
 		// package doesn't match, return false
 		return false
 	}

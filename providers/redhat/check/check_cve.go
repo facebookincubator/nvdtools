@@ -59,7 +59,7 @@ func affectedReleaseCheckers(cve *schema.CVE) ([]rpm.Checker, error) {
 		if err != nil {
 			return nil, fmt.Errorf("can't parse distro cpe %q: %v", ar.CPE, err)
 		}
-		// TODO we need to do this because RedHat sometimes sets `a` as part for RHEL-X, when it should be `o`
+		// XXX we need to do this because RedHat sometimes sets `a` as part for RHEL-X, when it should be `o`
 		d.Part = wfn.Any
 
 		var pc pkgCheck = constPkgChecker(true) // match all packages
@@ -93,7 +93,7 @@ func packageStateCheckers(cve *schema.CVE) ([]rpm.Checker, error) {
 		if err != nil {
 			return nil, fmt.Errorf("can't parse distro cpe %q: %v", ps.CPE, err)
 		}
-		// TODO we need to do this because RedHat sometimes sets `a` as part for RHEL-X, when it should be `o`
+		// XXX we need to do this because RedHat sometimes sets `a` as part for RHEL-X, when it should be `o`
 		d.Part = wfn.Any
 
 		var pc pkgCheck = constPkgChecker(true) // match all packages
