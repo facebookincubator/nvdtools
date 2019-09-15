@@ -1,6 +1,21 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package rpm
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/facebookincubator/nvdtools/wfn"
@@ -28,7 +43,7 @@ func TestCheck(t *testing.T) {
 }
 
 func TestFilterFixedPackages(t *testing.T) {
-	pkgs := []string{"foo-v1-rel.arch.rpm", "bar-v1-rel.arch.rpm"}
+	pkgs := []string{"foo-v1-rel.arch.rpm", "bar-v1-rel.arch.rpm", "malformed-rpm"}
 	distro := "cpe:/o:vendor:product:version"
 
 	// only foo has been fixed
@@ -37,9 +52,10 @@ func TestFilterFixedPackages(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// expecting to filter foo out and leave only bar
-	if len(filtered) != 1 || filtered[0] != "bar-v1-rel.arch.rpm" {
-		t.Fatalf("expecting to find only the bar package, got %v", filtered)
+	// expecting to filter foo out and leave only bar and malformed
+	filteredWant := []string{"bar-v1-rel.arch.rpm", "malformed-rpm"}
+	if !reflect.DeepEqual(filtered, filteredWant) {
+		t.Fatalf("wrong filtering\n\thave: %v\n\twant: %v", filtered, filteredWant)
 	}
 }
 

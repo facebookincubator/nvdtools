@@ -59,9 +59,9 @@ func IsFixed(fixState string) bool {
 	// "fix_state": "Will not fix",
 
 	switch strings.TrimSpace(strings.ToLower(fixState)) {
-	case "affected", "fix deferred", "new", "out of support scope", "will not fix":
+	case "affected", "fix deferred", "new", "out of support scope", "will not fix", "under investigation":
 		return false
-	case "not affected", "under investigation":
+	case "not affected":
 		return true
 	default:
 		log.Printf("unknown fix state: %q", fixState)
