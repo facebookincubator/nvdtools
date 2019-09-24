@@ -35,7 +35,7 @@ type Config struct {
 
 // AddFlags adds flags used to configure a client
 func (conf *Config) AddFlags() {
-	flag.StringVar(&conf.UserAgent, "", conf.UserAgent, "which user agent to use when making requests")
+	flag.StringVar(&conf.UserAgent, "user-agent", conf.UserAgent, "which user agent to use when making requests")
 	flag.IntVar(&conf.numRetries, "num-retries", 0, "how many times will specified statuses get retried. 0 means no retries")
 	// TODO implement exponential backoff (for some statuses?)
 	flag.DurationVar(&conf.retryDelay, "retry-delay", time.Second, "delay between each retry")
