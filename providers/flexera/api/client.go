@@ -24,8 +24,7 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/flexera/schema"
-	"github.com/facebookincubator/nvdtools/providers/lib/download"
-	"github.com/facebookincubator/nvdtools/providers/lib/rate"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/pkg/errors"
 )
@@ -34,28 +33,23 @@ import (
 // API key will be sent in the Authorization field
 // rate limiter is used to enforce their api limits (so we don't go over them)
 type Client struct {
-	baseURL   string
-	userAgent string
-	apiKey    string
-	limiter   rate.Limiter
+	client.Client
+	baseURL string
+	apiKey  string
 }
 
 const (
 	pageSize           = 100
 	advisoriesEndpoint = "/api/advisories"
 	numFetchers        = 4
-	requestsPerMinute  = 240
-	numRequestRetries  = 3
-	retryDelay         = 1 * time.Second
 )
 
 // NewClient creates a new Client object with given properties
-func NewClient(baseURL, userAgent, apiKey string) Client {
-	return Client{
-		baseURL:   baseURL,
-		userAgent: userAgent,
-		apiKey:    apiKey,
-		limiter:   rate.BurstyLimiter(time.Minute, requestsPerMinute),
+func NewClient(c client.Client, baseURL, apiKey string) *Client {
+	return &Client{
+		Client:  c,
+		baseURL: baseURL,
+		apiKey:  apiKey,
 	}
 }
 
@@ -63,7 +57,7 @@ func NewClient(baseURL, userAgent, apiKey string) Client {
 // we first fetch all pages and just collect all identifiers found on them and
 // push them into the `identifiers` channel. Then we start fetchers which take
 // those identifiers and fetch the real advisories
-func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
+func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
 	from, to := since, time.Now().Unix()
 	totalAdvisories, err := c.getNumberOfAdvisories(from, to)
 	if err != nil {
@@ -122,7 +116,7 @@ func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible,
 }
 
 // Fetch will return a channel with only one advisory in it
-func (c Client) Fetch(identifier string) (*schema.Advisory, error) {
+func (c *Client) Fetch(identifier string) (*schema.Advisory, error) {
 	var advisory schema.Advisory
 	endpoint := fmt.Sprintf("%s/%s", advisoriesEndpoint, identifier)
 	if err := c.query(endpoint, map[string]interface{}{}, &advisory); err != nil {
@@ -131,7 +125,7 @@ func (c Client) Fetch(identifier string) (*schema.Advisory, error) {
 	return &advisory, nil
 }
 
-func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.AdvisoryListResult, error) {
+func (c *Client) fetchAdvisoryList(from, to int64, page int) (*schema.AdvisoryListResult, error) {
 	var list schema.AdvisoryListResult
 	params := map[string]interface{}{
 		"modified__gte": from,
@@ -145,7 +139,7 @@ func (c Client) fetchAdvisoryList(from, to int64, page int) (*schema.AdvisoryLis
 	return &list, nil
 }
 
-func (c Client) getNumberOfAdvisories(from, to int64) (int, error) {
+func (c *Client) getNumberOfAdvisories(from, to int64) (int, error) {
 	var list schema.AdvisoryListResult
 	params := map[string]interface{}{
 		"modified__gte": from,
@@ -158,7 +152,7 @@ func (c Client) getNumberOfAdvisories(from, to int64) (int, error) {
 	return list.Count, nil
 }
 
-func (c Client) query(endpoint string, params map[string]interface{}, v interface{}) error {
+func (c *Client) query(endpoint string, params map[string]interface{}, v interface{}) error {
 	// setup new parameters
 	u, err := url.Parse(fmt.Sprintf("%s%s", c.baseURL, endpoint))
 	if err != nil {
@@ -170,27 +164,9 @@ func (c Client) query(endpoint string, params map[string]interface{}, v interfac
 	}
 	u.RawQuery = query.Encode()
 
-	var resp *http.Response
-	for i := 0; i < numRequestRetries; i++ {
-		c.limiter.Allow() // block until we can make another request
-		resp, err = download.Get(u.String(), http.Header{
-			"Authorization": {c.apiKey},
-			"User-Agent":    {c.userAgent},
-		})
-		if err == nil {
-			break
-		}
-
-		if he, ok := err.(download.Err); !ok {
-			return err
-		} else if he.Code != http.StatusTooManyRequests && he.Code != http.StatusGatewayTimeout {
-			// if it's not any of these two, it's not rate limit so return the error
-			return err
-		}
-		// it is rate limit, just retry after 1 second
-		time.Sleep(retryDelay)
-	}
-	if resp == nil {
+	// execute request
+	resp, err := client.Get(c, u.String(), http.Header{"Authorization": {c.apiKey}})
+	if err != nil {
 		return err
 	}
 
