@@ -45,5 +45,3 @@ func (c *userAgentClient) Do(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", c.userAgent)
 	return c.Client.Do(req)
 }
-
-

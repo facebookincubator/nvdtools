@@ -23,14 +23,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/snyk/api"
 	"github.com/facebookincubator/nvdtools/providers/snyk/schema"
-)
-
-const (
-	baseURL   = "https://data.snyk.io/api/v4"
-	userAgent = "snyk2nvd"
 )
 
 var lf languageFilter
@@ -50,7 +46,7 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
+func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	consumerID := os.Getenv("SNYK_ID")
 	if consumerID == "" {
 		return nil, fmt.Errorf("please set SNYK_ID in environment")
@@ -60,7 +56,7 @@ func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertib
 		return nil, fmt.Errorf("please set SNYK_READONLY_KEY in environment")
 	}
 
-	client := api.NewClient(baseURL, userAgent, consumerID, secret)
+	client := api.NewClient(baseURL, "TODO", consumerID, secret)
 
 	advs, err := client.FetchAllVulnerabilities(since)
 	return lf.filter(advs), err
@@ -70,8 +66,10 @@ func main() {
 	flag.Var(&lf, "language", "Comma separated list of languages to download/convert. If not set, then use all available")
 	r := runner.Runner{
 		Config: runner.Config{
-			BaseURL:   baseURL,
-			UserAgent: userAgent,
+			BaseURL: "https://data.snyk.io/api/v4",
+			ClientConfig: client.Config{
+				UserAgent: "snyk2nvd",
+			},
 		},
 		FetchSince: FetchSince,
 		Read:       Read,

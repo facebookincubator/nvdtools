@@ -25,6 +25,7 @@ import (
 	"time"
 
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/stats"
 )
 
@@ -43,7 +44,7 @@ type Read func(io.Reader, chan Convertible) error
 
 // FetchSince knows how to fetch vulnerabilities from an API
 // it should create a new channel, fetch everything concurrently and close the channel
-type FetchSince func(baseURL, userAgent string, since int64) (<-chan Convertible, error)
+type FetchSince func(c client.Client, baseURL string, since int64) (<-chan Convertible, error)
 
 // Runner knows how to run everything together, based on the config values
 // if config.Download is set, it will use the fetcher, otherwise it will use Reader to read stdin or files
@@ -76,7 +77,13 @@ func (r *Runner) Run() error {
 		return fmt.Errorf("config is invalid: %v", err)
 	}
 
-	vulns, err := r.getVulnerabilities()
+	var vulns <-chan Convertible
+	var err error
+	if r.Config.download {
+		vulns, err = r.downloadVulnerabilities()
+	} else {
+		vulns, err = r.readVulnerabilities()
+	}
 	if err != nil {
 		return fmt.Errorf("couldn't get vulnerabilities: %v", err)
 	}
@@ -99,17 +106,17 @@ func (r *Runner) Run() error {
 	return nil
 }
 
-// getVulnerabilities will either get vulnerabilities using fetcher (if download is set) or stdin/files
-func (r *Runner) getVulnerabilities() (<-chan Convertible, error) {
+func (r *Runner) downloadVulnerabilities() (<-chan Convertible, error) {
+	c := client.Default()
+	c = r.Config.ClientConfig.Configure(c)
+	return r.FetchSince(c, r.Config.BaseURL, int64(r.Config.downloadSince))
+}
 
-	if r.Config.download {
-		// fetch vulnerabilites since provided timestamp
-		return r.FetchSince(r.Config.BaseURL, r.Config.UserAgent, int64(r.Config.downloadSince))
-	}
+func (r *Runner) readVulnerabilities() (<-chan Convertible, error) {
+	vulns := make(chan Convertible)
 
 	if flag.NArg() == 0 {
 		// read from stdin
-		vulns := make(chan Convertible)
 		go func() {
 			defer close(vulns)
 			if err := r.Read(os.Stdin, vulns); err != nil {
@@ -120,7 +127,6 @@ func (r *Runner) getVulnerabilities() (<-chan Convertible, error) {
 	}
 
 	// read from files in args
-	vulns := make(chan Convertible)
 	wg := sync.WaitGroup{}
 	for _, filename := range flag.Args() {
 		wg.Add(1)

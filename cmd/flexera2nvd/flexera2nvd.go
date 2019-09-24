@@ -23,12 +23,8 @@ import (
 
 	"github.com/facebookincubator/nvdtools/providers/flexera/api"
 	"github.com/facebookincubator/nvdtools/providers/flexera/schema"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
-)
-
-const (
-	baseURL   = "https://api.app.secunia.com"
-	userAgent = "flexera2nvd"
 )
 
 func Read(r io.Reader, c chan runner.Convertible) error {
@@ -44,21 +40,23 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
+func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	apiKey := os.Getenv("FLEXERA_TOKEN")
 	if apiKey == "" {
 		return nil, fmt.Errorf("please set FLEXERA_TOKEN in environment")
 	}
 
-	client := api.NewClient(baseURL, userAgent, apiKey)
+	client := api.NewClient(baseURL, "TODO", apiKey)
 	return client.FetchAllVulnerabilities(since)
 }
 
 func main() {
 	r := runner.Runner{
 		Config: runner.Config{
-			BaseURL:   baseURL,
-			UserAgent: userAgent,
+			BaseURL: "https://api.app.secunia.com",
+			ClientConfig: client.Config{
+				UserAgent: "flexera2nvd",
+			},
 		},
 		FetchSince: FetchSince,
 		Read:       Read,

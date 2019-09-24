@@ -23,12 +23,8 @@ import (
 
 	"github.com/facebookincubator/nvdtools/providers/fireeye/api"
 	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
-)
-
-const (
-	baseURL   = "https://api.isightpartners.com"
-	userAgent = "fireeye2nvd"
 )
 
 func Read(r io.Reader, c chan runner.Convertible) error {
@@ -44,7 +40,7 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
+func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	publicKey := os.Getenv("FIREEYE_PUBLIC_KEY")
 	if publicKey == "" {
 		return nil, fmt.Errorf("please set FIREEYE_PUBLIC_KEY in environment")
@@ -54,7 +50,7 @@ func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertib
 		return nil, fmt.Errorf("please set FIREEYE_PRIVATE_KEY in environment")
 	}
 
-	client, err := api.NewClient(baseURL, userAgent, publicKey, privateKey)
+	client, err := api.NewClient(baseURL, "TODO", publicKey, privateKey)
 	if err != nil {
 		return nil, fmt.Errorf("can't create client")
 	}
@@ -65,8 +61,10 @@ func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertib
 func main() {
 	r := runner.Runner{
 		Config: runner.Config{
-			BaseURL:   baseURL,
-			UserAgent: userAgent,
+			BaseURL: "https://api.isightpartners.com",
+			ClientConfig: client.Config{
+				UserAgent: "fireeye2nvd",
+			},
 		},
 		FetchSince: FetchSince,
 		Read:       Read,

@@ -17,17 +17,17 @@ package runner
 import (
 	"flag"
 	"fmt"
-	"regexp"
 	"strconv"
 	"time"
 
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 )
 
 // Config is used to configure the execution of the converter
 type Config struct {
 	BaseURL       string
-	UserAgent     string
+	ClientConfig  client.Config
 	download      bool
 	convert       bool
 	downloadSince sinceTS
@@ -35,7 +35,7 @@ type Config struct {
 
 func (c *Config) addFlags() {
 	flag.StringVar(&c.BaseURL, "base_url", c.BaseURL, "API base URL")
-	flag.StringVar(&c.UserAgent, "user_agent", c.UserAgent, "User agent to be used when sending requests")
+	c.ClientConfig.AddFlags()
 	flag.BoolVar(&c.download, "download", false, "Should the data be downloaded or read from stdin/files")
 	flag.BoolVar(&c.convert, "convert", false, "Should the feed be converted to NVD format or not")
 	flag.Var(&c.downloadSince, "since", fmt.Sprintf("Since when to download. It can be a timestamp, golang duration or time in %q format. Default is timestamp=0", nvd.TimeLayout))
@@ -45,11 +45,8 @@ func (c *Config) validate() error {
 	if c.BaseURL == "" {
 		return fmt.Errorf("need to specify base url")
 	}
-	if c.UserAgent == "" {
-		return fmt.Errorf("need to specify user agent")
-	}
-	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(c.UserAgent) {
-		return fmt.Errorf("User-Agent contains non ascii characters, using default")
+	if err := c.ClientConfig.Validate(); err != nil {
+		return err
 	}
 	if c.downloadSince < 0 {
 		return fmt.Errorf("negative timestamp used %d", c.downloadSince)

@@ -21,14 +21,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/redhat/api"
 	"github.com/facebookincubator/nvdtools/providers/redhat/schema"
-)
-
-const (
-	baseURL   = "https://access.redhat.com/labs/securitydataapi"
-	userAgent = "redhat2nvd"
 )
 
 func Read(r io.Reader, c chan runner.Convertible) error {
@@ -44,16 +40,18 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
-	client := api.NewClient(baseURL, userAgent)
+func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
+	client := api.NewClient(baseURL, "TODO")
 	return client.FetchAllCVEs(since)
 }
 
 func main() {
 	r := runner.Runner{
 		Config: runner.Config{
-			BaseURL:   baseURL,
-			UserAgent: userAgent,
+			BaseURL: "https://access.redhat.com/labs/securitydataapi",
+			ClientConfig: client.Config{
+				UserAgent: "redhat2nvd",
+			},
 		},
 		FetchSince: FetchSince,
 		Read:       Read,
