@@ -23,23 +23,23 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/snyk/schema"
 )
 
 type Client struct {
+	client.Client
 	baseURL    string
-	userAgent  string
 	consumerID string
 	secret     string
 }
 
-func NewClient(baseURL, userAgent, consumerID, secret string) Client {
-	return Client{
+func NewClient(c client.Client, baseURL, consumerID, secret string) *Client {
+	return &Client{
+		Client:     c,
 		consumerID: consumerID,
 		secret:     secret,
 		baseURL:    baseURL,
-		userAgent:  userAgent,
 	}
 }
 
@@ -81,8 +81,7 @@ func (c *Client) get(endpoint string) (io.ReadCloser, error) {
 	}
 
 	url := fmt.Sprintf("%s/%s", c.baseURL, endpoint)
-	resp, err := download.Get(url, http.Header{
-		"User-Agent":    {c.userAgent},
+	resp, err := client.Get(c, url, http.Header{
 		"Authorization": {"Bearer" + token},
 	})
 	if err != nil {

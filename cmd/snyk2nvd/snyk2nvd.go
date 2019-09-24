@@ -56,8 +56,7 @@ func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Con
 		return nil, fmt.Errorf("please set SNYK_READONLY_KEY in environment")
 	}
 
-	client := api.NewClient(baseURL, "TODO", consumerID, secret)
-
+	client := api.NewClient(c, baseURL, consumerID, secret)
 	advs, err := client.FetchAllVulnerabilities(since)
 	return lf.filter(advs), err
 }
