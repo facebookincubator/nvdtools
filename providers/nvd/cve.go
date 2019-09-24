@@ -34,7 +34,7 @@ import (
 	"time"
 
 	"github.com/facebookincubator/flog"
-	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 )
 
 // CVE defines the CVE data feed for synchronization.
@@ -323,11 +323,7 @@ func (cf cveFile) downloadAndVerify(ctx context.Context, m *metaFile, remoteFile
 		return "", err
 	}
 	flog.V(1).Infof("downloading data file %q", remoteFileURL)
-	client, err := download.Client()
-	if err != nil {
-		return "", fmt.Errorf("can't obtain http client: %v", err)
-	}
-	resp, err := client.Do(req)
+	resp, err := client.Default().Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -505,11 +501,7 @@ func newMetaFromURL(ctx context.Context, url string) (metaFile, error) {
 	if err != nil {
 		return m, err
 	}
-	client, err := download.Client()
-	if err != nil {
-		return m, fmt.Errorf("can't obtain http client: %v", err)
-	}
-	resp, err := client.Do(req)
+	resp, err := client.Default().Do(req)
 	if err != nil {
 		return m, err
 	}

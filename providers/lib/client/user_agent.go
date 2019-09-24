@@ -19,36 +19,29 @@ import (
 	"net/http"
 )
 
-// Client is an interface used for making http requests
-type Client interface {
-	Do(req *http.Request) (*http.Response, error)
-	Get(url string) (*http.Response, error)
+// WithUserAgent wrapps the given client in a way that it always makes requests with User Agent header
+func WithUserAgent(c Client, userAgent string) Client {
+	return &userAgentClient{c, userAgent}
 }
 
-// Default returns the default http client to use
-func Default() Client {
-	return http.DefaultClient
+type userAgentClient struct {
+	Client
+	userAgent string
 }
 
-// Get will create a GET request with given headers and call Do on the client
-func Get(c Client, url string, header http.Header) (*http.Response, error) {
+// Get is a part of the Client interface
+func (c *userAgentClient) Get(url string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http get request: %v", err)
 	}
-	req.Header = header
 
+	// Do will set the user agent header
 	return c.Do(req)
 }
 
-// Err encapsulates stuff from the http.Response
-type Err struct {
-	Code   int
-	Status string
-	Body   string
-}
-
-// Error is a part of the error interface
-func (e *Err) Error() string {
-	return fmt.Sprintf("http error %s:\n %q", e.Status, e.Body)
+// Do is a part of the Client interface
+func (c *userAgentClient) Do(req *http.Request) (*http.Response, error) {
+	req.Header.Set("User-Agent", c.userAgent)
+	return c.Client.Do(req)
 }

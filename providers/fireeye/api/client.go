@@ -24,14 +24,13 @@ import (
 	"hash"
 	"io"
 	"net/http"
-	"regexp"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
-	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/stats"
 )
 
@@ -41,24 +40,21 @@ const (
 
 // Client struct
 type Client struct {
+	client.Client
 	hash      hash.Hash
 	publicKey string
 	baseURL   string
-	userAgent string
 	m         sync.Mutex
 }
 
 // NewClient creates an object which is used to query the iDefense API
-func NewClient(baseURL, userAgent, publicKey, privateKey string) (*Client, error) {
-	if !regexp.MustCompile("^[[:ascii:]]+$").MatchString(userAgent) {
-		return nil, fmt.Errorf("user agent contains non ascii characters")
-	}
+func NewClient(c client.Client, baseURL, publicKey, privateKey string) *Client {
 	return &Client{
+		Client:    c,
 		hash:      hmac.New(sha256.New, []byte(privateKey)),
 		publicKey: publicKey,
 		baseURL:   baseURL,
-		userAgent: userAgent,
-	}, nil
+	}
 }
 
 // Request will fetch the given endpoint and return the response
@@ -79,16 +75,9 @@ func (c *Client) Request(endpoint string) (io.Reader, error) {
 	req.Header.Set("X-Auth-Hash", auth)
 	req.Header.Set("Date", timestamp)
 
-	req.Header.Set("User-Agent", c.userAgent)
-
 	// execute the request
-	client, err := download.Client()
-	if err != nil {
-		return nil, errors.Wrap(err, "can't obtain http client")
-	}
-
 	stats.IncrementCounter("request")
-	resp, err := client.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		stats.IncrementCounter("request.error")
 		return nil, errors.Wrap(err, "cannot get url")

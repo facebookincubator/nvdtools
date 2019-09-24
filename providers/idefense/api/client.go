@@ -24,16 +24,16 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/idefense/schema"
-	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/pkg/errors"
 )
 
 // Client struct
 type Client struct {
-	baseUrl   string
-	userAgent string
-	apiKey    string
+	client.Client
+	baseUrl string
+	apiKey  string
 }
 
 const (
@@ -42,16 +42,16 @@ const (
 )
 
 // NewClient creates an object which is used to query the iDefense API
-func NewClient(baseUrl, userAgent, apiKey string) Client {
-	return Client{
-		baseUrl:   baseUrl,
-		userAgent: userAgent,
-		apiKey:    apiKey,
+func NewClient(c client.Client, baseUrl, apiKey string) *Client {
+	return &Client{
+		Client:  c,
+		baseUrl: baseUrl,
+		apiKey:  apiKey,
 	}
 }
 
 // FetchAllVulnerabilities will fetch all vulnerabilities from iDefense API
-func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
+func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
 	sinceStr := time.Unix(since, 0).Format("2006-01-02T15:04:05.000Z")
 
 	result, err := c.queryVulnerabilities(map[string]interface{}{
@@ -105,7 +105,7 @@ func (c Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible,
 	return output, nil
 }
 
-func (c Client) queryVulnerabilities(params map[string]interface{}) (*schema.VulnerabilitySearchResults, error) {
+func (c *Client) queryVulnerabilities(params map[string]interface{}) (*schema.VulnerabilitySearchResults, error) {
 	u, err := url.Parse(c.baseUrl + vulnerabilityEndpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse url")
@@ -116,9 +116,8 @@ func (c Client) queryVulnerabilities(params map[string]interface{}) (*schema.Vul
 	}
 	u.RawQuery = query.Encode()
 
-	resp, err := download.Get(u.String(), http.Header{
+	resp, err := client.Get(c, u.String(), http.Header{
 		"Auth-Token": {c.apiKey},
-		"User-Agent": {c.userAgent},
 	})
 	if err != nil {
 		return nil, err

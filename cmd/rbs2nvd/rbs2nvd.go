@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/rbs/api"
 	"github.com/facebookincubator/nvdtools/providers/rbs/schema"
@@ -47,7 +48,7 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertible, error) {
+func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	clientID := os.Getenv("RBS_CLIENT_ID")
 	if clientID == "" {
 		return nil, fmt.Errorf("please set RBS_CLIENT_ID in environment")
@@ -57,10 +58,7 @@ func FetchSince(baseURL, userAgent string, since int64) (<-chan runner.Convertib
 		return nil, fmt.Errorf("olease set RBS_CLIENT_SECRET in environment")
 	}
 
-	client, err := api.NewClient(clientID, clientSecret, tokenURL, baseURL, userAgent)
-	if err != nil {
-		return nil, fmt.Errorf("can't create a client: %v", err)
-	}
+	client := api.NewClient(c, baseURL, tokenURL, clientID, clientSecret)
 	return client.FetchAllVulnerabilities(since)
 }
 
@@ -69,8 +67,10 @@ func main() {
 
 	r := runner.Runner{
 		Config: runner.Config{
-			BaseURL:   baseURL,
-			UserAgent: userAgent,
+			BaseURL: baseURL,
+			ClientConfig: client.Config{
+				UserAgent: "rbs2nvd",
+			},
 		},
 		FetchSince: FetchSince,
 		Read:       Read,

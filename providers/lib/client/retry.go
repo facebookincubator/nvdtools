@@ -30,11 +30,11 @@ func (fr FailedRetries) Error() string {
 	return fmt.Sprintf("failed to fetch after %d retries", int(fr))
 }
 
-// Retry will retry all given requests for the specified number of times
+// WithRetries will retry all given requests for the specified number of times
 //	- if status is 200, returns
 //	- if status is one of the specified and hasn't been retried the total number of times, retry
 //	- otherwise, fail the request
-func Retry(c Client, retries int, delay time.Duration, statuses ...int) Client {
+func WithRetries(c Client, retries int, delay time.Duration, statuses ...int) Client {
 	if retries <= 0 || len(statuses) == 0 {
 		// if no retries, return the normal client
 		// if no statuses are retried, do the same

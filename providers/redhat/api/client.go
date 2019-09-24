@@ -41,16 +41,10 @@ type Client struct {
 }
 
 // NewClient creates an object which is used to query the iDefense API
-func NewClient(baseURL, userAgent string) Client {
-	c := client.Default()
-	// 10 requests per second
-	c = client.Throttle(c, time.Second, 10)
-	// retry up to 5 times given statuses, 3 second delay between requests
-	c = client.Retry(c, 5, 3*time.Second, http.StatusTooManyRequests, http.StatusGatewayTimeout)
-	return Client{
-		Client:    c,
-		baseURL:   baseURL,
-		userAgent: userAgent,
+func NewClient(c client.Client, baseURL string) *Client {
+	return &Client{
+		Client:  c,
+		baseURL: baseURL,
 	}
 }
 
@@ -138,5 +132,5 @@ func (c *Client) fetchListPage(since int64, page int) (*schema.CVEList, error) {
 }
 
 func (c *Client) queryPath(path string) (*http.Response, error) {
-	return client.Get(c.Client, c.baseURL+path, http.Header{"User-Agent": {c.userAgent}})
+	return c.Get(c.baseURL + path)
 }
