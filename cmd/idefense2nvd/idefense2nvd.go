@@ -45,7 +45,7 @@ func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Con
 	if apiKey == "" {
 		return nil, fmt.Errorf("please set IDEFENSE_TOKEN in environment")
 	}
-	client := api.NewClient(baseURL, "TODO", apiKey)
+	client := api.NewClient(c, baseURL, apiKey)
 	return client.FetchAllVulnerabilities(since)
 }
 
