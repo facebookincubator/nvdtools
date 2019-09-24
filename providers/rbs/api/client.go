@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -27,7 +26,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 
-	"github.com/facebookincubator/nvdtools/providers/lib/download"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/rbs/schema"
 )
@@ -37,18 +36,14 @@ const (
 )
 
 type Client struct {
-	client    *http.Client
-	baseURL   string
-	userAgent string
+	client.Client
+	baseURL string
 }
 
-func NewClient(clientID, clientSecret, tokenURL, baseURL, userAgent string) (*Client, error) {
-	httpClient, err := download.Client()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't obtain http client: %v", err)
-	}
-
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, httpClient)
+func NewClient(c client.Client, baseURL, tokenURL, clientID, clientSecret string) *Client {
+	// TODO this might not work anymore, since c should be a *http.Client
+	// Need to add all other functions to the client.Client interface and eventually maybe drop the interface altogether
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, c)
 
 	conf := &clientcredentials.Config{
 		ClientID:     clientID,
@@ -56,13 +51,10 @@ func NewClient(clientID, clientSecret, tokenURL, baseURL, userAgent string) (*Cl
 		TokenURL:     tokenURL,
 	}
 
-	c := Client{
-		client:    conf.Client(ctx),
-		baseURL:   baseURL,
-		userAgent: userAgent,
+	return &Client{
+		Client:  conf.Client(ctx),
+		baseURL: baseURL,
 	}
-
-	return &c, nil
 }
 
 func (c *Client) FetchAllVulnerabilitiesAfterVulndbID(vulndbID int) (<-chan runner.Convertible, error) {
@@ -136,7 +128,7 @@ func (c *Client) fetchAllVulnerabilities(getEndpoint func() string) (<-chan runn
 }
 
 func (c *Client) getResult(u string) (*schema.VulnerabilityResult, error) {
-	resp, err := c.get(u)
+	resp, err := c.Get(u)
 	if err != nil {
 		return nil, fmt.Errorf("can't get response: %v", err)
 	}
@@ -148,10 +140,4 @@ func (c *Client) getResult(u string) (*schema.VulnerabilityResult, error) {
 	}
 
 	return &result, nil
-}
-
-func (c *Client) get(u string) (*http.Response, error) {
-	header := http.Header{}
-	header.Set("User-Agent", c.userAgent)
-	return download.GetWithClient(c.client, u, header)
 }

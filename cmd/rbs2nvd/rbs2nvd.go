@@ -58,10 +58,7 @@ func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Con
 		return nil, fmt.Errorf("olease set RBS_CLIENT_SECRET in environment")
 	}
 
-	client, err := api.NewClient(clientID, clientSecret, tokenURL, baseURL, "TODO")
-	if err != nil {
-		return nil, fmt.Errorf("can't create a client: %v", err)
-	}
+	client := api.NewClient(c, baseURL, tokenURL, clientID, clientSecret)
 	return client.FetchAllVulnerabilities(since)
 }
 
