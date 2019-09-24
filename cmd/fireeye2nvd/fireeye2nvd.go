@@ -50,11 +50,7 @@ func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Con
 		return nil, fmt.Errorf("please set FIREEYE_PRIVATE_KEY in environment")
 	}
 
-	client, err := api.NewClient(baseURL, "TODO", publicKey, privateKey)
-	if err != nil {
-		return nil, fmt.Errorf("can't create client")
-	}
-
+	client := api.NewClient(c, baseURL, publicKey, privateKey)
 	return client.FetchAllVulnerabilities(since)
 }
 
