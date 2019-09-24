@@ -17,9 +17,6 @@ package client
 import (
 	"fmt"
 	"net/http"
-
-	// TODO lose download package, move all to here
-	"github.com/facebookincubator/nvdtools/providers/lib/download"
 )
 
 // Client is an interface used for making http requests
@@ -30,10 +27,6 @@ type Client interface {
 
 // Default returns the default http client to use
 func Default() Client {
-	// TODO merge into one function
-	if cl, err := download.Client(); err == nil {
-		return cl
-	}
 	return http.DefaultClient
 }
 
