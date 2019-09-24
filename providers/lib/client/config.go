@@ -23,6 +23,7 @@ import (
 
 // Config is used to configure a client
 type Config struct {
+	UserAgent		  string
 	numRetries        int
 	retryDelay        time.Duration
 	retriable         ints
@@ -31,7 +32,8 @@ type Config struct {
 }
 
 // AddFlags adds flags used to configure a client
-func (conf *Config) AddFlags() {
+func (conf *Config) AddFlags(userAgent string) {
+	flag.StringVar(&conf.UserAgent, "", conf.UserAgent, "which user agent to use when making requests")
 	flag.IntVar(&conf.numRetries, "num-retries", 0, "how many times will specified statuses get retried. 0 means no retries")
 	// TODO implement exponential backoff (for some statuses?)
 	flag.DurationVar(&conf.retryDelay, "retry-delay", time.Second, "delay between each retry")
@@ -43,10 +45,13 @@ func (conf *Config) AddFlags() {
 // Configure configures the given client (add throttling, retries, ...)
 func (conf *Config) Configure(c Client) Client {
 	if conf.numRetries > 0 {
-		c = Retry(c, conf.numRetries, conf.retryDelay, conf.retriable...)
+		c = WithRetries(c, conf.numRetries, conf.retryDelay, conf.retriable...)
 	}
 	if conf.requestsPerPeriod > 0 {
-		c = Throttle(c, conf.period, conf.requestsPerPeriod)
+		c = WithThrottling(c, conf.period, conf.requestsPerPeriod)
+	}
+	if conf.UserAgent != "" {
+		c = WithUserAgent(c, conf.UserAgent)
 	}
 	return c
 }

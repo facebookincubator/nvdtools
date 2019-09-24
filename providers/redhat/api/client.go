@@ -44,9 +44,9 @@ type Client struct {
 func NewClient(baseURL, userAgent string) Client {
 	c := client.Default()
 	// 10 requests per second
-	c = client.Throttle(c, time.Second, 10)
+	c = client.WithThrottling(c, time.Second, 10)
 	// retry up to 5 times given statuses, 3 second delay between requests
-	c = client.Retry(c, 5, 3*time.Second, http.StatusTooManyRequests, http.StatusGatewayTimeout)
+	c = client.WithRetries(c, 5, 3*time.Second, http.StatusTooManyRequests, http.StatusGatewayTimeout)
 	return Client{
 		Client:    c,
 		baseURL:   baseURL,

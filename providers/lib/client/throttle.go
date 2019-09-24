@@ -21,8 +21,8 @@ import (
 	"github.com/facebookincubator/nvdtools/providers/lib/rate"
 )
 
-// Throttle creates a rate limitted client - all requests are throttled
-func Throttle(c Client, period time.Duration, requestsPerPeriod int) Client {
+// WithThrottling creates a rate limitted client - all requests are throttled
+func WithThrottling(c Client, period time.Duration, requestsPerPeriod int) Client {
 	limiter := rate.BurstyLimiter(period, requestsPerPeriod)
 	return &executorClient{c, &rateLimitedExecutor{limiter}}
 }
