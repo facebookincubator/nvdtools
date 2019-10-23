@@ -141,7 +141,14 @@ func (v Vector) modifiedImpactScore() float64 {
 		0.915,
 	)
 	if v.modifiedScopeChanged() {
-		return 7.52*(iscModified-0.029) - 3.25*math.Pow((iscModified-0.02), 15)
+		switch v.version {
+		case version(1):
+			return 7.52*(iscModified-0.029) - 3.25*math.Pow((iscModified*0.9731-0.02), 13)
+		case version(0):
+			fallthrough
+		default:
+			return 7.52*(iscModified-0.029) - 3.25*math.Pow((iscModified-0.02), 15)
+		}
 	} else {
 		return 6.42 * iscModified
 	}

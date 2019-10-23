@@ -127,3 +127,31 @@ func TestScores(t *testing.T) {
 		})
 	}
 }
+
+func TestScoresV30V31(t *testing.T) {
+	vec := "AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H/E:U/RL:T/RC:U/CR:L/IR:L/AR:H/MAV:P/MAC:H/MPR:H/MUI:R/MS:C/MC:H/MI:H/MA:H"
+
+	for _, c := range []struct {
+		ver                           version
+		base, temporal, environmental float64
+	}{
+		{version(0), 10.0, 8.1, 5.5},
+		{version(1), 10.0, 8.1, 5.6},
+	} {
+		fullVec := fmt.Sprintf("%s%s/%s", prefix, c.ver, vec)
+		v, err := VectorFromString(fullVec)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if base := v.BaseScore(); base != c.base {
+			t.Fatalf("v %s: base score wrong: have %.1f, want %.1f", c.ver, base, c.base)
+		}
+		if temporal := v.TemporalScore(); temporal != c.temporal {
+			t.Fatalf("v %s: temporal score wrong: have %.1f, want %.1f", c.ver, temporal, c.temporal)
+		}
+		if environmental := v.EnvironmentalScore(); environmental != c.environmental {
+			t.Fatalf("v %s: environmental score wrong: have %.1f, want %.1f", c.ver, environmental, c.environmental)
+		}
+	}
+}

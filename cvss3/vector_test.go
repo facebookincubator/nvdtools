@@ -19,32 +19,74 @@ import (
 	"testing"
 )
 
+func TestVersionFromString(t *testing.T) {
+	for i, c := range []struct {
+		s    string
+		v    version
+		fail bool
+	}{
+		{"3.0", version(0), false},
+		{"3.1", version(1), false},
+		{"3.2", version(0), true},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			if v, err := versionFromString(c.s); err != nil {
+				if !c.fail {
+					t.Fatal(err)
+				}
+			} else if c.fail {
+				t.Fatalf("versionFromString(%q) should've failed, but didn't", c.s)
+			} else if v != c.v {
+				t.Fatalf("versionFromString(%q) = %v, but got %v", c.s, c.v, v)
+			}
+		})
+	}
+}
+
+func TestVersionInVector(t *testing.T) {
+	for i, c := range []struct {
+		vec string
+		ver version
+	}{
+		{"CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H/E:H/RL:O/RC:C", version(0)},
+		{"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H/E:H/RL:O/RC:C", version(1)},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			if v, err := VectorFromString(c.vec); err != nil {
+				t.Fatal(err)
+			} else if v.version != c.ver {
+				t.Fatalf("version(%q) = %v, but got %v", c.vec, c.ver, v.version)
+			}
+		})
+	}
+}
+
 func TestFromString(t *testing.T) {
 	cases := []string{
 		"CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H/E:H/RL:O/RC:C",
-		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N/E:U/RL:O/RC:C",
+		"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N/E:U/RL:O/RC:C",
 		"CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H/E:F/RL:O/RC:C",
-		"CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:C/C:L/I:N/A:N/E:U/RL:O/RC:C",
+		"CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:L/I:N/A:N/E:U/RL:O/RC:C",
 		"CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:N/I:N/A:H/E:U/RL:T/RC:C",
-		"CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N/E:U/RL:O/RC:C",
+		"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N/E:U/RL:O/RC:C",
 		"CVSS:3.0/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:N/A:H/E:U/RL:T/RC:C",
-		"CVSS:3.0/AV:A/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N/E:U/RL:T/RC:C",
+		"CVSS:3.1/AV:A/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N/E:U/RL:T/RC:C",
 		"CVSS:3.0/AV:L/AC:L/PR:L/UI:R/S:U/C:L/I:N/A:N/E:U/RL:U/RC:C",
-		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:U/RL:U/RC:C",
+		"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N/E:U/RL:U/RC:C",
 		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P/RL:T/RC:C",
-		"CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:L/A:N/E:F/RL:O/RC:C",
+		"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:L/A:N/E:F/RL:O/RC:C",
 		"CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N/E:U/RL:U/RC:C",
-		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/E:U/RL:T/RC:C",
+		"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H/E:U/RL:T/RC:C",
 		"CVSS:3.0/AV:L/AC:H/PR:N/UI:R/S:C/C:L/I:N/A:N/E:U/RL:O/RC:C",
-		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N/E:U/RL:T/RC:C",
+		"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N/E:U/RL:T/RC:C",
 		"CVSS:3.0/AV:A/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H/E:U/RL:U/RC:C",
-		"CVSS:3.0/AV:A/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H/E:U/RL:O/RC:C",
+		"CVSS:3.1/AV:A/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H/E:U/RL:O/RC:C",
 		"CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H/E:U/RL:O/RC:C",
-		"CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N/E:U/RL:U/RC:C",
+		"CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N/E:U/RL:U/RC:C",
 		"CVSS:3.0/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:N/E:U/RL:T/RC:C",
-		"CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N/E:P/RL:U/RC:C",
+		"CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:N/I:L/A:N/E:P/RL:U/RC:C",
 		"CVSS:3.0/AV:N/AC:H/PR:N/UI:R/S:U/C:N/I:L/A:N/E:U/RL:T/RC:C",
-		"CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N/E:U/RL:O/RC:C",
+		"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N/E:U/RL:O/RC:C",
 		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H/RL:T/RC:C",
 	}
 

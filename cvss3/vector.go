@@ -20,13 +20,33 @@ import (
 )
 
 const (
-	prefix          = "CVSS:3.0/"
+	prefix          = "CVSS:"
 	partSeparator   = "/"
 	metricSeparator = ":"
 )
 
+// vector version, int part represents the minor version
+// version(1) would mean version 3.1
+type version int
+
+func (v version) String() string {
+	return fmt.Sprintf("3.%d", int(v))
+}
+
+func versionFromString(v string) (version, error) {
+	switch v {
+	case "3.0":
+		return version(0), nil
+	case "3.1":
+		return version(1), nil
+	default:
+		return version(0), fmt.Errorf("cvss v3 version %s not supported", v)
+	}
+}
+
 // Vector represents a CVSSv3 vector, holds all metrics inside (base, temporal and environmental)
 type Vector struct {
+	version version
 	BaseMetrics
 	TemporalMetrics
 	EnvironmentalMetrics
@@ -36,7 +56,7 @@ type Vector struct {
 // it shouldn't depend on the order of metrics
 func (v Vector) String() string {
 	var sb strings.Builder
-	fmt.Fprint(&sb, prefix)
+	fmt.Fprintf(&sb, "%s%s/", prefix, v.version)
 
 	defineables := v.definables()
 
@@ -59,10 +79,24 @@ func (v Vector) String() string {
 
 // VectorFromString will parse a string into a Vector, or return an error if it can't be parsed
 func VectorFromString(str string) (Vector, error) {
-	// remove prefix if exists
-	str = strings.TrimPrefix(strings.ToUpper(str), prefix)
-
 	var v Vector
+
+	// check for prefix and trim it
+	str = strings.ToUpper(str)
+	if !strings.HasPrefix(str, prefix) {
+		return v, fmt.Errorf("vector missing %q prefix: %q", prefix, str)
+	}
+	str = strings.TrimPrefix(str, prefix)
+
+	// extract version
+	slashIdx := strings.IndexByte(str, '/')
+	var err error
+	if v.version, err = versionFromString(str[:slashIdx]); err != nil {
+		return v, err
+	}
+	str = str[slashIdx+1:]
+
+	// parse all metrics
 	parseables := v.parseables()
 
 	for _, part := range strings.Split(str, partSeparator) {
