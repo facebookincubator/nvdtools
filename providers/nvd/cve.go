@@ -48,6 +48,8 @@ const (
 	cve12xmlZip             // CVE database in XML 1.2 format, zip compressed.
 	cve10jsonGz             // CVE database in JSON 1.0 format, gzip compressed.
 	cve10jsonZip            // CVE database in JSON 1.0 format, zip compressed.
+	cve11jsonGz             // CVE database in JSON 1.1 format, gzip compressed.
+	cve11jsonZip            // CVE database in JSON 1.1 format, zip compressed.
 )
 
 // SupportedCVE contains all supported CVE feeds indexed by name.
@@ -58,6 +60,8 @@ var SupportedCVE = map[string]CVE{
 	"cve-2.0.xml.zip":  cve20xmlZip,
 	"cve-1.0.json.gz":  cve10jsonGz,
 	"cve-1.0.json.zip": cve10jsonZip,
+	"cve-1.1.json.gz":  cve11jsonGz,
+	"cve-1.1.json.zip": cve11jsonZip,
 }
 
 // Set implements the flag.Value interface.
@@ -93,7 +97,7 @@ func (c CVE) encoding() string {
 	switch c {
 	case cve12xmlGz, cve12xmlZip, cve20xmlGz, cve20xmlZip:
 		return "xml"
-	case cve10jsonGz, cve10jsonZip:
+	case cve10jsonGz, cve10jsonZip, cve11jsonGz, cve11jsonZip:
 		return "json"
 	default:
 		panic("unsupported CVE encoding")
@@ -103,9 +107,9 @@ func (c CVE) encoding() string {
 // compression returns the data feed compression: gz or zip.
 func (c CVE) compression() string {
 	switch c {
-	case cve10jsonGz, cve12xmlGz, cve20xmlGz:
+	case cve10jsonGz, cve11jsonGz, cve12xmlGz, cve20xmlGz:
 		return "gz"
-	case cve10jsonZip, cve12xmlZip, cve20xmlZip:
+	case cve10jsonZip, cve11jsonZip, cve12xmlZip, cve20xmlZip:
 		return "zip"
 	default:
 		panic("unsupported CVE compression")
@@ -121,6 +125,8 @@ func (c CVE) version() string {
 		return "2.0"
 	case cve10jsonGz, cve10jsonZip:
 		return "1.0"
+	case cve11jsonGz, cve11jsonZip:
+		return "1.1"
 	default:
 		panic("unsupported CVE version")
 	}
