@@ -28,15 +28,21 @@ func smartVerCmp(v1, v2 string) int {
 	for s1, s2 := v1, v2; len(s1) > 0 && len(s2) > 0; {
 		num1, cmpTo1, skip1 := parseVerParts(s1)
 		num2, cmpTo2, skip2 := parseVerParts(s2)
-		if num1 > num2 {
-			return 1
+
+		ns1 := s1[:cmpTo1]
+		ns2 := s2[:cmpTo2]
+		diff := num1 - num2
+		switch {
+		case diff > 0: // ns1 has longer numeric part
+			ns2 = lpad(ns2, diff)
+		case diff < 0: // ns2 has longer numeric part
+			ns1 = lpad(ns1, -diff)
 		}
-		if num2 > num1 {
-			return -1
-		}
-		if cmp := strings.Compare(s1[:cmpTo1], s2[:cmpTo2]); cmp != 0 {
+
+		if cmp := strings.Compare(ns1, ns2); cmp != 0 {
 			return cmp
 		}
+
 		s1 = s1[skip1:]
 		s2 = s2[skip2:]
 	}
@@ -78,4 +84,14 @@ func parseVerParts(v string) (int, int, int) {
 		return num, len(v), len(v)
 	}
 	return num, skip, skip + 1
+}
+
+// lpad pads s with n '0's
+func lpad(s string, n int) string {
+	var sb strings.Builder
+	for i := 0; i < n; i++ {
+		sb.WriteByte('0')
+	}
+	sb.WriteString(s)
+	return sb.String()
 }
