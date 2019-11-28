@@ -107,6 +107,11 @@ func TestScores(t *testing.T) {
 		{"CVSS:3.0/AV:L/AC:H/PR:H/UI:R/S:U/C:L/I:H/A:L/E:P/RL:W/RC:R/CR:M/IR:H/AR:L/MAV:N/MAC:H/MPR:L/MUI:R/MS:C/MC:L/MA:N", 5.1, 4.5, 7.1},
 		{"CVSS:3.0/AV:L/AC:H/PR:H/UI:R/S:U/C:L/I:H/A:L/E:P/RL:W/RC:R/CR:M/IR:H/AR:L/MAV:N/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MA:N", 5.1, 4.5, 6.1},
 		{"CVSS:3.0/AV:L/AC:H/PR:H/UI:R/S:U/C:L/I:H/A:L/E:P/RL:W/RC:R/CR:M/IR:H/AR:L/MAV:N/MAC:H/MPR:L/MUI:R/MS:X/MC:L/MA:N", 5.1, 4.5, 6.1},
+
+		// Extended functionality: defined Modified Temporal metrics should override temporal metrics
+		{"CVSS:3.0/AV:L/AC:H/PR:H/UI:R/S:U/C:L/I:H/A:L/E:P/RL:W/RC:R/CR:M/IR:H/AR:L/MAV:N/MAC:H/MPR:L/MUI:R/MS:X/MC:L/MA:N/ME:F", 5.1, 4.5, 6.3},
+		{"CVSS:3.0/AV:L/AC:H/PR:H/UI:R/S:U/C:L/I:H/A:L/E:P/RL:W/RC:R/CR:M/IR:H/AR:L/MAV:N/MAC:H/MPR:L/MUI:R/MS:X/MC:L/MA:N/MRL:T", 5.1, 4.5, 6.0},
+		{"CVSS:3.0/AV:L/AC:H/PR:H/UI:R/S:U/C:L/I:H/A:L/E:P/RL:W/RC:R/CR:M/IR:H/AR:L/MAV:N/MAC:H/MPR:L/MUI:R/MS:X/MC:L/MA:N/MRC:U", 5.1, 4.5, 5.8},
 	}
 
 	for i, c := range cases {

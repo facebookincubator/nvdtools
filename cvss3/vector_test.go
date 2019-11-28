@@ -88,6 +88,7 @@ func TestFromString(t *testing.T) {
 		"CVSS:3.0/AV:N/AC:H/PR:N/UI:R/S:U/C:N/I:L/A:N/E:U/RL:T/RC:C",
 		"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N/E:U/RL:O/RC:C",
 		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H/RL:T/RC:C",
+		"CVSS:3.1/AV:N/AC:L/PR:N/ME:U/MRL:T/MRC:R",
 	}
 
 	for i, str := range cases {
@@ -102,10 +103,31 @@ func TestFromString(t *testing.T) {
 	}
 }
 
+//Not defined environmental metrics should not be serialized into the vector string
+func TestToString(t *testing.T) {
+	for i, c := range []struct {
+		vecWithNotDefined    string
+		vecWithoutNotDefined string
+	}{
+		{"CVSS:3.0/AC:L/UI:N/S:U/I:H/A:H/E:H/RL:O/RC:C/CR:X/MAC:X/MC:X", "CVSS:3.0/AC:L/UI:N/S:U/I:H/A:H/E:H/RL:O/RC:C"},
+		{"CVSS:3.1/AC:L/UI:N/S:U/I:H/A:H/E:H/RL:O/RC:C/CR:X/MAC:X/MC:X", "CVSS:3.1/AC:L/UI:N/S:U/I:H/A:H/E:H/RL:O/RC:C"},
+		{"CVSS:3.0/AV:N/AC:L/PR:N/ME:X/MRL:X/MRC:X", "CVSS:3.0/AV:N/AC:L/PR:N"},
+		{"CVSS:3.1/AV:N/AC:L/PR:N/ME:X/MRL:X/MRC:X", "CVSS:3.1/AV:N/AC:L/PR:N"},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			if v, err := VectorFromString(c.vecWithNotDefined); err != nil {
+				t.Errorf("unable to parse vector: %v", err)
+			} else if v.String() != c.vecWithoutNotDefined {
+				t.Errorf("vector.String() should be the same thing it was parsed from but withoud Not Defined metrics.\nGot:\t%s\nExpect:\t%s", v, c.vecWithoutNotDefined)
+			}
+		})
+	}
+}
+
 func BenchmarkParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// all possible metrics are defined in this string
-		VectorFromString("CVSS:3.0/AV:P/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L/E:U/RL:T/RC:R/CR:H/IR:M/AR:L/MAV:P/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MI:L/MA:H")
+		VectorFromString("CVSS:3.0/AV:P/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L/E:U/RL:T/RC:R/CR:H/IR:M/AR:L/MAV:P/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MI:L/MA:H/ME:U/MRL:T/MRC:R")
 	}
 }
 
