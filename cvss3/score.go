@@ -75,9 +75,8 @@ func (v Vector) impactScore() float64 {
 			(1-v.BaseMetrics.Availability.weight())
 	if v.baseScopeChanged() {
 		return 7.52*(iscBase-0.029) - 3.25*math.Pow((iscBase-0.02), 15)
-	} else {
-		return 6.42 * iscBase
 	}
+	return 6.42 * iscBase
 }
 
 func (v Vector) exploitabilityScore() float64 {
@@ -107,10 +106,34 @@ func (v Vector) EnvironmentalScore() float64 {
 		c = 1.08
 	}
 
+	modifiedTemporalMetricsMult := v.modifiedTemporalMetricsMult()
+
 	return roundUp(roundUp(math.Min(c*(e+i), 10.0)) *
-		v.TemporalMetrics.ExploitCodeMaturity.weight() *
-		v.TemporalMetrics.RemediationLevel.weight() *
-		v.TemporalMetrics.ReportConfidence.weight())
+		modifiedTemporalMetricsMult)
+}
+
+func (v Vector) modifiedTemporalMetricsMult() float64 {
+	var me, mrl, mrc float64
+
+	if v.EnvironmentalMetrics.ModifiedExploitCodeMaturity.defined() {
+		me = v.EnvironmentalMetrics.ModifiedExploitCodeMaturity.weight()
+	} else {
+		me = v.TemporalMetrics.ExploitCodeMaturity.weight()
+	}
+
+	if v.EnvironmentalMetrics.ModifiedRemediationLevel.defined() {
+		mrl = v.EnvironmentalMetrics.ModifiedRemediationLevel.weight()
+	} else {
+		mrl = v.TemporalMetrics.RemediationLevel.weight()
+	}
+
+	if v.EnvironmentalMetrics.ModifiedReportConfidence.defined() {
+		mrc = v.EnvironmentalMetrics.ModifiedReportConfidence.weight()
+	} else {
+		mrc = v.TemporalMetrics.ReportConfidence.weight()
+	}
+
+	return me * mrl * mrc
 }
 
 func (v Vector) modifiedImpactScore() float64 {

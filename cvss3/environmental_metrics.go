@@ -28,7 +28,12 @@ type EnvironmentalMetrics struct {
 	ModifiedConfidentiality
 	ModifiedIntegrity
 	ModifiedAvailability
+	ModifiedExploitCodeMaturity
+	ModifiedRemediationLevel
+	ModifiedReportConfidence
 }
+
+/******** CONFIDENTIALITY REQUIREMENT (CR) ********/
 
 type ConfidentialityRequirement int
 
@@ -65,6 +70,8 @@ func (cr *ConfidentialityRequirement) parse(str string) error {
 	return fmt.Errorf("illegal confidentiality requirement code %s", str)
 }
 
+/******** INTEGRITY REQUIREMENT (IR) ********/
+
 type IntegrityRequirement int
 
 const (
@@ -100,6 +107,8 @@ func (ir *IntegrityRequirement) parse(str string) error {
 	return fmt.Errorf("illegal integrity requirement code %s", str)
 }
 
+/******** AVAILAVILITY REQUIREMENT (AR) ********/
+
 type AvailabilityRequirement int
 
 const (
@@ -134,6 +143,8 @@ func (ar *AvailabilityRequirement) parse(str string) error {
 	}
 	return fmt.Errorf("illegal availability requirement code %s", str)
 }
+
+/******** MODIFIED ATTACK VECTOR (MAV) ********/
 
 type ModifiedAttackVector AttackVector
 
@@ -171,6 +182,8 @@ func (mav *ModifiedAttackVector) parse(str string) error {
 	return err
 }
 
+/******** MODIFIED ATTACK COMPLEXITY (MAC) ********/
+
 type ModifiedAttackComplexity AttackComplexity
 
 const (
@@ -206,6 +219,8 @@ func (mac *ModifiedAttackComplexity) parse(str string) error {
 	*mac = ModifiedAttackComplexity(ac)
 	return err
 }
+
+/******** MODIFIED PRIVILIGES REQUIRED (MPR) ********/
 
 type ModifiedPrivilegesRequired PrivilegesRequired
 
@@ -243,6 +258,8 @@ func (mpr *ModifiedPrivilegesRequired) parse(str string) error {
 	return err
 }
 
+/******** MODIFIED USER INTERACTION (MUI) ********/
+
 type ModifiedUserInteraction UserInteraction
 
 const (
@@ -279,6 +296,8 @@ func (mui *ModifiedUserInteraction) parse(str string) error {
 	return err
 }
 
+/******** MODIFIED SCOPE (MS) ********/
+
 type ModifiedScope Scope
 
 const (
@@ -307,6 +326,8 @@ func (ms *ModifiedScope) parse(str string) error {
 	*ms = ModifiedScope(s)
 	return err
 }
+
+/******** MODIFIED CONFIDENTIALITY (MC) ********/
 
 type ModifiedConfidentiality Confidentiality
 
@@ -344,6 +365,8 @@ func (mc *ModifiedConfidentiality) parse(str string) error {
 	return err
 }
 
+/******** MODIFIED INTEGRITY (MI) ********/
+
 type ModifiedIntegrity Integrity
 
 const (
@@ -380,6 +403,8 @@ func (mi *ModifiedIntegrity) parse(str string) error {
 	return err
 }
 
+/******** MODIFIED AVAILABILITY (MA) ********/
+
 type ModifiedAvailability Availability
 
 const (
@@ -413,5 +438,105 @@ func (ma *ModifiedAvailability) parse(str string) error {
 	a := Availability(*ma)
 	err := a.parse(str)
 	*ma = ModifiedAvailability(a)
+	return err
+}
+
+/*
+	EXTENDED FUNCTIONALITY
+	The following metrics extend the CVSS Specification by allowing Temporal
+	metrics to be modified in the Environmental Score.
+	If not used they will not be serialized allowing backwards compatibility.
+*/
+
+/******** MODIFIED EXPLOIT CODE MATURITY (MR) ********/
+
+type ModifiedExploitCodeMaturity ExploitCodeMaturity
+
+const (
+	ModifiedExploitCodeMaturityNotdefined       ModifiedExploitCodeMaturity = 0
+	ModifiedExploitCodeMaturityNotdefinedString string                      = "X"
+)
+
+func (mecm ModifiedExploitCodeMaturity) defined() bool {
+	return ExploitCodeMaturity(mecm).defined()
+}
+
+func (mecm ModifiedExploitCodeMaturity) weight() float64 {
+	if !mecm.defined() {
+		return 1.00
+	}
+	return ExploitCodeMaturity(mecm).weight()
+}
+
+func (mecm ModifiedExploitCodeMaturity) String() string {
+	return ExploitCodeMaturity(mecm).String()
+}
+
+func (mecm *ModifiedExploitCodeMaturity) parse(str string) error {
+	a := ExploitCodeMaturity(*mecm)
+	err := a.parse(str)
+	*mecm = ModifiedExploitCodeMaturity(a)
+	return err
+}
+
+/******** MODIFIED REMEDIATION LEVEL (MRL) ********/
+
+type ModifiedRemediationLevel RemediationLevel
+
+const (
+	ModifiedRemediationLevelNotdefined       ModifiedRemediationLevel = 0
+	ModifiedRemediationLevelNotdefinedString string                   = "X"
+)
+
+func (mrl ModifiedRemediationLevel) defined() bool {
+	return RemediationLevel(mrl).defined()
+}
+
+func (mrl ModifiedRemediationLevel) weight() float64 {
+	if !mrl.defined() {
+		return 1.00
+	}
+	return RemediationLevel(mrl).weight()
+}
+
+func (mrl ModifiedRemediationLevel) String() string {
+	return RemediationLevel(mrl).String()
+}
+
+func (mrl *ModifiedRemediationLevel) parse(str string) error {
+	a := RemediationLevel(*mrl)
+	err := a.parse(str)
+	*mrl = ModifiedRemediationLevel(a)
+	return err
+}
+
+/******** MODIFIED REPORT CONFIDENCE LEVEL (MRC) ********/
+
+type ModifiedReportConfidence ReportConfidence
+
+const (
+	ModifiedReportConfidenceNotdefined       ModifiedReportConfidence = 0
+	ModifiedReportConfidenceNotdefinedString string                   = "X"
+)
+
+func (mrc ModifiedReportConfidence) defined() bool {
+	return ReportConfidence(mrc).defined()
+}
+
+func (mrc ModifiedReportConfidence) weight() float64 {
+	if !mrc.defined() {
+		return 1.00
+	}
+	return ReportConfidence(mrc).weight()
+}
+
+func (mrc ModifiedReportConfidence) String() string {
+	return ReportConfidence(mrc).String()
+}
+
+func (mrc *ModifiedReportConfidence) parse(str string) error {
+	a := ReportConfidence(*mrc)
+	err := a.parse(str)
+	*mrc = ModifiedReportConfidence(a)
 	return err
 }
