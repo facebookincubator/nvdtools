@@ -92,21 +92,35 @@ func TestBaseScores(t *testing.T) {
 func TestScores(t *testing.T) {
 	// random vector chosen and validated at:
 	// https://nvd.nist.gov/vuln-metrics/cvss/v2-calculator?calculator&adv&version=2
-	v, err := VectorFromString("(AV:A/AC:L/Au:S/C:C/I:P/A:C/E:F/RL:W/RC:UR/CDP:MH/TD:M/CR:M/IR:L/AR:H)")
-	if err != nil {
-		t.Errorf("parse error: %v", err)
+
+	cases := []struct {
+		str           string
+		base          float64
+		temporal      float64
+		environmental float64
+	}{
+		{"(AV:A/AC:L/Au:S/C:C/I:P/A:C/E:F/RL:W/RC:UR/CDP:MH/TD:M/CR:M/IR:L/AR:H)", 7.4, 6.3, 6.0},
+
+		// Extended functionality: defined Modified Temporal metrics should override temporal metrics
+		{"(AV:A/AC:L/Au:S/C:C/I:P/A:C/E:F/RL:W/RC:UR/CDP:MH/TD:M/CR:M/IR:L/AR:H/MRC:UC)", 7.4, 6.3, 5.8},
 	}
 
-	if s := v.BaseScore(); s != 7.4 {
-		t.Errorf("base score expected to be %.1f, got %.1f", 7.4, s)
-	}
-
-	if s := v.TemporalScore(); s != 6.3 {
-		t.Errorf("temporal score expected to be %.1f, got %.1f", 6.3, s)
-	}
-
-	if s := v.EnvironmentalScore(); s != 6.0 {
-		t.Errorf("environmental score expected to be %.1f, got %.1f", 6.0, s)
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			v, err := VectorFromString(c.str)
+			if err != nil {
+				t.Errorf("parse error: %v", err)
+			}
+			if vbs := v.BaseScore(); vbs != c.base {
+				t.Errorf("base score expected to be %.1f, got %.1f", c.base, vbs)
+			}
+			if vts := v.TemporalScore(); vts != c.temporal {
+				t.Errorf("temporal score expected to be %.1f, got %.1f", c.temporal, vts)
+			}
+			if ves := v.EnvironmentalScore(); ves != c.environmental {
+				t.Errorf("environmental score expected to be %.1f, got %.1f", c.environmental, ves)
+			}
+		})
 	}
 }
 
