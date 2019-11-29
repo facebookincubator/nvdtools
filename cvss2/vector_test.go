@@ -46,6 +46,7 @@ func TestFromString(t *testing.T) {
 		"(AV:A/AC:L/Au:N/C:N/I:N/A:P/E:U/RL:U/RC:C)",
 		"(AV:A/AC:L/Au:S/C:N/I:N/A:C/E:U/RL:OF/RC:C)",
 		"(AV:L/AC:L/Au:S/C:N/I:N/A:P/E:U/RL:OF/RC:C)",
+		"(AV:L/AC:L/Au:S/C:N/I:N/A:P/E:U/RL:OF/RC:C/ME:U/MRL:OF/MRC:C)",
 	}
 
 	for i, str := range cases {
@@ -63,7 +64,7 @@ func TestFromString(t *testing.T) {
 func BenchmarkParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// all possible metrics are defined in this string
-		VectorFromString("CVSS:3.0/AV:P/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L/E:U/RL:T/RC:R/CR:H/IR:M/AR:L/MAV:P/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MI:L/MA:H")
+		VectorFromString("CVSS:3.0/AV:P/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:L/E:U/RL:T/RC:R/CR:H/IR:M/AR:L/MAV:P/MAC:H/MPR:L/MUI:R/MS:U/MC:L/MI:L/MA:H/ME:U/MRL:OF/MRC:C")
 	}
 }
 

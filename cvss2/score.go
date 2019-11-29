@@ -57,13 +57,13 @@ func (v Vector) BaseScore() float64 {
 
 // TemporalScore returns temporal score of the vector
 func (v Vector) TemporalScore() float64 {
-	return v.temporalScoreWith(v.impactScore(false))
+	return v.temporalScoreWith(v.impactScore(false), false)
 }
 
 // EnvironmentalScore returns environmental score of the vector
 func (v Vector) EnvironmentalScore() float64 {
 	ai := math.Min(10, v.impactScore(true))
-	at := v.temporalScoreWith(ai)
+	at := v.temporalScoreWith(ai, true)
 	return roundTo1Decimal((at + (10-at)*v.EnvironmentalMetrics.CollateralDamagePotential.weight()) * v.EnvironmentalMetrics.TargetDistribution.weight())
 }
 
@@ -83,11 +83,22 @@ func (v Vector) impactScore(adjust bool) float64 {
 	return 10.41 * (1 - (1-c)*(1-i)*(1-a))
 }
 
-func (v Vector) temporalScoreWith(impact float64) float64 {
-	return roundTo1Decimal(v.baseScoreWith(impact) *
-		v.TemporalMetrics.Exploitablity.weight() *
-		v.TemporalMetrics.RemediationLevel.weight() *
-		v.TemporalMetrics.ReportConfidence.weight())
+func (v Vector) temporalScoreWith(impact float64, envTemporalExtension bool) float64 {
+	e := v.TemporalMetrics.Exploitablity.weight()
+	rl := v.TemporalMetrics.RemediationLevel.weight()
+	rc := v.TemporalMetrics.ReportConfidence.weight()
+
+	if envTemporalExtension && v.EnvironmentalMetrics.ModifiedExploitablity.defined() {
+		e = v.EnvironmentalMetrics.ModifiedExploitablity.weight()
+	}
+	if envTemporalExtension && v.EnvironmentalMetrics.ModifiedRemediationLevel.defined() {
+		rl = v.EnvironmentalMetrics.ModifiedRemediationLevel.weight()
+	}
+	if envTemporalExtension && v.EnvironmentalMetrics.ModifiedReportConfidence.defined() {
+		rc = v.EnvironmentalMetrics.ModifiedReportConfidence.weight()
+	}
+
+	return roundTo1Decimal(v.baseScoreWith(impact) * e * rl * rc)
 }
 
 func (v Vector) baseScoreWith(impact float64) float64 {

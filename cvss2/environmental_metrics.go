@@ -22,6 +22,9 @@ type EnvironmentalMetrics struct {
 	ConfidentialityRequirement
 	IntegrityRequirement
 	AvailabilityRequirement
+	ModifiedExploitablity
+	ModifiedRemediationLevel
+	ModifiedReportConfidence
 }
 
 type CollateralDamagePotential int
@@ -200,4 +203,89 @@ func (ar *AvailabilityRequirement) parse(str string) error {
 		return nil
 	}
 	return fmt.Errorf("illegal availability requirement code %s", str)
+}
+
+/*
+	EXTENDED FUNCTIONALITY
+	The following metrics extend the CVSS Specification by allowing Temporal
+	metrics to be modified in the Environmental Score.
+	If not used they will not be serialized allowing backwards compatibility.
+*/
+
+/******** MODIFIED EXPLOITABILITY (ME) ********/
+
+type ModifiedExploitablity Exploitablity
+
+func (mecm ModifiedExploitablity) defined() bool {
+	return Exploitablity(mecm).defined()
+}
+
+func (mecm ModifiedExploitablity) weight() float64 {
+	if !mecm.defined() {
+		return 1.00
+	}
+	return Exploitablity(mecm).weight()
+}
+
+func (mecm ModifiedExploitablity) String() string {
+	return Exploitablity(mecm).String()
+}
+
+func (mecm *ModifiedExploitablity) parse(str string) error {
+	a := Exploitablity(*mecm)
+	err := a.parse(str)
+	*mecm = ModifiedExploitablity(a)
+	return err
+}
+
+/******** MODIFIED REMEDIATION LEVEL (MRL) ********/
+
+type ModifiedRemediationLevel RemediationLevel
+
+func (mrl ModifiedRemediationLevel) defined() bool {
+	return RemediationLevel(mrl).defined()
+}
+
+func (mrl ModifiedRemediationLevel) weight() float64 {
+	if !mrl.defined() {
+		return 1.00
+	}
+	return RemediationLevel(mrl).weight()
+}
+
+func (mrl ModifiedRemediationLevel) String() string {
+	return RemediationLevel(mrl).String()
+}
+
+func (mrl *ModifiedRemediationLevel) parse(str string) error {
+	a := RemediationLevel(*mrl)
+	err := a.parse(str)
+	*mrl = ModifiedRemediationLevel(a)
+	return err
+}
+
+/******** MODIFIED REPORT CONFIDENCE LEVEL (MRC) ********/
+
+type ModifiedReportConfidence ReportConfidence
+
+func (mrc ModifiedReportConfidence) defined() bool {
+	return ReportConfidence(mrc).defined()
+}
+
+func (mrc ModifiedReportConfidence) weight() float64 {
+	if !mrc.defined() {
+		return 1.00
+	}
+	return ReportConfidence(mrc).weight()
+}
+
+func (mrc ModifiedReportConfidence) String() string {
+	return ReportConfidence(mrc).String()
+}
+
+func (mrc *ModifiedReportConfidence) parse(str string) error {
+	a := ReportConfidence(*mrc)
+	err := a.parse(str)
+	*mrc = ModifiedReportConfidence(a)
+	return err
 }

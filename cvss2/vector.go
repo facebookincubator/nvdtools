@@ -98,7 +98,7 @@ func (v *Vector) Absorb(other Vector) {
 
 // helpers
 
-var order = []string{"AV", "AC", "Au", "C", "I", "A", "E", "RL", "RC", "CDP", "TD", "CR", "IR", "AR"}
+var order = []string{"AV", "AC", "Au", "C", "I", "A", "E", "RL", "RC", "CDP", "TD", "CR", "IR", "AR", "ME", "MRL", "MRC"}
 
 type defineable interface {
 	defined() bool
@@ -128,6 +128,10 @@ func (v *Vector) definables() map[string]defineable {
 		"CR":  v.EnvironmentalMetrics.ConfidentialityRequirement,
 		"IR":  v.EnvironmentalMetrics.IntegrityRequirement,
 		"AR":  v.EnvironmentalMetrics.AvailabilityRequirement,
+		// extended environmental metrics
+		"ME":  v.EnvironmentalMetrics.ModifiedExploitablity,
+		"MRL": v.EnvironmentalMetrics.ModifiedRemediationLevel,
+		"MRC": v.EnvironmentalMetrics.ModifiedReportConfidence,
 	}
 }
 
@@ -150,5 +154,9 @@ func (v *Vector) parseables() map[string]parseable {
 		"CR":  &v.EnvironmentalMetrics.ConfidentialityRequirement,
 		"IR":  &v.EnvironmentalMetrics.IntegrityRequirement,
 		"AR":  &v.EnvironmentalMetrics.AvailabilityRequirement,
+		// extended environmental metrics
+		"ME":  &v.EnvironmentalMetrics.ModifiedExploitablity,
+		"MRL": &v.EnvironmentalMetrics.ModifiedRemediationLevel,
+		"MRC": &v.EnvironmentalMetrics.ModifiedReportConfidence,
 	}
 }
