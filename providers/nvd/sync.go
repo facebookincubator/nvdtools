@@ -16,12 +16,29 @@ package nvd
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 )
 
 // Syncer is an abstract interface for data feed synchronizers.
 type Syncer interface {
 	Sync(ctx context.Context, src SourceConfig, localdir string) error
+}
+
+// SyncError accumulates errors occured during Sync.Do() call.
+type SyncError []string
+
+// Error implements error interface.
+func (se SyncError) Error() string {
+	if len(se) == 0 {
+		return ""
+	}
+	sfx := ""
+	if len(se) > 1 {
+		sfx = "s"
+	}
+	return fmt.Sprintf("%d synchronisation error%s:\n\t%s", len(se), sfx, strings.Join(se, "\n\t"))
 }
 
 // Sync provides full synchronization between remote and local data feeds.
@@ -42,10 +59,11 @@ func (s Sync) Do(ctx context.Context) error {
 		src = NewSourceConfig()
 	}
 	vsrc := *src
+	var errors SyncError
 	for _, feed := range s.Feeds {
 		if err = feed.Sync(ctx, vsrc, s.LocalDir); err != nil {
-			return err
+			errors = append(errors, err.Error())
 		}
 	}
-	return nil
+	return errors
 }
