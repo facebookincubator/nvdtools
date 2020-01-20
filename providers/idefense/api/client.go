@@ -15,6 +15,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -51,10 +52,10 @@ func NewClient(c client.Client, baseUrl, apiKey string) *Client {
 }
 
 // FetchAllVulnerabilities will fetch all vulnerabilities from iDefense API
-func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
+func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-chan runner.Convertible, error) {
 	sinceStr := time.Unix(since, 0).Format("2006-01-02T15:04:05.000Z")
 
-	result, err := c.queryVulnerabilities(map[string]interface{}{
+	result, err := c.queryVulnerabilities(ctx, map[string]interface{}{
 		"last_modified.from":      sinceStr,
 		"last_modified.inclusive": "true",
 		"page_size":               0,
@@ -79,7 +80,7 @@ func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			result, err := c.queryVulnerabilities(map[string]interface{}{
+			result, err := c.queryVulnerabilities(ctx, map[string]interface{}{
 				"last_modified.from":      sinceStr,
 				"last_modified.inclusive": "true",
 				"page_size":               pageSize,
@@ -105,7 +106,7 @@ func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible
 	return output, nil
 }
 
-func (c *Client) queryVulnerabilities(params map[string]interface{}) (*schema.VulnerabilitySearchResults, error) {
+func (c *Client) queryVulnerabilities(ctx context.Context, params map[string]interface{}) (*schema.VulnerabilitySearchResults, error) {
 	u, err := url.Parse(c.baseUrl + vulnerabilityEndpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse url")
@@ -116,7 +117,7 @@ func (c *Client) queryVulnerabilities(params map[string]interface{}) (*schema.Vu
 	}
 	u.RawQuery = query.Encode()
 
-	resp, err := client.Get(c, u.String(), http.Header{
+	resp, err := client.Get(ctx, c, u.String(), http.Header{
 		"Auth-Token": {c.apiKey},
 	})
 	if err != nil {

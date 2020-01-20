@@ -16,6 +16,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -58,11 +59,12 @@ func NewClient(c client.Client, baseURL, publicKey, privateKey string) *Client {
 }
 
 // Request will fetch the given endpoint and return the response
-func (c *Client) Request(endpoint string) (io.Reader, error) {
+func (c *Client) Request(ctx context.Context, endpoint string) (io.Reader, error) {
 	req, err := http.NewRequest("GET", c.baseURL+endpoint, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create http get request")
 	}
+	req = req.WithContext(ctx)
 
 	acceptHeader := "application/json"
 	timestamp := time.Now().Format(time.RFC1123)

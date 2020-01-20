@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -40,7 +41,7 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
+func FetchSince(ctx context.Context, c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	publicKey := os.Getenv("FIREEYE_PUBLIC_KEY")
 	if publicKey == "" {
 		return nil, fmt.Errorf("please set FIREEYE_PUBLIC_KEY in environment")
@@ -51,7 +52,7 @@ func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Con
 	}
 
 	client := api.NewClient(c, baseURL, publicKey, privateKey)
-	return client.FetchAllVulnerabilities(since)
+	return client.FetchAllVulnerabilities(ctx, since)
 }
 
 func main() {

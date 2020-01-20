@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -40,13 +41,13 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
+func FetchSince(ctx context.Context, c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	apiKey := os.Getenv("IDEFENSE_TOKEN")
 	if apiKey == "" {
 		return nil, fmt.Errorf("please set IDEFENSE_TOKEN in environment")
 	}
 	client := api.NewClient(c, baseURL, apiKey)
-	return client.FetchAllVulnerabilities(since)
+	return client.FetchAllVulnerabilities(ctx, since)
 }
 
 func main() {

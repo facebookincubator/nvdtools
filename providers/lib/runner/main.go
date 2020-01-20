@@ -15,6 +15,7 @@
 package runner
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -44,7 +45,7 @@ type Read func(io.Reader, chan Convertible) error
 
 // FetchSince knows how to fetch vulnerabilities from an API
 // it should create a new channel, fetch everything concurrently and close the channel
-type FetchSince func(c client.Client, baseURL string, since int64) (<-chan Convertible, error)
+type FetchSince func(ctx context.Context, c client.Client, baseURL string, since int64) (<-chan Convertible, error)
 
 // Runner knows how to run everything together, based on the config values
 // if config.Download is set, it will use the fetcher, otherwise it will use Reader to read stdin or files
@@ -80,7 +81,7 @@ func (r *Runner) Run() error {
 	var vulns <-chan Convertible
 	var err error
 	if r.Config.download {
-		vulns, err = r.downloadVulnerabilities()
+		vulns, err = r.downloadVulnerabilities(context.Background())
 	} else {
 		vulns, err = r.readVulnerabilities()
 	}
@@ -106,10 +107,10 @@ func (r *Runner) Run() error {
 	return nil
 }
 
-func (r *Runner) downloadVulnerabilities() (<-chan Convertible, error) {
+func (r *Runner) downloadVulnerabilities(ctx context.Context) (<-chan Convertible, error) {
 	c := client.Default()
 	c = r.Config.ClientConfig.Configure(c)
-	return r.FetchSince(c, r.Config.BaseURL, int64(r.Config.downloadSince))
+	return r.FetchSince(ctx, c, r.Config.BaseURL, int64(r.Config.downloadSince))
 }
 
 func (r *Runner) readVulnerabilities() (<-chan Convertible, error) {

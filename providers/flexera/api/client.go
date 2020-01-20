@@ -15,6 +15,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -57,9 +58,9 @@ func NewClient(c client.Client, baseURL, apiKey string) *Client {
 // we first fetch all pages and just collect all identifiers found on them and
 // push them into the `identifiers` channel. Then we start fetchers which take
 // those identifiers and fetch the real advisories
-func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible, error) {
+func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-chan runner.Convertible, error) {
 	from, to := since, time.Now().Unix()
-	totalAdvisories, err := c.getNumberOfAdvisories(from, to)
+	totalAdvisories, err := c.getNumberOfAdvisories(ctx, from, to)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get total number of advisories")
 	}
@@ -75,7 +76,7 @@ func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible
 		wgPages.Add(1)
 		go func(p int) {
 			defer wgPages.Done()
-			list, err := c.fetchAdvisoryList(from, to, p)
+			list, err := c.fetchAdvisoryList(ctx, from, to, p)
 			if err == nil {
 				for _, element := range list.Results {
 					identifiers <- element.AdvisoryIdentifier
@@ -97,7 +98,7 @@ func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible
 		go func() {
 			defer wgFetcher.Done()
 			for identifier := range identifiers {
-				advisory, err := c.Fetch(identifier)
+				advisory, err := c.Fetch(ctx, identifier)
 				if err == nil {
 					advisories <- advisory
 				} else {
@@ -116,16 +117,16 @@ func (c *Client) FetchAllVulnerabilities(since int64) (<-chan runner.Convertible
 }
 
 // Fetch will return a channel with only one advisory in it
-func (c *Client) Fetch(identifier string) (*schema.Advisory, error) {
+func (c *Client) Fetch(ctx context.Context, identifier string) (*schema.Advisory, error) {
 	var advisory schema.Advisory
 	endpoint := fmt.Sprintf("%s/%s", advisoriesEndpoint, identifier)
-	if err := c.query(endpoint, map[string]interface{}{}, &advisory); err != nil {
+	if err := c.query(ctx, endpoint, map[string]interface{}{}, &advisory); err != nil {
 		return nil, errors.Wrapf(err, "failed to query advisory details endpoint %s", endpoint)
 	}
 	return &advisory, nil
 }
 
-func (c *Client) fetchAdvisoryList(from, to int64, page int) (*schema.AdvisoryListResult, error) {
+func (c *Client) fetchAdvisoryList(ctx context.Context, from, to int64, page int) (*schema.AdvisoryListResult, error) {
 	var list schema.AdvisoryListResult
 	params := map[string]interface{}{
 		"modified__gte": from,
@@ -133,26 +134,26 @@ func (c *Client) fetchAdvisoryList(from, to int64, page int) (*schema.AdvisoryLi
 		"page":          page,
 		"page_size":     pageSize,
 	}
-	if err := c.query(advisoriesEndpoint, params, &list); err != nil {
+	if err := c.query(ctx, advisoriesEndpoint, params, &list); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch page %d", page)
 	}
 	return &list, nil
 }
 
-func (c *Client) getNumberOfAdvisories(from, to int64) (int, error) {
+func (c *Client) getNumberOfAdvisories(ctx context.Context, from, to int64) (int, error) {
 	var list schema.AdvisoryListResult
 	params := map[string]interface{}{
 		"modified__gte": from,
 		"modified__lt":  to,
 		"page_size":     1,
 	}
-	if err := c.query(advisoriesEndpoint, params, &list); err != nil {
+	if err := c.query(ctx, advisoriesEndpoint, params, &list); err != nil {
 		return 0, errors.Wrap(err, "failed to fetch first page")
 	}
 	return list.Count, nil
 }
 
-func (c *Client) query(endpoint string, params map[string]interface{}, v interface{}) error {
+func (c *Client) query(ctx context.Context, endpoint string, params map[string]interface{}, v interface{}) error {
 	// setup new parameters
 	u, err := url.Parse(fmt.Sprintf("%s%s", c.baseURL, endpoint))
 	if err != nil {
@@ -165,7 +166,7 @@ func (c *Client) query(endpoint string, params map[string]interface{}, v interfa
 	u.RawQuery = query.Encode()
 
 	// execute request
-	resp, err := client.Get(c, u.String(), http.Header{"Authorization": {c.apiKey}})
+	resp, err := client.Get(ctx, c, u.String(), http.Header{"Authorization": {c.apiKey}})
 	if err != nil {
 		return err
 	}
