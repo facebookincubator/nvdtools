@@ -39,7 +39,11 @@ func Get(ctx context.Context, c Client, url string, header http.Header) (*http.R
 	}
 	req.Header = header
 
-	return c.Do(req)
+	id := traceRequestStart(req)
+	resp, err := c.Do(req)
+	traceRequestEnd(id, resp)
+
+	return resp, err
 }
 
 // Err encapsulates stuff from the http.Response
