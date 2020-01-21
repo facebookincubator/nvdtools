@@ -25,12 +25,36 @@ func init() {
 	debug.traceRequests = getBool("NVD_TRACE_REQUESTS")
 }
 
+func obfuscateHeaders(req *http.Request) *http.Request {
+	authHeaders := []string{
+		"Authorization",
+		// fireeye
+		"X-Auth",
+		"X-Auth-Hash",
+		// idefense
+		"Auth-Token",
+	}
+
+	headers := req.Header.Clone()
+	for _, header := range authHeaders {
+		if headers.Get(header) == "" {
+			continue
+		}
+		headers.Set(header, "<obfuscated>")
+	}
+
+	// A shallow copy is enough for this usage.
+	newReq := *req
+	newReq.Header = headers
+	return &newReq
+}
+
 func traceRequestStart(req *http.Request) uint64 {
 	if !debug.traceRequests {
 		return 0
 	}
 	id := atomic.AddUint64(&debug.requestNum, 1)
-	data, _ := httputil.DumpRequest(req, false)
+	data, _ := httputil.DumpRequest(obfuscateHeaders(req), false)
 	fmt.Fprintf(os.Stderr, "Req %d: %s", id, string(data))
 	return id
 }
