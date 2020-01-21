@@ -21,13 +21,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/flexera/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 // Client stores information needed to access  API
@@ -65,51 +65,56 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 		return nil, errors.Wrap(err, "failed to get total number of advisories")
 	}
 
+	mainCtx, cancel := context.WithCancel(ctx)
+
 	numPages := (totalAdvisories-1)/pageSize + 1
 	log.Printf("starting sync for %d advisories over %d pages\n", totalAdvisories, numPages)
 
 	identifiers := make(chan string, totalAdvisories)
 	advisories := make(chan runner.Convertible, totalAdvisories)
 
-	wgPages := sync.WaitGroup{}
+	identifersEg, identifiersCtx := errgroup.WithContext(mainCtx)
 	for page := 0; page < numPages; page++ {
-		wgPages.Add(1)
-		go func(p int) {
-			defer wgPages.Done()
-			list, err := c.fetchAdvisoryList(ctx, from, to, p)
-			if err == nil {
-				for _, element := range list.Results {
-					identifiers <- element.AdvisoryIdentifier
-				}
-			} else {
-				log.Println(errors.Wrapf(err, "failed to fetch page %d advisory list", p))
+		p := page + 1
+		identifersEg.Go(func() error {
+			list, err := c.fetchAdvisoryList(identifiersCtx, from, to, p)
+			if err != nil {
+				return errors.Wrapf(err, "failed to fetch page %d advisory list", p)
 			}
-		}(page + 1)
+			for _, element := range list.Results {
+				identifiers <- element.AdvisoryIdentifier
+			}
+			return nil
+		})
 	}
 
 	go func() {
-		wgPages.Wait()
+		if err := identifersEg.Wait(); err != nil {
+			log.Println(err)
+			cancel()
+		}
 		close(identifiers)
 	}()
 
-	wgFetcher := sync.WaitGroup{}
+	advisoriesEg, advisoriesCtx := errgroup.WithContext(mainCtx)
 	for i := 0; i < numFetchers; i++ {
-		wgFetcher.Add(1)
-		go func() {
-			defer wgFetcher.Done()
+		advisoriesEg.Go(func() error {
 			for identifier := range identifiers {
-				advisory, err := c.Fetch(ctx, identifier)
-				if err == nil {
-					advisories <- advisory
-				} else {
-					log.Println(errors.Wrapf(err, "failed to fetch advisory %s", identifier))
+				advisory, err := c.Fetch(advisoriesCtx, identifier)
+				if err != nil {
+					return errors.Wrapf(err, "failed to fetch advisory %s", identifier)
 				}
+				advisories <- advisory
 			}
-		}()
+			return nil
+		})
 	}
 
 	go func() {
-		wgFetcher.Wait()
+		if err := advisoriesEg.Wait(); err != nil {
+			log.Println(err)
+			cancel()
+		}
 		close(advisories)
 	}()
 
