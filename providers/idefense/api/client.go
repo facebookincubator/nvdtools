@@ -21,13 +21,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/providers/idefense/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 // Client struct
@@ -74,12 +74,10 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 
 	// fetch pages concurrently
 	log.Printf("starting sync for %d vulnerabilities over %d pages\n", totalVulns, numPages)
-	wg := sync.WaitGroup{}
+	eg, ctx := errgroup.WithContext(ctx)
 	for page := 1; page <= numPages; page++ {
 		page := page
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		eg.Go(func() error {
 			result, err := c.queryVulnerabilities(ctx, map[string]interface{}{
 				"last_modified.from":      sinceStr,
 				"last_modified.inclusive": "true",
@@ -87,19 +85,21 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 				"page":                    page,
 			})
 			if err != nil {
-				log.Printf("failed to get page %d: %v", page, err)
-				return
+				return errors.Wrapf(err, "failed to get page %d: %v", page, err)
 			}
 			for _, vuln := range result.Results {
 				if vuln != nil {
 					output <- vuln
 				}
 			}
-		}()
+			return nil
+		})
 	}
 
 	go func() {
-		wg.Wait()
+		if err := eg.Wait(); err != nil {
+			log.Println(err)
+		}
 		close(output)
 	}()
 
