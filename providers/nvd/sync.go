@@ -65,5 +65,8 @@ func (s Sync) Do(ctx context.Context) error {
 			errors = append(errors, err.Error())
 		}
 	}
+	if len(errors) == 0 {
+		return nil
+	}
 	return errors
 }
