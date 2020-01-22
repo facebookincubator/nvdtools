@@ -40,6 +40,13 @@ func Get(ctx context.Context, c Client, url string, header http.Header) (*http.R
 	req.Header = header
 
 	id := traceRequestStart(req)
+	if debug.failRequestNum == id {
+		return nil, &Err{
+			Code:   503,
+			Status: "Service Unavailable",
+			Body:   "Request cancelled by debug feature",
+		}
+	}
 	resp, err := c.Do(req)
 	traceRequestEnd(id, resp)
 

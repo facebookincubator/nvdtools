@@ -17,6 +17,8 @@ var debug struct {
 	// cancel pending requests as soon as one request fails. This option
 	// restores the old behaviour or executing the remaning requests anyway.
 	continueDownloading bool
+	// When set to a number n, the n th HTTP request will fail.
+	failRequestNum uint64
 
 	requestNum uint64
 }
@@ -26,9 +28,18 @@ func getBool(varName string) bool {
 	return v
 }
 
+func getUint(varName string, defaultValue uint64) uint64 {
+	v, err := strconv.ParseUint(os.Getenv(varName), 10, 64)
+	if err != nil {
+		return defaultValue
+	}
+	return v
+}
+
 func init() {
 	debug.traceRequests = getBool("NVD_TRACE_REQUESTS")
 	debug.continueDownloading = getBool("NVD_CONTINUE_DOWNLOADING")
+	debug.failRequestNum = getUint("NVD_FAIL_REQUEST", 0)
 }
 
 func obfuscateHeaders(req *http.Request) *http.Request {
