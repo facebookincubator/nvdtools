@@ -31,7 +31,7 @@ The [HOWTO](HOWTO.md) provides a broader view on how to effectively use these to
 
 ## Requirements
 
-* Go 1.10 or newer
+* Go 1.13 or newer
 
 ## Installation
 
