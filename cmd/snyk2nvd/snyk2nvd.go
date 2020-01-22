@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -46,7 +47,7 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
+func FetchSince(ctx context.Context, c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	consumerID := os.Getenv("SNYK_ID")
 	if consumerID == "" {
 		return nil, fmt.Errorf("please set SNYK_ID in environment")
@@ -57,7 +58,7 @@ func FetchSince(c client.Client, baseURL string, since int64) (<-chan runner.Con
 	}
 
 	client := api.NewClient(c, baseURL, consumerID, secret)
-	advs, err := client.FetchAllVulnerabilities(since)
+	advs, err := client.FetchAllVulnerabilities(ctx, since)
 	return lf.filter(advs), err
 }
 

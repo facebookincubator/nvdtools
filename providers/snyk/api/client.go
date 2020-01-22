@@ -15,6 +15,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -43,9 +44,9 @@ func NewClient(c client.Client, baseURL, consumerID, secret string) *Client {
 	}
 }
 
-func (c *Client) FetchAllVulnerabilities(since int64) (<-chan *schema.Advisory, error) {
+func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-chan *schema.Advisory, error) {
 	// since is ignored, always download all from snyk
-	content, err := c.get("vulnerabilities.json")
+	content, err := c.get(ctx, "vulnerabilities.json")
 	if err != nil {
 		return nil, fmt.Errorf("can't get vulnerabilities: %v", err)
 	}
@@ -69,7 +70,7 @@ func (c *Client) FetchAllVulnerabilities(since int64) (<-chan *schema.Advisory, 
 	return output, nil
 }
 
-func (c *Client) get(endpoint string) (io.ReadCloser, error) {
+func (c *Client) get(ctx context.Context, endpoint string) (io.ReadCloser, error) {
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
 		Issuer:   c.consumerID,
 		IssuedAt: time.Now().Unix(),
@@ -81,7 +82,7 @@ func (c *Client) get(endpoint string) (io.ReadCloser, error) {
 	}
 
 	url := fmt.Sprintf("%s/%s", c.baseURL, endpoint)
-	resp, err := client.Get(c, url, http.Header{
+	resp, err := client.Get(ctx, c, url, http.Header{
 		"Authorization": {"Bearer" + token},
 	})
 	if err != nil {

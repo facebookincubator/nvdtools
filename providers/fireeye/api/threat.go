@@ -15,6 +15,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -25,7 +26,7 @@ import (
 )
 
 // FetchAllThreatReportsSince will fetch all vulnerabilities with specified parameters
-func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.Report, error) {
+func (c *Client) FetchAllThreatReportsSince(ctx context.Context, since int64) (<-chan *schema.Report, error) {
 	parameters := newParametersSince(since)
 	if err := parameters.validate(); err != nil {
 		return nil, err
@@ -42,7 +43,7 @@ func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.Report,
 		go func() {
 			defer wgReportIDs.Done()
 			log.Printf("Fetching: %s\n", params)
-			if rIDs, err := c.fetchReportIDs(params); err == nil {
+			if rIDs, err := c.fetchReportIDs(ctx, params); err == nil {
 				for _, rID := range rIDs {
 					reportIDs <- rID
 				}
@@ -67,7 +68,7 @@ func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.Report,
 		rID := rID
 		go func() {
 			defer wgReports.Done()
-			if report, err := c.fetchReport(rID); err == nil {
+			if report, err := c.fetchReport(ctx, rID); err == nil {
 				stats.IncrementCounter("report.success")
 				reports <- report
 			} else {
@@ -85,8 +86,8 @@ func (c *Client) FetchAllThreatReportsSince(since int64) (<-chan *schema.Report,
 	return reports, nil
 }
 
-func (c *Client) fetchReportIDs(parameters timeRangeParameters) ([]string, error) {
-	resp, err := c.Request(fmt.Sprintf("/report/index?intelligenceType=threat&%s", parameters.query()))
+func (c *Client) fetchReportIDs(ctx context.Context, parameters timeRangeParameters) ([]string, error) {
+	resp, err := c.Request(ctx, fmt.Sprintf("/report/index?intelligenceType=threat&%s", parameters.query()))
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +105,8 @@ func (c *Client) fetchReportIDs(parameters timeRangeParameters) ([]string, error
 	return reportIDs, nil
 }
 
-func (c *Client) fetchReport(reportID string) (*schema.Report, error) {
-	resp, err := c.Request(fmt.Sprintf("/report/%s?detail=full", reportID))
+func (c *Client) fetchReport(ctx context.Context, reportID string) (*schema.Report, error) {
+	resp, err := c.Request(ctx, fmt.Sprintf("/report/%s?detail=full", reportID))
 	if err != nil {
 		return nil, err
 	}

@@ -15,6 +15,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -31,14 +32,25 @@ func Default() Client {
 }
 
 // Get will create a GET request with given headers and call Do on the client
-func Get(c Client, url string, header http.Header) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func Get(ctx context.Context, c Client, url string, header http.Header) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http get request: %v", err)
 	}
 	req.Header = header
 
-	return c.Do(req)
+	id := traceRequestStart(req)
+	if debug.failRequestNum == id {
+		return nil, &Err{
+			Code:   503,
+			Status: "Service Unavailable",
+			Body:   "Request cancelled by debug feature",
+		}
+	}
+	resp, err := c.Do(req)
+	traceRequestEnd(id, resp)
+
+	return resp, err
 }
 
 // Err encapsulates stuff from the http.Response
