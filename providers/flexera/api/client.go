@@ -79,7 +79,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 		identifersEg.Go(func() error {
 			list, err := c.fetchAdvisoryList(identifiersCtx, from, to, p)
 			if err != nil {
-				return errors.Wrapf(err, "failed to fetch page %d advisory list", p)
+				return client.StopOrContinue(errors.Wrapf(err, "failed to fetch page %d advisory list", p))
 			}
 			for _, element := range list.Results {
 				identifiers <- element.AdvisoryIdentifier
@@ -102,7 +102,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 			for identifier := range identifiers {
 				advisory, err := c.Fetch(advisoriesCtx, identifier)
 				if err != nil {
-					return errors.Wrapf(err, "failed to fetch advisory %s", identifier)
+					return client.StopOrContinue(errors.Wrapf(err, "failed to fetch advisory %s", identifier))
 				}
 				advisories <- advisory
 			}

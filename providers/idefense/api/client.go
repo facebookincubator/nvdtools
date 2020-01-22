@@ -85,7 +85,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 				"page":                    page,
 			})
 			if err != nil {
-				return errors.Wrapf(err, "failed to get page %d: %v", page, err)
+				return client.StopOrContinue(errors.Wrapf(err, "failed to get page %d: %v", page, err))
 			}
 			for _, vuln := range result.Results {
 				if vuln != nil {
