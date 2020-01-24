@@ -81,10 +81,10 @@ func obfuscateHeaders(req *http.Request) *http.Request {
 }
 
 func traceRequestStart(req *http.Request) uint64 {
-	if !debug.traceRequests {
-		return 0
-	}
 	id := atomic.AddUint64(&debug.requestNum, 1)
+	if !debug.traceRequests {
+		return id
+	}
 	data, _ := httputil.DumpRequest(obfuscateHeaders(req), false)
 	fmt.Fprintf(os.Stderr, "Req %d: %s", id, string(data))
 	return id
