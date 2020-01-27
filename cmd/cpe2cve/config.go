@@ -59,8 +59,6 @@ type config struct {
 	// feeds
 	FeedOverrides multiString // []string
 	Feeds         map[string][]string
-
-	provider string
 }
 
 func (cfg *config) addFlags() {
