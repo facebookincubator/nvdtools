@@ -15,6 +15,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -49,17 +50,17 @@ func NewClient(c client.Client, baseURL string) *Client {
 }
 
 // FetchAll will fetch all vulnerabilities
-func (c *Client) FetchAllCVEs(since int64) (<-chan runner.Convertible, error) {
+func (c *Client) FetchAllCVEs(ctx context.Context, since int64) (<-chan runner.Convertible, error) {
 	output := make(chan runner.Convertible)
 	wg := sync.WaitGroup{}
 
-	for page := range c.fetchAllPages(since) {
+	for page := range c.fetchAllPages(ctx, since) {
 		for _, cveItem := range *page {
 			wg.Add(1)
 			go func(cveid string) {
 				defer wg.Done()
 				log.Printf("\tfetching cve %s", cveid)
-				cve, err := c.fetchCVE(cveid)
+				cve, err := c.fetchCVE(ctx, cveid)
 				if err != nil {
 					log.Printf("error while fetching cve %s: %v", cveid, err)
 					return
@@ -77,8 +78,8 @@ func (c *Client) FetchAllCVEs(since int64) (<-chan runner.Convertible, error) {
 	return output, nil
 }
 
-func (c *Client) fetchCVE(cveid string) (*schema.CVE, error) {
-	resp, err := c.queryPath(fmt.Sprintf("/cve/%s.json", cveid))
+func (c *Client) fetchCVE(ctx context.Context, cveid string) (*schema.CVE, error) {
+	resp, err := c.queryPath(ctx, fmt.Sprintf("/cve/%s.json", cveid))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch from feed: %v", err)
 	}
@@ -92,13 +93,13 @@ func (c *Client) fetchCVE(cveid string) (*schema.CVE, error) {
 	return &cve, nil
 }
 
-func (c *Client) fetchAllPages(since int64) <-chan *schema.CVEList {
+func (c *Client) fetchAllPages(ctx context.Context, since int64) <-chan *schema.CVEList {
 	output := make(chan *schema.CVEList)
 	go func() {
 		defer close(output)
 		for page := 1; ; page++ {
 			log.Printf("fetching page %d", page)
-			if list, err := c.fetchListPage(since, page); err == nil {
+			if list, err := c.fetchListPage(ctx, since, page); err == nil {
 				output <- list
 				if len(*list) < perPage {
 					break
@@ -112,13 +113,13 @@ func (c *Client) fetchAllPages(since int64) <-chan *schema.CVEList {
 	return output
 }
 
-func (c *Client) fetchListPage(since int64, page int) (*schema.CVEList, error) {
+func (c *Client) fetchListPage(ctx context.Context, since int64, page int) (*schema.CVEList, error) {
 	params := url.Values{}
 	params.Add("per_page", strconv.Itoa(perPage))
 	params.Add("page", strconv.Itoa(page))
 	params.Add("after", time.Unix(since, 0).Format("2006-01-02")) // YYYY-MM-DD
 
-	resp, err := c.queryPath("/cve.json?" + params.Encode())
+	resp, err := c.queryPath(ctx, "/cve.json?"+params.Encode())
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch cve list: %v", err)
 	}
@@ -131,6 +132,6 @@ func (c *Client) fetchListPage(since int64, page int) (*schema.CVEList, error) {
 	return &cveList, nil
 }
 
-func (c *Client) queryPath(path string) (*http.Response, error) {
-	return c.Get(c.baseURL + path)
+func (c *Client) queryPath(ctx context.Context, path string) (*http.Response, error) {
+	return client.Get(ctx, c, c.baseURL+path, http.Header{})
 }
