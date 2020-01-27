@@ -104,7 +104,7 @@ func (c *Client) fetchAllPages(since int64) <-chan *schema.CVEList {
 					break
 				}
 			} else {
-				log.Printf("can't fecth page %d: %v", page, err)
+				log.Printf("can't fetch page %d: %v", page, err)
 				break
 			}
 		}
