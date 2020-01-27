@@ -43,7 +43,7 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 
 func FetchSince(ctx context.Context, c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	client := api.NewClient(c, baseURL)
-	return client.FetchAllCVEs(since)
+	return client.FetchAllCVEs(ctx, since)
 }
 
 func main() {
