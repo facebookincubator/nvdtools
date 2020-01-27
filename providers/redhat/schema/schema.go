@@ -23,7 +23,7 @@ import (
 // https://access.redhat.com/documentation/en-us/red_hat_security_data_api/1.0/html-single/red_hat_security_data_api/index#cve_format
 
 type CVEList []struct {
-	CVE string `json:"cve`
+	CVE string `json:"cve"`
 	// don't need the rest
 }
 
