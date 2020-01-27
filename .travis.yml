@@ -19,7 +19,7 @@ env:
 
 script:
 - go get -v -t -u -d ./...
-- golangci-lint run ./... --disable-all -E gosimple -E govet -E ineffassign -E staticcheck -E structcheck -E typecheck -E varcheck
+- golangci-lint run ./... --disable-all -E gosimple -E govet -E ineffassign -E staticcheck -E structcheck -E varcheck
 - go test -v ./...
 
 before_deploy:
