@@ -40,7 +40,7 @@ type Client struct {
 	userAgent string
 }
 
-// NewClient creates an object which is used to query the iDefense API
+// NewClient creates an object which is used to query the RedHat API
 func NewClient(c client.Client, baseURL string) *Client {
 	return &Client{
 		Client:  c,
