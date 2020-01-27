@@ -22,7 +22,6 @@ import (
 
 // FromRPMName parses CPE name from RPM package name
 func ToWFN(attr *wfn.Attributes, s string) error {
-	var err error
 	pkg, err := Parse(s)
 	if err != nil {
 		return fmt.Errorf("can't get fields from %q: %v", s, err)
@@ -35,7 +34,7 @@ func ToWFN(attr *wfn.Attributes, s string) error {
 		"arch":    &pkg.Arch,
 	} {
 		if *addr, err = wfn.WFNize(*addr); err != nil {
-			err = fmt.Errorf("couldn't wfnize %s %q: %v", n, *addr, err)
+			return fmt.Errorf("couldn't wfnize %s %q: %v", n, *addr, err)
 		}
 	}
 

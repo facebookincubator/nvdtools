@@ -37,8 +37,7 @@ const (
 // Client struct
 type Client struct {
 	client.Client
-	baseURL   string
-	userAgent string
+	baseURL string
 }
 
 // NewClient creates an object which is used to query the RedHat API
