@@ -30,8 +30,7 @@ import (
 )
 
 const (
-	baseURL   = "https://vulndb.cyberriskanalytics.com"
-	userAgent = "rbs2nvd"
+	baseURL = "https://vulndb.cyberriskanalytics.com"
 )
 
 var tokenURL = baseURL + "/oauth/token"
