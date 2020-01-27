@@ -48,7 +48,7 @@ type Client struct {
 	m         sync.Mutex
 }
 
-// NewClient creates an object which is used to query the iDefense API
+// NewClient creates an object which is used to query the FireEye API
 func NewClient(c client.Client, baseURL, publicKey, privateKey string) *Client {
 	return &Client{
 		Client:    c,
