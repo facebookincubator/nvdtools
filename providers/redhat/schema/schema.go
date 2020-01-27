@@ -29,7 +29,7 @@ type CVEList []struct {
 
 type CVE struct {
 	Name           string `json:"name,omitempty"`
-	ThreatSeverity string `json:"threat_severity,omitempty,omitempty"`
+	ThreatSeverity string `json:"threat_severity,omitempty"`
 	PublicDate     string `json:"public_date,omitempty"`
 	Bugzilla       *struct {
 		Description string `json:"description,omitempty"`
@@ -59,7 +59,7 @@ type CVE struct {
 	// the types of these are just helper types
 
 	AffectedRelease AffectedReleases `json:"affected_release,omitempty"`
-	PackageState    PackageStates    `json:"package_state,omittempty"`
+	PackageState    PackageStates    `json:"package_state,omitempty"`
 }
 
 type AffectedRelease struct {
