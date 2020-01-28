@@ -39,7 +39,7 @@ func TestVersionCompare(t *testing.T) {
 
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
-			if r := VersionCompare(c.v1, c.v2); r != c.result {
+			if r := versionCompare(c.v1, c.v2); r != c.result {
 				t.Errorf("compare(%q, %q) = %d, expecting %d", c.v1, c.v2, r, c.result)
 			}
 		})
@@ -48,6 +48,6 @@ func TestVersionCompare(t *testing.T) {
 
 func BenchmarkVersionCompare(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		VersionCompare("1a2b3c4d", "1a2b3c4de")
+		versionCompare("1a2b3c4d", "1a2b3c4de")
 	}
 }
