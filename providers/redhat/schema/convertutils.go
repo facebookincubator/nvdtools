@@ -36,7 +36,10 @@ var (
 )
 
 func convertTime(redhatTime string) (string, error) {
-	t, err := time.Parse(timeLayout, redhatTime)
+	t, err := time.Parse(time.RFC3339, redhatTime)
+	if err != nil {
+		t, err = time.Parse(timeLayout, redhatTime)
+	}
 	if err != nil { // should be parsable
 		log.Printf("unable to parse time: %v", err)
 		return redhatTime, err
