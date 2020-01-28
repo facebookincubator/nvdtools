@@ -19,6 +19,8 @@ import (
 	"unicode"
 )
 
+// LabelCompare returns 0 if the two packages have the same label, -1 if l1 < l2
+// and 1 of l1 > l2.
 func LabelCompare(l1, l2 Label) int {
 	// 1. Set each epoch value to 0 if it’s null/None.
 	if l1.Epoch == "" {
