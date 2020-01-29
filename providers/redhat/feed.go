@@ -26,8 +26,10 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
+// Feed is a map of CVEs as returned by the redhat API, keyed by CVE names.
 type Feed map[string]*schema.CVE
 
+// LoadFeed loads a Feed from a JSON file.
 func LoadFeed(path string) (Feed, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -45,6 +47,7 @@ func loadFeed(r io.Reader) (Feed, error) {
 	return feed, nil
 }
 
+// Checker returns an rpm.Checker that uses the Feed.
 func (feed Feed) Checker() (rpm.Checker, error) {
 	mc := make(mapChecker, len(feed))
 	var err error
