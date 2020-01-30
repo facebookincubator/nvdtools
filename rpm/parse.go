@@ -33,7 +33,7 @@ type Label struct {
 	Release string
 }
 
-// FieldsFromRPMName returns name, version, release and architecture parsed from RPM package name
+// Parse returns name, version, release and architecture parsed from RPM package name
 // NEVRA: https://blog.jasonantman.com/2014/07/how-yum-and-rpm-compare-versions/
 func Parse(pkg string) (*Package, error) {
 	// pkg should be name-[epoch:]version-release.arch.rpm

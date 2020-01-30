@@ -19,6 +19,8 @@ import (
 	"unicode"
 )
 
+// LabelCompare returns 0 if the two packages have the same label, -1 if l1 < l2
+// and 1 of l1 > l2.
 func LabelCompare(l1, l2 Label) int {
 	// 1. Set each epoch value to 0 if it’s null/None.
 	if l1.Epoch == "" {
@@ -35,17 +37,17 @@ func LabelCompare(l1, l2 Label) int {
 	// them is empty/not present, compare them using rpmvercmp() and follow the same
 	// logic; if one is “greater” (newer) than the other, that’s the end result of
 	// the comparison. Otherwise, move on to the next component (version).
-	if c := VersionCompare(l1.Epoch, l2.Epoch); c != 0 {
+	if c := versionCompare(l1.Epoch, l2.Epoch); c != 0 {
 		return c
 	}
 
 	// 3. Compare the versions using the same logic.
-	if c := VersionCompare(l1.Version, l2.Version); c != 0 {
+	if c := versionCompare(l1.Version, l2.Version); c != 0 {
 		return c
 	}
 
 	// 4. Compare the releases using the same logic.
-	if c := VersionCompare(l1.Release, l2.Release); c != 0 {
+	if c := versionCompare(l1.Release, l2.Release); c != 0 {
 		return c
 	}
 
@@ -53,7 +55,7 @@ func LabelCompare(l1, l2 Label) int {
 	return 0
 }
 
-func VersionCompare(v1, v2 string) int {
+func versionCompare(v1, v2 string) int {
 	// 1. If the strings are binary equal (a == b), they’re equal, return 0.
 	if v1 == v2 {
 		return 0

@@ -20,7 +20,7 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-// FromRPMName parses CPE name from RPM package name
+// ToWFN parses CPE name from RPM package name
 func ToWFN(attr *wfn.Attributes, s string) error {
 	pkg, err := Parse(s)
 	if err != nil {

@@ -54,7 +54,7 @@ type CVE struct {
 	Mitigation      string   `json:"mitigation,omitempty"`
 	UpstreamFix     string   `json:"upstream_fix,omitempty"`
 
-	// redhat uses a single object insted of an array when there's a single instance of that entity
+	// redhat uses a single object instead of an array when there's a single instance of that entity
 	// that's why we need to do it manually
 	// the types of these are just helper types
 

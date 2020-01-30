@@ -78,7 +78,7 @@ func Check(chk Checker, pkg, distro, cve string) (bool, error) {
 	return chk.Check(p, d, cve), nil
 }
 
-// FilterPackages will return those packages which haven't been fixed already on the given distro and for a given cve
+// FilterFixedPackages will return those packages which haven't been fixed already on the given distro and for a given cve
 // if some package can't be parsed as an rpm package, it will not be checked and will be included in the output list
 func FilterFixedPackages(chk Checker, pkgs []string, distro, cve string) ([]string, error) {
 	d, err := wfn.Parse(distro)
