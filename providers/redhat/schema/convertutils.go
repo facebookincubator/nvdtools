@@ -51,6 +51,8 @@ func findCWEs(s string) []string {
 	return cweRegex.FindAllString(s, -1)
 }
 
+// IsFixed returns true if the state string describe a CVE resolution meaning a
+// packaged isn't vulnerable.
 func IsFixed(fixState string) bool {
 	// $ jq 'to_entries | .[].value.package_state' redhat.json | grep fix_state | sort -u
 	// "fix_state": "Affected",
@@ -68,7 +70,7 @@ func IsFixed(fixState string) bool {
 		return true
 	default:
 		log.Printf("unknown fix state: %q", fixState)
-		return true
+		return false
 	}
 }
 
