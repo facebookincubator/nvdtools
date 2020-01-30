@@ -26,11 +26,14 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-// Feed is a map of CVEs as returned by the redhat API, keyed by CVE names.
-type Feed map[string]*schema.CVE
+// Feed is a collection of CVEs from RedHat.
+type Feed struct {
+	// data is map of CVEs as returned by the redhat API, keyed by CVE names.
+	data map[string]*schema.CVE
+}
 
 // LoadFeed loads a Feed from a JSON file.
-func LoadFeed(path string) (Feed, error) {
+func LoadFeed(path string) (*Feed, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("can't open file %q: %v", path, err)
@@ -39,19 +42,19 @@ func LoadFeed(path string) (Feed, error) {
 	return loadFeed(f)
 }
 
-func loadFeed(r io.Reader) (Feed, error) {
+func loadFeed(r io.Reader) (*Feed, error) {
 	var feed Feed
-	if err := json.NewDecoder(r).Decode(&feed); err != nil {
+	if err := json.NewDecoder(r).Decode(&feed.data); err != nil {
 		return nil, fmt.Errorf("can't decode feed: %v", err)
 	}
-	return feed, nil
+	return &feed, nil
 }
 
 // Checker returns an rpm.Checker that uses the Feed.
 func (feed Feed) Checker() (rpm.Checker, error) {
-	mc := make(mapChecker, len(feed))
+	mc := make(mapChecker, len(feed.data))
 	var err error
-	for cveid, cve := range feed {
+	for cveid, cve := range feed.data {
 		if mc[cveid], err = check.CVEChecker(cve); err != nil {
 			if err == check.NoCheckers {
 				// no checkers could be created, just skip it
