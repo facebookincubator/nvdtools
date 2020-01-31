@@ -32,6 +32,8 @@ type Feed struct {
 	data map[string]*schema.CVE
 	// pkgCVE is a package -> CVE map produced from data and cached.
 	pkg2CVE packageFeed
+	// rpm.Checker for this feed, cached.
+	checker rpm.Checker
 }
 
 // LoadFeed loads a Feed from a JSON file.
@@ -53,7 +55,10 @@ func loadFeed(r io.Reader) (*Feed, error) {
 }
 
 // Checker returns an rpm.Checker that uses the Feed.
-func (feed Feed) Checker() (rpm.Checker, error) {
+func (feed *Feed) Checker() (rpm.Checker, error) {
+	if feed.checker != nil {
+		return feed.checker, nil
+	}
 	mc := make(mapChecker, len(feed.data))
 	var err error
 	for cveid, cve := range feed.data {
@@ -66,6 +71,7 @@ func (feed Feed) Checker() (rpm.Checker, error) {
 			return nil, fmt.Errorf("can't create a checker for %q: %v", cveid, err)
 		}
 	}
+	feed.checker = mc
 	return mc, nil
 }
 

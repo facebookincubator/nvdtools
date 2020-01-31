@@ -19,6 +19,8 @@ import (
 	"strings"
 
 	"github.com/facebookincubator/nvdtools/providers/redhat"
+	"github.com/facebookincubator/nvdtools/rpm"
+	"github.com/facebookincubator/nvdtools/wfn"
 	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
@@ -44,8 +46,18 @@ func fixedCVEs(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "fixed-cves")
 	}
 
+	distro, err := wfn.Parse(options.distro)
+	if err != nil {
+		return fmt.Errorf("fixed-cves: can't parse distro cpe %q: %v", distro, err)
+	}
+
 	for _, pkg := range args {
-		cves, err := feed.ListFixedCVEs(options.distro, pkg)
+		rpmPkg, err := rpm.Parse(pkg)
+		if err != nil {
+			return fmt.Errorf("fixed-cves: can't parse package %q: %v", pkg, err)
+		}
+
+		cves, err := feed.ListFixedCVEs(distro, rpmPkg)
 		if err != nil {
 			return errors.Wrap(err, "fixed-cves")
 		}

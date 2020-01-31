@@ -15,7 +15,6 @@
 package redhat
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/facebookincubator/nvdtools/providers/redhat/schema"
@@ -91,16 +90,7 @@ func (feed *Feed) packageFeed() packageFeed {
 // been backported.
 // distro is a CPE identifying a distribution.
 // pkg is the full package name as reported, for instance by rpm -qa.
-func (feed *Feed) ListFixedCVEs(distro, pkg string) ([]string, error) {
-	d, err := wfn.Parse(distro)
-	if err != nil {
-		return nil, fmt.Errorf("list: can't parse distro cpe %q: %v", distro, err)
-	}
-	p, err := rpm.Parse(pkg)
-	if err != nil {
-		return nil, fmt.Errorf("list: can't parse package name %q: %v", pkg, err)
-	}
-
+func (feed *Feed) ListFixedCVEs(d *wfn.Attributes, p *rpm.Package) ([]string, error) {
 	pkgFeed := feed.packageFeed()
 	checker, err := feed.Checker()
 	if err != nil {
