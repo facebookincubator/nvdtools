@@ -16,6 +16,7 @@ package redhat
 
 import (
 	"log"
+	"sort"
 
 	"github.com/facebookincubator/nvdtools/providers/redhat/schema"
 	"github.com/facebookincubator/nvdtools/rpm"
@@ -103,6 +104,9 @@ func (feed *Feed) ListFixedCVEs(d *wfn.Attributes, p *rpm.Package) ([]string, er
 			cves = append(cves, cve.Name)
 		}
 	}
+
+	// Sort for deterministic output.
+	sort.Strings(cves)
 
 	return cves, nil
 }
