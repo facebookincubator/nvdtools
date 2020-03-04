@@ -101,7 +101,7 @@ csv2cpe \
 
 The `-e=1` flag erases the injected "a" part from jq, and the `-i=1` flag tells [csv2cpe](https://github.com/facebookincubator/nvdtools/tree/master/cmd/csv2cpe) to add the cpe in column 1 of its output.
 
-The tab-separated output constains the following columns:
+The tab-separated output contains the following columns:
 
 ```
 cpe, vendor, product, version, update, sw_edition, target_sw, target_hw, metadata_json
@@ -303,7 +303,7 @@ On a system with multi-vendor databases, the maintainers of collectors should be
 
 It's not uncommon for processors to report false positives due to the quality of the inventory and databases, lack of normalization (missing vendors, wrong product names, bad versions).
 
-Curating the data is the hardest part of maintaing a large system with multiple inventories and databases. Reporting high quality data is generally what makes the system successful.
+Curating the data is the hardest part of maintaining a large system with multiple inventories and databases. Reporting high quality data is generally what makes the system successful.
 
 Following are some methods that can help improve the data quality and end-user experience:
 
