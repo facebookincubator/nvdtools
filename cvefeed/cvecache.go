@@ -17,6 +17,7 @@ package cvefeed
 import (
 	"bytes"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 
 	"github.com/facebookincubator/flog"
@@ -100,6 +101,10 @@ type Cache struct {
 	RequireVersion bool  // ignore matching specifications that have Version == ANY
 	MaxSize        int64 // maximum size of the cache, 0 -- unlimited, -1 -- no caching
 	size           int64 // current size of the cache
+
+	// Used to compute the hit ratio
+	numLookups int64
+	numHits    int64
 }
 
 // NewCache creates new Cache instance with dictionary dict.
@@ -127,6 +132,8 @@ func (c *Cache) SetMaxSize(size int64) *Cache {
 // Get returns slice of CVEs for CPE names from cpes parameter;
 // if CVEs aren't cached (and the feature is enabled) it finds them in cveDict and caches the results
 func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
+	atomic.AddInt64(&c.numLookups, 1)
+
 	// negative max size of the cache disables caching
 	if c.MaxSize < 0 {
 		return c.match(cpes)
@@ -140,6 +147,8 @@ func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
 	}
 	cves := c.data[key]
 	if cves != nil {
+		atomic.AddInt64(&c.numHits, 1)
+
 		// value is being computed, wait till ready
 		c.mu.Unlock()
 		<-cves.ready
@@ -260,4 +269,13 @@ func cacheKey(cpes []*wfn.Attributes) string {
 		out.WriteByte('#')
 	}
 	return out.String()
+}
+
+// HitRatio returns the cache hit ratio, the number of cache hits to the number
+// of lookups, as a percentage.
+func (c *Cache) HitRatio() float64 {
+	if c.numLookups == 0 {
+		return 0
+	}
+	return float64(c.numHits) / float64(c.numLookups) * 100
 }
