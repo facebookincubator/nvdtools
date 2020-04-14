@@ -15,7 +15,8 @@
 package cvefeed
 
 import (
-	"bytes"
+	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -240,11 +241,12 @@ func (c *Cache) evict(nbytes int64) {
 }
 
 func cacheKey(cpes []*wfn.Attributes) string {
-	var out bytes.Buffer
+	parts := make([]string, 0, len(cpes))
 	for _, cpe := range cpes {
 		if cpe == nil {
 			continue
 		}
+		var out strings.Builder
 		out.WriteString(cpe.Part)
 		out.WriteByte('^')
 		out.WriteString(cpe.Vendor)
@@ -266,9 +268,10 @@ func cacheKey(cpes []*wfn.Attributes) string {
 		out.WriteString(cpe.Other)
 		out.WriteByte('^')
 		out.WriteString(cpe.Language)
-		out.WriteByte('#')
+		parts = append(parts, out.String())
 	}
-	return out.String()
+	sort.Strings(parts)
+	return strings.Join(parts, "#")
 }
 
 // HitRatio returns the cache hit ratio, the number of cache hits to the number
