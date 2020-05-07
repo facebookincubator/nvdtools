@@ -27,6 +27,8 @@ import (
 var debug struct {
 	// Print HTTP requests and responses to stderr.
 	traceRequests bool
+	// Print the bodies of HTTP requests and responses to stderr.
+	traceRequestBodies bool
 	// When tools issue concurrent GET requests, the normal behaviour is to
 	// cancel pending requests as soon as one request fails. This option
 	// restores the old behaviour or executing the remaning requests anyway.
@@ -52,6 +54,7 @@ func getUint(varName string, defaultValue uint64) uint64 {
 
 func init() {
 	debug.traceRequests = getBool("NVD_TRACE_REQUESTS")
+	debug.traceRequestBodies = getBool("NVD_TRACE_REQUEST_BODIES")
 	debug.continueDownloading = getBool("NVD_CONTINUE_DOWNLOADING")
 	debug.failRequestNum = getUint("NVD_FAIL_REQUEST", 0)
 }
@@ -85,7 +88,7 @@ func traceRequestStart(req *http.Request) uint64 {
 	if !debug.traceRequests {
 		return id
 	}
-	data, _ := httputil.DumpRequest(obfuscateHeaders(req), false)
+	data, _ := httputil.DumpRequest(obfuscateHeaders(req), debug.traceRequestBodies)
 	fmt.Fprintf(os.Stderr, "Req %d: %s", id, string(data))
 	return id
 }
@@ -97,7 +100,7 @@ func traceRequestEnd(id uint64, resp *http.Response) {
 	if resp == nil {
 		return
 	}
-	data, _ := httputil.DumpResponse(resp, false)
+	data, _ := httputil.DumpResponse(resp, debug.traceRequestBodies)
 	fmt.Fprintf(os.Stderr, "Req %d: %s", id, string(data))
 }
 
