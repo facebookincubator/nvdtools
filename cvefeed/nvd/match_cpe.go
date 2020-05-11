@@ -106,6 +106,10 @@ func (cm *cpeMatch) match(attr *wfn.Attributes, requireVersion bool) bool {
 	//	- matched attr without version
 	//  - didn't match version, or require version was set and version was *
 
+	if attr.Version == wfn.Any {
+		return true
+	}
+
 	if !cm.hasVersionRanges {
 		return false
 	}
