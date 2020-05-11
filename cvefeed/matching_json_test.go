@@ -43,6 +43,11 @@ func TestMatchJSON(t *testing.T) {
 			Inventory: []*wfn.Attributes{},
 		},
 		{
+			Rule:      0,
+			Inventory: []*wfn.Attributes{{}},
+			Matches:   []*wfn.Attributes{{}},
+		},
+		{
 			Inventory: []*wfn.Attributes{
 				{Part: "o", Vendor: "linux", Product: "linux_kernel", Version: "2\\.6\\.1"},
 				{Part: "a", Vendor: "djvulibre_project", Product: "djvulibre", Version: "3\\.5\\.11"},
@@ -61,6 +66,11 @@ func TestMatchJSON(t *testing.T) {
 			},
 		},
 		{
+			Rule:      1,
+			Inventory: []*wfn.Attributes{{}},
+			Matches:   []*wfn.Attributes{{}},
+		},
+		{
 			Rule: 1,
 			Inventory: []*wfn.Attributes{
 				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "3\\.9"},
@@ -72,6 +82,11 @@ func TestMatchJSON(t *testing.T) {
 				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "4\\.0"},
 				{Part: "a", Vendor: "microsoft", Product: "ie", Version: "5\\.4"},
 			},
+		},
+		{
+			Rule:      2,
+			Inventory: []*wfn.Attributes{{}},
+			Matches:   []*wfn.Attributes{{}},
 		},
 		{
 			Rule: 2,
