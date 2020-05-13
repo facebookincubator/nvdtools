@@ -207,9 +207,11 @@ func (c *Cache) dictFromIndex(cpes []*wfn.Attributes) Dictionary {
 			flog.Warning("nil CPE in list")
 			continue
 		}
-		if cpe.Product != wfn.Any {
-			addVulns(cpe.Product)
+		// any of the CPEs having product=ANY would mean we need to match against the entire dictionary
+		if cpe.Product == wfn.Any {
+			return c.Dict
 		}
+		addVulns(cpe.Product)
 	}
 	addVulns(wfn.Any)
 
