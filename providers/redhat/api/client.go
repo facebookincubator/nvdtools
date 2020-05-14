@@ -48,7 +48,7 @@ func NewClient(c client.Client, baseURL string) *Client {
 	}
 }
 
-// FetchAll will fetch all vulnerabilities
+// FetchAllCVEs will fetch all vulnerabilities
 func (c *Client) FetchAllCVEs(ctx context.Context, since int64) (<-chan runner.Convertible, error) {
 	output := make(chan runner.Convertible)
 	wg := sync.WaitGroup{}
@@ -59,7 +59,7 @@ func (c *Client) FetchAllCVEs(ctx context.Context, since int64) (<-chan runner.C
 			go func(cveid string) {
 				defer wg.Done()
 				log.Printf("\tfetching cve %s", cveid)
-				cve, err := c.fetchCVE(ctx, cveid)
+				cve, err := c.FetchCVE(ctx, cveid)
 				if err != nil {
 					log.Printf("error while fetching cve %s: %v", cveid, err)
 					return
@@ -77,7 +77,8 @@ func (c *Client) FetchAllCVEs(ctx context.Context, since int64) (<-chan runner.C
 	return output, nil
 }
 
-func (c *Client) fetchCVE(ctx context.Context, cveid string) (*schema.CVE, error) {
+// FetchCVE retrieves a single CVE.
+func (c *Client) FetchCVE(ctx context.Context, cveid string) (*schema.CVE, error) {
 	resp, err := c.queryPath(ctx, fmt.Sprintf("/cve/%s.json", cveid))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch from feed: %v", err)
