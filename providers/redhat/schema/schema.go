@@ -51,8 +51,11 @@ type CVE struct {
 	Statement       string   `json:"statement,omitempty"`
 	References      []string `json:"references,omitempty"`
 	Acknowledgement string   `json:"acknowledgement,omitempty"`
-	Mitigation      string   `json:"mitigation,omitempty"`
-	UpstreamFix     string   `json:"upstream_fix,omitempty"`
+	Mitigation      *struct {
+		Value string `json:"value"`
+		Lang  string `json:"lang"`
+	} `json:"mitigation,omitempty"`
+	UpstreamFix string `json:"upstream_fix,omitempty"`
 
 	// redhat uses a single object instead of an array when there's a single instance of that entity
 	// that's why we need to do it manually
