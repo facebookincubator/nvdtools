@@ -59,6 +59,8 @@ type config struct {
 	// feeds
 	FeedOverrides multiString // []string
 	Feeds         map[string][]string
+	// http uri
+	HttpBindAt string
 }
 
 func (cfg *config) addFlags() {
@@ -93,6 +95,9 @@ func (cfg *config) addFlags() {
 
 	// feeds
 	flag.Var(&cfg.FeedOverrides, "r", "overRide: path to override feed, can be specified multiple times")
+
+	// feeds
+	flag.StringVar(&cfg.HttpBindAt, "bind", "", "use http based api. endp: [server:port]/cpe/your_cpe_name")
 }
 
 func (cfg *config) addFeedsFromArgs(provider string, feedFiles ...string) {
