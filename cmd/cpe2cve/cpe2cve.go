@@ -346,7 +346,6 @@ func Main() int {
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
-	fmt.Println("Process Single: ", processSingle(caches, cfg, "cpe:2.3:a:gnu:bash:1.14.4:*:*:*:*:*:*:*\n"))
 	if len(cfg.HttpBindAt) > 0 {
 		go httpServer(caches, cfg)
 	}
