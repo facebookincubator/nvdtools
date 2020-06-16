@@ -22,7 +22,7 @@ env:
 
 script:
 - go get -v -t -u -d ./...
-- 'golangci-lint run ./... --disable-all -E gosimple -E govet -E ineffassign -E staticcheck -E structcheck -E varcheck -e SA5011:'
+- 'golangci-lint run ./... --disable-all -E golint -E gosimple -E govet -E ineffassign -E staticcheck -E structcheck -E varcheck -e SA5011:'
 - go test -v ./...
 
 before_deploy:
