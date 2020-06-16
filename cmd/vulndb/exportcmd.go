@@ -38,7 +38,7 @@ var exportCmd = &cobra.Command{
 	Long: `
 The export command returns data from all vendors + overrides.
 
-The --format flag is required and must be one of csv or nvdjson.
+The --format flag is required and must be one of csv or nvdcvejson.
 
 The --provider flag is optional, as well as the list of IDs to filter in.
 
