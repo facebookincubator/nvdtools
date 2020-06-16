@@ -33,7 +33,7 @@ import (
 // Client struct
 type Client struct {
 	client.Client
-	baseUrl string
+	baseURL string
 	apiKey  string
 }
 
@@ -43,10 +43,10 @@ const (
 )
 
 // NewClient creates an object which is used to query the iDefense API
-func NewClient(c client.Client, baseUrl, apiKey string) *Client {
+func NewClient(c client.Client, baseURL, apiKey string) *Client {
 	return &Client{
 		Client:  c,
-		baseUrl: baseUrl,
+		baseURL: baseURL,
 		apiKey:  apiKey,
 	}
 }
@@ -107,7 +107,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 }
 
 func (c *Client) queryVulnerabilities(ctx context.Context, params map[string]interface{}) (*schema.VulnerabilitySearchResults, error) {
-	u, err := url.Parse(c.baseUrl + vulnerabilityEndpoint)
+	u, err := url.Parse(c.baseURL + vulnerabilityEndpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse url")
 	}

@@ -114,9 +114,8 @@ func versionCompare(v1, v2 string) int {
 		if len(v2Seg) == 0 {
 			if isNumeric {
 				return 1
-			} else {
-				return -1
 			}
+			return -1
 		}
 
 		// here we know that they both start with either numbers or letters
