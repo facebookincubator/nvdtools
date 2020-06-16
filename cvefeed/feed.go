@@ -20,6 +20,7 @@ package cvefeed
 
 import (
 	"bufio"
+	"compress/bzip2"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -75,6 +76,9 @@ func setupReader(in io.Reader) (src io.ReadCloser, err error) {
 			return nil, err
 		}
 		src = zr
+	} else if header[0] == 'B' && header[1] == 'Z' {
+		// or with bzip2.Reader if bzip2'ed
+		src = ioutil.NopCloser(bzip2.NewReader(r))
 	}
 	// TODO: maybe support .zip
 	return src, nil
