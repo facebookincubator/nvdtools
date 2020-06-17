@@ -63,7 +63,7 @@ func (feed *Feed) Checker() (rpm.Checker, error) {
 	var err error
 	for cveid, cve := range feed.data {
 		if mc[cveid], err = check.CVEChecker(cve); err != nil {
-			if err == check.NoCheckers {
+			if err == check.ErrCheckers {
 				// no checkers could be created, just skip it
 				delete(mc, cveid)
 				continue

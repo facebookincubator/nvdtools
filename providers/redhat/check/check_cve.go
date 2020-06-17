@@ -23,25 +23,26 @@ import (
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
-var NoCheckers = errors.New("no applicable checkers")
+var ErrCheckers = errors.New("no applicable checkers")
 
 func CVEChecker(cve *schema.CVE) (rpm.Checker, error) {
 	var chks []rpm.Checker
 
-	if archks, err := affectedReleaseCheckers(cve); err != nil {
+	archks, err := affectedReleaseCheckers(cve)
+	if err != nil {
 		return nil, fmt.Errorf("can't construct checkers for affected release: %v", err)
-	} else {
-		chks = archks
 	}
+	chks = archks
 
-	if pschks, err := packageStateCheckers(cve); err != nil {
+	pschks, err := packageStateCheckers(cve)
+	if err != nil {
 		return nil, fmt.Errorf("can't construct checkers for package state: %v", err)
-	} else {
-		chks = append(chks, pschks...)
 	}
+	chks = append(chks, pschks...)
+
 
 	if len(chks) == 0 {
-		return nil, NoCheckers
+		return nil, ErrCheckers
 	}
 
 	return &cveChecker{cve.Name, chks}, nil
