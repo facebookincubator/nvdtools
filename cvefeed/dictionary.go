@@ -41,7 +41,7 @@ func (d *Dictionary) Override(d2 Dictionary) {
 	}
 }
 
-// LoadJSONDictionary parses dictionary from multiple NVD vulenrability feed JSON files
+// LoadJSONDictionary parses dictionary from multiple NVD vulnerability feed JSON files
 func LoadJSONDictionary(paths ...string) (Dictionary, error) {
 	return LoadFeed(loadJSONFile, paths...)
 }
