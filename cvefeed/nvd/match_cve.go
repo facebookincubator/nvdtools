@@ -45,6 +45,11 @@ type Vuln struct {
 	wfn.Matcher
 }
 
+// Schema returns the underlying schema of the Vuln
+func (v *Vuln) Schema() *schema.NVDCVEFeedJSON10DefCVEItem {
+	return v.cveItem
+}
+
 // ID is a part of the cvefeed.Vuln Interface
 func (v *Vuln) ID() string {
 	if v == nil || v.cveItem == nil || v.cveItem.CVE == nil || v.cveItem.CVE.CVEDataMeta == nil {
