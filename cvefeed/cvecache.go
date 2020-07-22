@@ -166,10 +166,10 @@ func (c *Cache) Get(cpes []*wfn.Attributes) []MatchResult {
 	cves.res = c.match(cpes)
 	cves.updateResSize(key)
 	c.mu.Lock()
-	c.size += cves.size
-	if c.MaxSize != 0 && c.size > c.MaxSize {
-		c.evict(int64(cacheEvictPercentage * float64(c.MaxSize)))
+	if c.MaxSize != 0 && c.size+cves.size > c.MaxSize {
+		c.evict(int64(cacheEvictPercentage*float64(c.MaxSize)) + cves.size)
 	}
+	c.size += cves.size
 	cves.evictionIndex = c.evictionQ.push(key)
 	c.mu.Unlock()
 	close(cves.ready)
@@ -231,7 +231,7 @@ func (c *Cache) matchDict(cpes []*wfn.Attributes, dict Dictionary) (results []Ma
 // evict the least recently used records untile nbytes of capacity is achieved or no more records left.
 // It is not concurrency-safe, c.mu should be locked before calling it.
 func (c *Cache) evict(nbytes int64) {
-	for c.size+nbytes > c.MaxSize {
+	for c.size > 0 && c.size+nbytes > c.MaxSize {
 		key := c.evictionQ.pop()
 		cd, ok := c.data[key]
 		if !ok { // should not happen
