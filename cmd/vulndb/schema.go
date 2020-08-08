@@ -28,7 +28,7 @@ func init() {
 
 var schemaCmd = &cobra.Command{
 	Use:   "schema",
-	Short: "dump vulndb MySQL schema to standatd output",
+	Short: "dump vulndb MySQL schema to standard output",
 	Run: func(cmd *cobra.Command, args []string) {
 		for _, part := range vulndb.SchemaSQL() {
 			fmt.Println(part)
