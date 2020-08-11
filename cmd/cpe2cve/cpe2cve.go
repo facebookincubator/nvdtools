@@ -18,7 +18,10 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"io"
+	"log"
+	"net/http"
 	"os"
 	"path"
 	"runtime"
@@ -33,6 +36,33 @@ import (
 	"github.com/facebookincubator/nvdtools/stats"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
+
+// input a
+func processSingle(caches map[string]*cvefeed.Cache, cfg config, cpe string) []string {
+	var cves = []string{}
+	attr, err := wfn.Parse(cpe)
+	if err != nil {
+		flog.Errorf("couldn't parse uri %q: %v", cpe, err)
+		return []string{}
+	}
+	cpes := make([]*wfn.Attributes, 0, 1)
+	cpes = append(cpes, attr)
+	for _, cache := range caches {
+		for _, matches := range cache.Get(cpes) {
+			ml := len(matches.CPEs)
+			matchingCPEs := make([]string, ml)
+			for i, attr := range matches.CPEs {
+				if attr == nil {
+					flog.Errorf("%s matches nil CPE", matches.CVE.ID())
+					continue
+				}
+				matchingCPEs[i] = (*wfn.Attributes)(attr).BindToURI()
+			}
+			cves = append(cves, matches.CVE.ID())
+		}
+	}
+	return cves
+}
 
 func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvefeed.Cache, cfg config, nlines *uint64) {
 	cpesAt := cfg.CPEsAt - 1
@@ -102,6 +132,7 @@ func processAll(in <-chan []string, out chan<- []string, caches map[string]*cvef
 					cfg.CVSSAt-1, fmt.Sprintf("%.1f", cvss),
 					cfg.ProviderAt-1, provider,
 				)
+				fmt.Println(matches.CVE.ID())
 				out <- rec2
 			}
 		}
@@ -190,6 +221,21 @@ func init() {
 	flag.Set("logtostderr", "true")
 }
 
+func httpServer(caches map[string]*cvefeed.Cache, cfg config) {
+	router := gin.Default()
+	router.GET("/cpe/:cpe", func(c *gin.Context) {
+		cpe := c.Param("cpe")
+		cves := processSingle(caches, cfg, cpe)
+		c.JSON(http.StatusOK, gin.H{"resp": cves})
+	})
+	var err = router.Run(cfg.HttpBindAt)
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		flog.Info("start run http server")
+	}
+
+}
 func main() {
 	// we do it like this because if we exit in Main, deferred functions don't get called
 	os.Exit(Main())
@@ -300,9 +346,10 @@ func Main() int {
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
 	}
-
+	if len(cfg.HttpBindAt) > 0 {
+		go httpServer(caches, cfg)
+	}
 	done := processInput(os.Stdin, os.Stdout, caches, cfg)
-
 	if cfg.MemoryProfile != "" {
 		f, err := os.Create(cfg.MemoryProfile)
 		if err != nil {
@@ -315,7 +362,6 @@ func Main() int {
 		}
 		f.Close()
 	}
-
 	<-done
 	return 0
 }
