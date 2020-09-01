@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/facebookincubator/nvdtools/providers/flexera/api"
 	"github.com/facebookincubator/nvdtools/providers/flexera/schema"
@@ -45,6 +46,9 @@ func FetchSince(ctx context.Context, c client.Client, baseURL string, since int6
 	apiKey := os.Getenv("FLEXERA_TOKEN")
 	if apiKey == "" {
 		return nil, fmt.Errorf("please set FLEXERA_TOKEN in environment")
+	}
+	if !strings.HasPrefix(apiKey, "Token ") {
+		apiKey = "Token " + apiKey
 	}
 
 	client := api.NewClient(c, baseURL, apiKey)
