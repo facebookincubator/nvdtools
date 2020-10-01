@@ -16,11 +16,11 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb"
 	"github.com/facebookincubator/nvdtools/vulndb/mysql"
 )
@@ -60,7 +60,7 @@ The deadline and metadata flags are optional.
 
 		db, err := mysql.OpenWrite(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -79,7 +79,7 @@ The deadline and metadata flags are optional.
 		ctx := context.Background()
 		err = sc.Create(ctx, args...)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }
@@ -101,7 +101,7 @@ The --collector and --provider flags, and list of CVEs are optional filters.
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mysql.OpenRead(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -115,7 +115,7 @@ The --collector and --provider flags, and list of CVEs are optional filters.
 		ctx := context.Background()
 		err = sg.CSV(ctx, os.Stdout, !gFlagCSVNoHeader)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }
@@ -139,7 +139,7 @@ The delete command deletes snoozes from the database for specific providers.
 
 		db, err := mysql.OpenWrite(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -153,7 +153,7 @@ The delete command deletes snoozes from the database for specific providers.
 		ctx := context.Background()
 		err = del.Delete(ctx)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }

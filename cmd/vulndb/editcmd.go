@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 
 	"github.com/spf13/cobra"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb"
 	"github.com/facebookincubator/nvdtools/vulndb/mysql"
 )
@@ -65,18 +65,18 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 
 		editor := os.Getenv("EDITOR")
 		if editor == "" {
-			log.Fatalln("$EDITOR not set, cannot edit")
+			flog.Fatalln("$EDITOR not set, cannot edit")
 		}
 
 		db, err := mysql.OpenRead(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
 		f, err := ioutil.TempFile("", "vulndb")
 		if err != nil {
-			log.Fatalln("cannot open temp file:", err)
+			flog.Fatalln("cannot open temp file:", err)
 		}
 		defer f.Close()
 
@@ -97,12 +97,12 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 		ctx := context.Background()
 		err = exp.JSON(ctx, mw, indent)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 
 		err = f.Sync()
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 
 		oscmd := exec.Command(editor, f.Name())
@@ -112,17 +112,17 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 		err = oscmd.Run()
 		if err != nil {
 			os.Remove(f.Name())
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 
 		_, err = f.Seek(0, io.SeekStart)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 
 		bb, err := ioutil.ReadAll(f)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 
 		x, y := srcmd5.Sum(nil), md5.Sum(bb)
@@ -134,7 +134,7 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 
 		db, err = mysql.OpenWrite(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -146,8 +146,8 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 
 		err = imp.ImportFile(ctx, f.Name())
 		if err != nil {
-			log.Println("temp file:", f.Name())
-			log.Fatalln(err)
+			flog.Infoln("temp file:", f.Name())
+			flog.Fatalln(err)
 		}
 
 		os.Remove(f.Name()) // remove on success
