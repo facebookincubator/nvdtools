@@ -19,10 +19,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"sort"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/cvefeed"
 	"github.com/spf13/cobra"
 )
@@ -32,7 +32,7 @@ func init() {
 }
 
 func feedLoad(file string) (cvefeed.Dictionary, error) {
-	log.Printf("loading %s\n", file)
+	flog.Infof("loading %s\n", file)
 	dict, err := cvefeed.LoadJSONDictionary(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load dictionary %s: %v", file, err)
@@ -84,7 +84,7 @@ var diffCmd = &cobra.Command{
 			return err
 		}
 
-		log.Println("computing stats")
+		flog.Infoln("computing stats")
 
 		a := feedName(args[0])
 		b := feedName(args[1])
@@ -106,7 +106,7 @@ var diffCmd = &cobra.Command{
 			stats.NumChunk(cvefeed.ChunkScore), stats.PercentChunk(cvefeed.ChunkScore),
 			percentInt(stats.NumChunk(cvefeed.ChunkScore), stats.NumVulnsA()))
 
-		log.Println("writing differences to stats.json")
+		flog.Infoln("writing differences to stats.json")
 
 		data, err := json.MarshalIndent(stats, "", "  ")
 		if err != nil {

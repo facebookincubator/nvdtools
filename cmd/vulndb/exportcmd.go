@@ -16,12 +16,12 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb"
 	"github.com/facebookincubator/nvdtools/vulndb/mysql"
 )
@@ -48,7 +48,7 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mysql.OpenRead(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -71,10 +71,10 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 		case "nvdcvejson":
 			err = exp.JSON(ctx, os.Stdout, os.Getenv("JSON_INDENT"))
 		default:
-			log.Fatalln("unsupported format:", gFlagFormat)
+			flog.Fatalln("unsupported format:", gFlagFormat)
 		}
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }

@@ -16,11 +16,11 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb"
 	"github.com/facebookincubator/nvdtools/vulndb/mysql"
 )
@@ -59,7 +59,7 @@ File schema: https://csrc.nist.gov/schema/nvd/feed/1.0/nvd_cve_feed_json_1.0.sch
 
 		db, err := mysql.OpenWrite(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -72,7 +72,7 @@ File schema: https://csrc.nist.gov/schema/nvd/feed/1.0/nvd_cve_feed_json_1.0.sch
 		ctx := context.Background()
 		err = imp.ImportFile(ctx, args[0])
 		if err != nil {
-			log.Fatal(err)
+			flog.Fatal(err)
 		}
 	},
 }
@@ -97,7 +97,7 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mysql.OpenRead(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -114,10 +114,10 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 		case "nvdcvejson":
 			err = exp.JSON(ctx, os.Stdout, os.Getenv("JSON_INDENT"))
 		default:
-			log.Fatalln("unsupported format:", gFlagFormat)
+			flog.Fatalln("unsupported format:", gFlagFormat)
 		}
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }
@@ -143,7 +143,7 @@ for specific providers. Requires a list of CVE ID to delete, or
 
 		db, err := mysql.OpenWrite(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -156,7 +156,7 @@ for specific providers. Requires a list of CVE ID to delete, or
 		ctx := context.Background()
 		err = del.Delete(ctx)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }

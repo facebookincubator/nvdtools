@@ -16,12 +16,12 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb"
 	"github.com/facebookincubator/nvdtools/vulndb/mysql"
 )
@@ -61,7 +61,7 @@ File schema: https://csrc.nist.gov/schema/nvd/feed/1.0/nvd_cve_feed_json_1.0.sch
 
 		db, err := mysql.OpenWrite(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -70,17 +70,17 @@ File schema: https://csrc.nist.gov/schema/nvd/feed/1.0/nvd_cve_feed_json_1.0.sch
 			Owner:    gFlagOwner,
 			Provider: gFlagProvider,
 			OnFile: func(name string) {
-				log.Println("importing", name)
+				flog.Infoln("importing", name)
 			},
 		}
 
 		ctx := context.Background()
 		vendor, err := imp.ImportFiles(ctx, args...)
 		if err != nil {
-			log.Fatal(err)
+			flog.Fatal(err)
 		}
 
-		log.Printf("imported %s:%d", vendor.Provider, vendor.Version)
+		flog.Infof("imported %s:%d", vendor.Provider, vendor.Version)
 	},
 }
 
@@ -104,7 +104,7 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mysql.OpenRead(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -122,10 +122,10 @@ for JSON output, e.g. JSON_INDENT=$'\t' or use jq.
 		case "nvdcvejson":
 			err = exp.JSON(ctx, os.Stdout, os.Getenv("JSON_INDENT"))
 		default:
-			log.Fatalln("unsupported format:", gFlagFormat)
+			flog.Fatalln("unsupported format:", gFlagFormat)
 		}
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }
@@ -150,7 +150,7 @@ To force deleting all data use --all, optionally combined with --provider.
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mysql.OpenWrite(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -168,7 +168,7 @@ To force deleting all data use --all, optionally combined with --provider.
 		ctx := context.Background()
 		err = del.Trim(ctx)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }

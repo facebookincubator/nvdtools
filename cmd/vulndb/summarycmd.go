@@ -16,11 +16,11 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
+  "github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb"
 	"github.com/facebookincubator/nvdtools/vulndb/mysql"
 )
@@ -37,7 +37,7 @@ var summaryCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mysql.OpenRead(gFlagMySQL)
 		if err != nil {
-			log.Fatalln("cannot open db:", err)
+			flog.Fatalln("cannot open db:", err)
 		}
 		defer db.Close()
 
@@ -48,7 +48,7 @@ var summaryCmd = &cobra.Command{
 		ctx := context.Background()
 		err = exp.CSV(ctx, os.Stdout, !gFlagCSVNoHeader)
 		if err != nil {
-			log.Fatalln(err)
+			flog.Fatalln(err)
 		}
 	},
 }

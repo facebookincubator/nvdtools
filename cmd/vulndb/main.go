@@ -16,16 +16,14 @@
 package main
 
 import (
-	"log"
-
 	"github.com/spf13/cobra"
+
+  "github.com/facebookincubator/flog"
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
 	if err := RootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		flog.Fatal(err)
 	}
 }
 
