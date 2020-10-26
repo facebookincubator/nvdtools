@@ -20,11 +20,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/stats"
@@ -59,7 +59,6 @@ type Runner struct {
 // It will run the fetchers/runners (and convert vulnerabilities)
 // Finally, it will output it as json to stdout
 func (r *Runner) Run() error {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	r.Config.addFlags()
 	stats.AddFlags()
 	flag.Usage = func() {
@@ -121,7 +120,7 @@ func (r *Runner) readVulnerabilities() (<-chan Convertible, error) {
 		go func() {
 			defer close(vulns)
 			if err := r.Read(os.Stdin, vulns); err != nil {
-				log.Printf("error while reading from stdin: %v", err)
+				flog.Errorf("error while reading from stdin: %v", err)
 			}
 		}()
 		return vulns, nil
@@ -135,12 +134,12 @@ func (r *Runner) readVulnerabilities() (<-chan Convertible, error) {
 			defer wg.Done()
 			file, err := os.Open(filename)
 			if err != nil {
-				log.Printf("couldn't open file %q: %v", filename, err)
+				flog.Errorf("couldn't open file %q: %v", filename, err)
 				return
 			}
 			defer file.Close()
 			if err := r.Read(file, vulns); err != nil {
-				log.Printf("error while reading from file %q: %v", filename, err)
+				flog.Errorf("error while reading from file %q: %v", filename, err)
 			}
 		}(filename)
 	}
@@ -159,7 +158,7 @@ func convert(vulns <-chan Convertible) error {
 	for vuln := range vulns {
 		converted, err := vuln.Convert()
 		if err != nil {
-			log.Printf("error while converting vuln: %v", err)
+			flog.Errorf("error while converting vuln: %v", err)
 			continue
 		}
 		feed.CVEItems = append(feed.CVEItems, converted)

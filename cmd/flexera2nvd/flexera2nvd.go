@@ -19,10 +19,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/flexera/api"
 	"github.com/facebookincubator/nvdtools/providers/flexera/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
@@ -68,7 +68,6 @@ func main() {
 	}
 
 	if err := r.Run(); err != nil {
-		log.Println(err)
-		os.Exit(1)
+		flog.Fatalln(err)
 	}
 }

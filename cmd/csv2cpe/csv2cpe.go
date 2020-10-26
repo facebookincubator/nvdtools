@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -77,8 +78,7 @@ func main() {
 
 	err = p.Process(acm, os.Stdin, os.Stdout)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		flog.Fatalln(err)
 	}
 }
 

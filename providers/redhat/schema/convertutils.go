@@ -16,11 +16,11 @@ package schema
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/rpm"
 	"github.com/facebookincubator/nvdtools/wfn"
@@ -41,7 +41,7 @@ func convertTime(redhatTime string) (string, error) {
 		t, err = time.Parse(timeLayout, redhatTime)
 	}
 	if err != nil { // should be parsable
-		log.Printf("unable to parse time: %v", err)
+		flog.Errorf("unable to parse time: %v", err)
 		return redhatTime, err
 	}
 	return t.Format(nvd.TimeLayout), nil
@@ -69,7 +69,7 @@ func IsFixed(fixState string) bool {
 	case "not affected":
 		return true
 	default:
-		log.Printf("unknown fix state: %q", fixState)
+		flog.Infof("unknown fix state: %q", fixState)
 		return false
 	}
 }

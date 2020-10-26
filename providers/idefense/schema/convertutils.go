@@ -15,9 +15,9 @@
 package schema
 
 import (
-	"log"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
@@ -57,7 +57,7 @@ func (item *Vulnerability) findConfigurations() []configuration {
 	for _, vulnTech := range item.Affects.VulnTechs {
 		attrs, err := createAttributes(vulnTech.Part, vulnTech.Vendor, vulnTech.Product)
 		if err != nil {
-			log.Println(err)
+			flog.Errorln(err)
 			continue
 		}
 		cpe23Uri := attrs.BindToFmtString()
@@ -77,7 +77,7 @@ func (item *Vulnerability) findConfigurations() []configuration {
 	for _, pkg := range item.Affects.Packages {
 		attrs, err := createAttributes("a", "", pkg.PackageName)
 		if err != nil {
-			log.Println(err)
+			flog.Errorln(err)
 			continue
 		}
 		cpe23Uri := attrs.BindToFmtString()
@@ -101,7 +101,7 @@ func (item *Vulnerability) findConfigurations() []configuration {
 	for _, vulnTech := range item.FixedBy.VulnTechs {
 		attrs, err := createAttributes(vulnTech.Part, vulnTech.Vendor, vulnTech.Product)
 		if err != nil {
-			log.Println(err)
+			flog.Errorln(err)
 			continue
 		}
 		cpe23Uri := attrs.BindToFmtString()
@@ -117,7 +117,7 @@ func (item *Vulnerability) findConfigurations() []configuration {
 	for _, pkg := range item.FixedBy.Packages {
 		attrs, err := createAttributes("a", "", pkg.PackageName)
 		if err != nil {
-			log.Println(err)
+			flog.Errorln(err)
 			continue
 		}
 		cpe23Uri := attrs.BindToFmtString()

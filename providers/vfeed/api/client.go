@@ -19,9 +19,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/vfeed/schema"
 )
 
@@ -56,7 +56,7 @@ func (c *Client) FetchAllVulnerabilities(since int64) (<-chan *schema.Item, erro
 
 			item, err := unmarshalFile(match)
 			if err != nil {
-				log.Printf("Failed to unmarshal %s: %v", match, err)
+				flog.Errorf("Failed to unmarshal %s: %v", match, err)
 				return
 			}
 

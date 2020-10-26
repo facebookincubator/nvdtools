@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"sync"
 	"time"
@@ -26,6 +25,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/rbs/schema"
@@ -99,7 +99,7 @@ func (c *Client) fetchAllVulnerabilities(getEndpoint func() string) (<-chan runn
 	numPages := (totalVulns-1)/pageSize + 1
 
 	// fetch pages concurrently
-	log.Printf("starting sync for %d vulnerabilities over %d pages\n", totalVulns, numPages)
+	flog.Infof("starting sync for %d vulnerabilities over %d pages\n", totalVulns, numPages)
 	wg := sync.WaitGroup{}
 	for page := 1; page <= numPages; page++ {
 		page := page
@@ -108,7 +108,7 @@ func (c *Client) fetchAllVulnerabilities(getEndpoint func() string) (<-chan runn
 			defer wg.Done()
 			result, err := fetch(page, pageSize)
 			if err != nil {
-				log.Printf("failed to get page %d: %v", page, err)
+				flog.Errorf("failed to get page %d: %v", page, err)
 				return
 			}
 			for _, vuln := range result.Vulnerabilities {

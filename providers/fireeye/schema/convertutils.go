@@ -15,11 +15,11 @@
 package schema
 
 import (
-	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 )
 
@@ -46,7 +46,7 @@ func convertTime(fireeyeTime int64) string {
 func strToFloat(str string) float64 {
 	f, err := strconv.ParseFloat(str, 64)
 	if err != nil {
-		log.Println(err)
+		flog.Errorln(err)
 		f = float64(0)
 	}
 	return f

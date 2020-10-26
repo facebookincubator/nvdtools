@@ -18,11 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/idefense/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
@@ -73,7 +73,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 	numPages := (totalVulns-1)/pageSize + 1
 
 	// fetch pages concurrently
-	log.Printf("starting sync for %d vulnerabilities over %d pages\n", totalVulns, numPages)
+	flog.Infof("starting sync for %d vulnerabilities over %d pages\n", totalVulns, numPages)
 	eg, ctx := errgroup.WithContext(ctx)
 	for page := 1; page <= numPages; page++ {
 		page := page
@@ -98,7 +98,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 
 	go func() {
 		if err := eg.Wait(); err != nil {
-			log.Println(err)
+			flog.Errorln(err)
 		}
 		close(output)
 	}()
