@@ -91,8 +91,7 @@ func diff(a, b string) error {
 
 // copied from https://github.com/RustSec/advisory-db
 // uncommented all settings, added patched ^1.2.1
-var sampleAdvisory = `
-[advisory]
+var sampleAdvisory = "```toml\n" + `[advisory]
 # Identifier for the advisory (mandatory). Will be assigned a "RUSTSEC-YYYY-NNNN"
 # identifier e.g. RUSTSEC-2018-0001. Please use "RUSTSEC-0000-0000" in PRs.
 id = "RUSTSEC-0000-0000"
@@ -111,7 +110,7 @@ description = """
 Affected versions of this crate did not properly X.
 
 This allows an attacker to Y.
- 
+
 The flaw was corrected by Z.
 """
 
@@ -146,12 +145,21 @@ affected_arch = ["x86", "x86_64"]
 # <https://docs.rs/platforms/latest/platforms/target/enum.OS.html>
 affected_os = ["windows"]
 
-# List of canonical paths to vulnerable functions (optional) 
+# List of canonical paths to vulnerable functions (optional)
 # The path syntax is cratename::path::to::function, without any
 # return type or parameters. More information:
 # <https://github.com/RustSec/advisory-db/issues/68>
 # For example, for RUSTSEC-2018-0003, this would look like:
 affected_functions = ["smallvec::SmallVec::insert_many"]
+` + "```" + `
+
+# Flaw in X allows Y
+
+Affected versions of this crate did not properly X.
+
+This allows an attacker to Y.
+
+The flaw was corrected by Z.
 `
 
 var goldenCVE = `{
@@ -168,7 +176,7 @@ var goldenCVE = `{
 			"description_data": [
 				{
 					"lang": "en",
-					"value": "Affected versions of this crate did not properly X.\n\nThis allows an attacker to Y.\n \nThe flaw was corrected by Z.\n"
+					"value": "Affected versions of this crate did not properly X.\n\nThis allows an attacker to Y.\n\nThe flaw was corrected by Z.\n"
 				}
 			]
 		},

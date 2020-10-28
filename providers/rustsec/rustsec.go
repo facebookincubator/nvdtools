@@ -17,8 +17,10 @@ package rustsec
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -39,7 +41,7 @@ func Convert(dir string) (*nvd.NVDCVEFeedJSON10, error) {
 			return err
 		}
 		_, fn := filepath.Split(path)
-		if !(strings.HasPrefix(fn, "RUSTSEC") && strings.HasSuffix(fn, ".toml")) {
+		if !(strings.HasPrefix(fn, "RUSTSEC") && strings.HasSuffix(fn, ".md")) {
 			return nil
 		}
 		f, err := os.Open(path)
@@ -66,10 +68,31 @@ func Convert(dir string) (*nvd.NVDCVEFeedJSON10, error) {
 // ConvertAdvisory converts the rustsec toml advisory data from r to NVD CVE JSON 1.0 format.
 func ConvertAdvisory(r io.Reader) (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
 	var spec advisoryFile
-	_, err := toml.DecodeReader(r, &spec)
+
+	bs, err := ioutil.ReadAll(r)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot decode rustsec toml advisory")
+		return nil, errors.Wrap(err, "cannot read RUSTSEC file")
 	}
+
+	reg := regexp.MustCompile("(?s)" + // global flag - . also matches newline
+		"```toml\\n(.+?)```" + // 1 group - match toml part (between ```toml and ```) in lazy mode
+		"(?s:[\\s\\n]*)" + // match any number of new lines and spaces before first #
+		"#\\s*(\\S.*?)\\n" + // get title - from # to new line in lazy mode
+		"(?s:[\\s\\n]*)" + // skip the newlines and spaces
+		"(.*)") // everything else is description
+
+	data := reg.FindStringSubmatch(string(bs))
+	if (data == nil) || (len(data) != 4) {
+		return nil, errors.New("cannot parse md advisory structure")
+	}
+	_, err = toml.Decode(data[1], &spec)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot decode rustsec toml advisory part of md file")
+	}
+
+	spec.Item.Title = data[2]
+	spec.Item.Description = data[3]
 
 	return spec.Item.Convert()
 }
