@@ -20,9 +20,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/rbs/api"
@@ -77,6 +77,6 @@ func main() {
 	}
 
 	if err := r.Run(); err != nil {
-		log.Println(err)
+		flog.Errorln(err)
 	}
 }

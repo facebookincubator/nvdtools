@@ -15,8 +15,7 @@
 package schema
 
 import (
-	"log"
-
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
@@ -119,7 +118,7 @@ func (advisory *Advisory) newConfigurations() *nvd.NVDCVEFeedJSON10DefConfigurat
 	var err error
 	var product string
 	if product, err = wfn.WFNize(advisory.Package); err != nil {
-		log.Printf("can't wfnize %q\n", advisory.Package)
+		flog.Errorf("can't wfnize %q\n", advisory.Package)
 		product = advisory.Package
 	}
 	cpe := wfn.Attributes{Part: "a", Product: product}
@@ -128,7 +127,7 @@ func (advisory *Advisory) newConfigurations() *nvd.NVDCVEFeedJSON10DefConfigurat
 	for _, versions := range advisory.VulnerableVersions {
 		vRanges, err := parseVersionRange(versions)
 		if err != nil {
-			log.Printf("could not generate configuration for item %s, vulnerable ver %q: %v", advisory.SnykID, versions, err)
+			flog.Errorf("could not generate configuration for item %s, vulnerable ver %q: %v", advisory.SnykID, versions, err)
 			continue
 		}
 		for _, vRange := range vRanges {

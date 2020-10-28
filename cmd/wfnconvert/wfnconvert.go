@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/facebookincubator/flog"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -42,8 +43,7 @@ func main() {
 		flag.Usage()
 	}
 	if err := wfnconvert(os.Stdin, os.Stdout, &o); err != nil {
-		fmt.Fprintf(os.Stderr, "wfnconvert: %v\n", err)
-		os.Exit(1)
+		flog.Fatalf("wfnconvert: %v\n", err)
 	}
 }
 

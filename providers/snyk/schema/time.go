@@ -15,9 +15,9 @@
 package schema
 
 import (
-	"log"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 )
 
@@ -37,6 +37,6 @@ func snykTimeToNVD(s string) string {
 		}
 	}
 
-	log.Printf("cannot parse snyk time: %v", err)
+	flog.Errorf("cannot parse snyk time: %v", err)
 	return s
 }

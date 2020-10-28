@@ -18,11 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/flexera/schema"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
@@ -68,7 +68,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 	mainCtx, cancel := context.WithCancel(ctx)
 
 	numPages := (totalAdvisories-1)/pageSize + 1
-	log.Printf("starting sync for %d advisories over %d pages\n", totalAdvisories, numPages)
+	flog.Infof("starting sync for %d advisories over %d pages\n", totalAdvisories, numPages)
 
 	identifiers := make(chan string, totalAdvisories)
 	advisories := make(chan runner.Convertible, totalAdvisories)
@@ -90,7 +90,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 
 	go func() {
 		if err := identifersEg.Wait(); err != nil {
-			log.Println(err)
+			flog.Errorln(err)
 			cancel()
 		}
 		close(identifiers)
@@ -112,7 +112,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 
 	go func() {
 		if err := advisoriesEg.Wait(); err != nil {
-			log.Println(err)
+			flog.Errorln(err)
 			cancel()
 		}
 		close(advisories)

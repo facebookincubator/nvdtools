@@ -16,12 +16,13 @@ package client
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
 	"strconv"
 	"sync/atomic"
+
+	"github.com/facebookincubator/flog"
 )
 
 var debug struct {
@@ -111,7 +112,7 @@ func traceRequestEnd(id uint64, resp *http.Response) {
 // want the pending requests to continue being processed).
 func StopOrContinue(err error) error {
 	if debug.continueDownloading {
-		log.Println(err)
+		flog.Errorln(err)
 		return nil
 	}
 	return err

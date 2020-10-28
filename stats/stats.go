@@ -19,10 +19,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/facebookincubator/flog"
 )
 
 // Stats encapsulates functionallity of incrementing counters and incrementing values
@@ -131,7 +132,7 @@ func (s *Stats) Write() error {
 // WriteAndLogError is just a wrapper around Write which also logs the error to stderr if it occurs
 func (s *Stats) WriteAndLogError() {
 	if err := s.Write(); err != nil {
-		log.Printf("failed to write stats: %v", err)
+		flog.Errorf("failed to write stats: %v", err)
 	}
 }
 

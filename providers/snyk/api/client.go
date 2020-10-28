@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/snyk/schema"
 )
@@ -57,7 +57,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 		defer content.Close()
 		var advisories schema.Advisories
 		if err := json.NewDecoder(content).Decode(&advisories); err != nil {
-			log.Printf("can't decode content into advisories: %v", err)
+			flog.Errorf("can't decode content into advisories: %v", err)
 			return
 		}
 		for _, advs := range advisories {

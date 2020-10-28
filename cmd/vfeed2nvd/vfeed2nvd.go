@@ -17,11 +17,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-
 	"github.com/facebookincubator/nvdtools/providers/vfeed/api"
 )
 
@@ -29,7 +28,7 @@ const pathVar = "VFEED_REPO_PATH"
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatal(err)
+		flog.Fatal(err)
 	}
 }
 

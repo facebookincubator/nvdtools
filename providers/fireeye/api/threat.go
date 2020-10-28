@@ -18,9 +18,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/fireeye/schema"
 	"github.com/facebookincubator/nvdtools/stats"
 )
@@ -42,13 +42,13 @@ func (c *Client) FetchAllThreatReportsSince(ctx context.Context, since int64) (<
 		params := params
 		go func() {
 			defer wgReportIDs.Done()
-			log.Printf("Fetching: %s\n", params)
+			flog.Infof("Fetching: %s\n", params)
 			if rIDs, err := c.fetchReportIDs(ctx, params); err == nil {
 				for _, rID := range rIDs {
 					reportIDs <- rID
 				}
 			} else {
-				log.Println(err)
+				flog.Errorln(err)
 			}
 		}()
 	}
@@ -73,7 +73,7 @@ func (c *Client) FetchAllThreatReportsSince(ctx context.Context, since int64) (<
 				reports <- report
 			} else {
 				stats.IncrementCounter("report.error")
-				log.Println(err)
+				flog.Errorln(err)
 			}
 		}()
 	}

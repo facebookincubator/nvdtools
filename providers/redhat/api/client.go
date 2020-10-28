@@ -18,13 +18,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/lib/runner"
 	"github.com/facebookincubator/nvdtools/providers/redhat/schema"
@@ -58,10 +58,10 @@ func (c *Client) FetchAllCVEs(ctx context.Context, since int64) (<-chan runner.C
 			wg.Add(1)
 			go func(cveid string) {
 				defer wg.Done()
-				log.Printf("\tfetching cve %s", cveid)
+				flog.Infof("\tfetching cve %s", cveid)
 				cve, err := c.FetchCVE(ctx, cveid)
 				if err != nil {
-					log.Printf("error while fetching cve %s: %v", cveid, err)
+					flog.Errorf("error while fetching cve %s: %v", cveid, err)
 					return
 				}
 				output <- cve
@@ -98,14 +98,14 @@ func (c *Client) fetchAllPages(ctx context.Context, since int64) <-chan *schema.
 	go func() {
 		defer close(output)
 		for page := 1; ; page++ {
-			log.Printf("fetching page %d", page)
+			flog.Infof("fetching page %d", page)
 			if list, err := c.fetchListPage(ctx, since, page); err == nil {
 				output <- list
 				if len(*list) < perPage {
 					break
 				}
 			} else {
-				log.Printf("can't fetch page %d: %v", page, err)
+				flog.Errorf("can't fetch page %d: %v", page, err)
 				break
 			}
 		}

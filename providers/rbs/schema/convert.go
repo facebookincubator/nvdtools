@@ -16,9 +16,9 @@ package schema
 
 import (
 	"fmt"
-	"log"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
@@ -106,7 +106,7 @@ func (item *Vulnerability) makeConfigurations() *nvd.NVDCVEFeedJSON10DefConfigur
 				for _, cpe := range version.CPEs {
 					c, err := normalizeCPE(cpe.CPE)
 					if err != nil {
-						log.Printf("couldn't normalize cpe %q: %v", cpe.CPE, err)
+						flog.Errorf("couldn't normalize cpe %q: %v", cpe.CPE, err)
 						continue
 					}
 					match := &nvd.NVDCVEFeedJSON10DefCPEMatch{

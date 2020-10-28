@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -27,6 +26,7 @@ import (
 
 	"github.com/andreyvit/diff"
 
+	"github.com/facebookincubator/flog"
 	nvd "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 )
 
@@ -80,7 +80,7 @@ func checkSchema(t *testing.T, input, expected string) {
 
 	item := &Item{}
 	if err := unmarshalFile(item, input); err != nil {
-		log.Fatalf("Failed to unmarshal example file: %v", err)
+		flog.Fatalf("Failed to unmarshal example file: %v", err)
 	}
 
 	want := &nvd.NVDCVEFeedJSON10DefCVEItem{}
