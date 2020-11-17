@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/facebookincubator/nvdtools/cvefeed"
+	"github.com/stretchr/testify/assert"
 )
 
 var testFeed = `
@@ -171,24 +172,16 @@ var testFeed = `
 
 func TestStats(t *testing.T) {
 	file, err := ioutil.TempFile("/tmp", "test_nvd.json")
-	if err != nil {
-		t.Fatalf("Unexpected error occurred when creating a temp file: %v", err)
-	}
+	assert.Nil(t, err, "Unexpected error occurred when creating a temp file")
 	defer func() {
-		if err := file.Close(); err != nil {
-			t.Fatalf("Unexpected error occurred when closing a temp file: %v", err)
-		}
-		if err := os.Remove(file.Name()); err != nil {
-			t.Fatalf("Unexpected error occurred when removing a temp file: %v", err)
-		}
+		assert.Nil(t, file.Close(), "Unexpected error occurred when closing a temp file")
+		assert.Nil(t, os.Remove(file.Name()), "Unexpected error occurred when removing a temp file")
 	}()
-	if _, err := file.WriteString(testFeed); err != nil {
-		t.Fatalf("Unexpected error occurred when writing to a temp file: %v", err)
-	}
+	_, err = file.WriteString(testFeed)
+	assert.Nil(t, err, "Unexpected error occurred when writing to a temp file")
 	feedDict, err := cvefeed.LoadJSONDictionary(file.Name())
-	if err != nil {
-		t.Fatalf("Unexpected error occurred when loading a test NVD JSON feed file: %v", err)
-	}
+	assert.Nil(t, err, "Unexpected error occurred when loading a test NVD JSON feed file")
+
 	stats := cvefeed.NewStats()
 	stats.Gather(feedDict)
 
@@ -204,8 +197,5 @@ func TestStats(t *testing.T) {
 66.67%: (a AND h)
 33.33%: (o AND (a OR h))
 `
-	if string(output) != expectedOutput {
-		t.Errorf("expected: %s\ngot: %s", expectedOutput, output)
-	}
-
+	assert.Equal(t, expectedOutput, string(output))
 }

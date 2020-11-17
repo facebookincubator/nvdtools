@@ -78,6 +78,9 @@ func NewStats() *Stats {
 
 // Reset clears out a Stats object
 func (s *Stats) Reset() {
+	s.totalCVEs = 0
+	s.totalRules = 0
+	s.totalRulesWithAND = 0
 	s.operatorANDs = make(map[string]int64)
 }
 
