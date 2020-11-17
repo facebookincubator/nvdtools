@@ -19,7 +19,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/facebookincubator/nvdtools/cvefeed"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -179,10 +178,10 @@ func TestStats(t *testing.T) {
 	}()
 	_, err = file.WriteString(testFeed)
 	assert.Nil(t, err, "Unexpected error occurred when writing to a temp file")
-	feedDict, err := cvefeed.LoadJSONDictionary(file.Name())
+	feedDict, err := LoadJSONDictionary(file.Name())
 	assert.Nil(t, err, "Unexpected error occurred when loading a test NVD JSON feed file")
 
-	stats := cvefeed.NewStats()
+	stats := NewStats()
 	stats.Gather(feedDict)
 
 	orgStdOut := os.Stdout
