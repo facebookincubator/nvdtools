@@ -94,18 +94,19 @@ func (cves *cachedCVEs) updateResSize(key string) {
 
 // Cache caches CVEs for known CPEs
 type Cache struct {
+	// Used to compute the hit ratio
+	numLookups int64
+	numHits    int64
+
+	// Actual cache data
 	data           map[string]*cachedCVEs
 	evictionQ      *evictionQueue
 	mu             sync.Mutex
 	Dict           Dictionary
 	Idx            Index
-	RequireVersion bool  // ignore matching specifications that have Version == ANY
 	MaxSize        int64 // maximum size of the cache, 0 -- unlimited, -1 -- no caching
 	size           int64 // current size of the cache
-
-	// Used to compute the hit ratio
-	numLookups int64
-	numHits    int64
+	RequireVersion bool  // ignore matching specifications that have Version == ANY
 }
 
 // NewCache creates new Cache instance with dictionary dict.
