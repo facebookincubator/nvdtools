@@ -28,8 +28,8 @@ import (
 
 // Feed is a collection of CVEs from RedHat.
 type Feed struct {
-	// data is map of CVEs as returned by the redhat API, keyed by CVE names.
-	data map[string]*schema.CVE
+	// Data is map of CVEs as returned by the redhat API, keyed by CVE names.
+	Data map[string]*schema.CVE
 	// pkgCVE is a package -> CVE map produced from data and cached.
 	pkg2CVE packageFeed
 	// rpm.Checker for this feed, cached.
