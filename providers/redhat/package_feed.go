@@ -48,7 +48,7 @@ func (feed *Feed) packageFeed() packageFeed {
 
 	pkgFeed := packageFeed{}
 
-	for _, cve := range feed.data {
+	for _, cve := range feed.Data {
 		var pkgs []string
 
 		// 1. look at AffectedRelease.

@@ -28,8 +28,8 @@ import (
 
 // Feed is a collection of CVEs from RedHat.
 type Feed struct {
-	// data is map of CVEs as returned by the redhat API, keyed by CVE names.
-	data map[string]*schema.CVE
+	// Data is map of CVEs as returned by the redhat API, keyed by CVE names.
+	Data map[string]*schema.CVE
 	// pkgCVE is a package -> CVE map produced from data and cached.
 	pkg2CVE packageFeed
 	// rpm.Checker for this feed, cached.
@@ -48,7 +48,7 @@ func LoadFeed(path string) (*Feed, error) {
 
 func loadFeed(r io.Reader) (*Feed, error) {
 	var feed Feed
-	if err := json.NewDecoder(r).Decode(&feed.data); err != nil {
+	if err := json.NewDecoder(r).Decode(&feed.Data); err != nil {
 		return nil, fmt.Errorf("can't decode feed: %v", err)
 	}
 	return &feed, nil
@@ -59,9 +59,9 @@ func (feed *Feed) Checker() (rpm.Checker, error) {
 	if feed.checker != nil {
 		return feed.checker, nil
 	}
-	mc := make(mapChecker, len(feed.data))
+	mc := make(mapChecker, len(feed.Data))
 	var err error
-	for cveid, cve := range feed.data {
+	for cveid, cve := range feed.Data {
 		if mc[cveid], err = check.CVEChecker(cve); err != nil {
 			if err == check.ErrCheckers {
 				// no checkers could be created, just skip it
