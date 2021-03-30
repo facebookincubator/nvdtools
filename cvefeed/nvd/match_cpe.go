@@ -33,10 +33,10 @@ type cpeMatch struct {
 }
 
 // Matcher returns an object which knows how to match attributes
-func cpeMatcher(nvdMatch *schema.NVDCVEFeedJSON10DefCPEMatch) (wfn.Matcher, error) {
+func cpeMatcher(ID string, nvdMatch *schema.NVDCVEFeedJSON10DefCPEMatch) (wfn.Matcher, error) {
 	parse := func(uri string) (*wfn.Attributes, error) {
 		if uri == "" {
-			return nil, fmt.Errorf("can't parse empty uri")
+			return nil, fmt.Errorf("%s: can't parse empty uri", ID)
 		}
 		return wfn.Parse(uri)
 	}
@@ -46,7 +46,7 @@ func cpeMatcher(nvdMatch *schema.NVDCVEFeedJSON10DefCPEMatch) (wfn.Matcher, erro
 	var err error
 	if match.Attributes, err = parse(nvdMatch.Cpe23Uri); err != nil {
 		if match.Attributes, err = parse(nvdMatch.Cpe22Uri); err != nil {
-			return nil, fmt.Errorf("unable to parse both cpe2.2 and cpe2.3")
+			return nil, fmt.Errorf("%s: unable to parse both cpe2.2 and cpe2.3", ID)
 		}
 	}
 

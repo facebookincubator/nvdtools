@@ -24,19 +24,21 @@ import (
 var cveRegex = regexp.MustCompile("CVE-[0-9]{4}-[0-9]{4,}")
 
 func ToVuln(cve *schema.NVDCVEFeedJSON10DefCVEItem) *Vuln {
+	vuln := &Vuln{
+		cveItem: cve,
+	}
+
 	var ms []wfn.Matcher
 	for _, node := range cve.Configurations.Nodes {
 		if node != nil {
-			if m, err := nodeMatcher(node); err == nil {
+			if m, err := nodeMatcher(vuln.ID(), node); err == nil {
 				ms = append(ms, m)
 			}
 		}
 	}
+	vuln.Matcher = wfn.MatchAny(ms...)
 
-	return &Vuln{
-		cveItem: cve,
-		Matcher: wfn.MatchAny(ms...),
-	}
+	return vuln
 }
 
 // Vuln implements the cvefeed.Vuln interface
