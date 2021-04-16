@@ -15,9 +15,9 @@
 package redhat
 
 import (
-	"log"
 	"sort"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/redhat/schema"
 	"github.com/facebookincubator/nvdtools/rpm"
 	"github.com/facebookincubator/nvdtools/wfn"
@@ -59,7 +59,7 @@ func (feed *Feed) packageFeed() packageFeed {
 			// Failing to parse a package isn't fatal, but we want to surface the error
 			rpmPkg, err := rpm.Parse(ar.Package)
 			if err != nil {
-				log.Printf("feed: failed to parse package: %q", ar.Package)
+				flog.Errorf("feed: failed to parse package: %q", ar.Package)
 				continue
 			}
 			pkgs = addPackage(pkgs, rpmPkg.Name)

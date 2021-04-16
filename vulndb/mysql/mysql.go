@@ -17,10 +17,10 @@ package mysql
 
 import (
 	"database/sql"
-	"log"
 	"net/url"
 	"time"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb/debug"
 )
 
@@ -44,7 +44,7 @@ func openDB(dsn string) (*sql.DB, error) {
 		"charset":   []string{"utf8mb4"},
 	})
 	if debug.V(1) {
-		log.Printf("connecting to %q", dsn)
+		flog.Infof("connecting to %q", dsn)
 	}
 	db, err := sql.Open(mysqlDriver, dsn)
 	if err != nil {

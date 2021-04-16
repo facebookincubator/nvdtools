@@ -16,10 +16,10 @@ package nvd
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/wfn"
 )
 
@@ -53,7 +53,7 @@ func nodeMatcher(ID string, node *schema.NVDCVEFeedJSON10DefNode) (wfn.Matcher, 
 
 	switch strings.ToUpper(node.Operator) {
 	default:
-		log.Printf("%s: unknown operator, defaulting to OR: got %q", ID, node.Operator)
+		flog.Warningf("%s: unknown operator, defaulting to OR: got %q", ID, node.Operator)
 		fallthrough
 	case "OR":
 		m = wfn.MatchAny(ms...)
