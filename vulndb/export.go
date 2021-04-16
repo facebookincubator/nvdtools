@@ -19,12 +19,12 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"io"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb/debug"
 	"github.com/facebookincubator/nvdtools/vulndb/sqlutil"
 )
@@ -140,7 +140,7 @@ func (exp DataExporter) CSV(ctx context.Context, w io.Writer, header bool) error
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	rows, err := exp.DB.QueryContext(ctx, query, args...)
@@ -210,7 +210,7 @@ func (exp DataExporter) JSON(ctx context.Context, w io.Writer, indent string) er
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	rows, err := exp.DB.QueryContext(ctx, query, args...)

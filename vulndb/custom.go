@@ -19,13 +19,13 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"io"
-	"log"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb/debug"
 	"github.com/facebookincubator/nvdtools/vulndb/sqlutil"
 )
@@ -105,7 +105,7 @@ func (o CustomDataImporter) importData(ctx context.Context, data []CustomDataRec
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(2) {
-		log.Printf("running: %q", query)
+		flog.Infof("running: %q", query)
 	}
 
 	_, err := o.DB.ExecContext(ctx, query, args...)
@@ -153,7 +153,7 @@ func (o CustomDataExporter) CSV(ctx context.Context, w io.Writer, header bool) e
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	rows, err := o.DB.QueryContext(ctx, query, args...)
@@ -206,7 +206,7 @@ func (o CustomDataExporter) JSON(ctx context.Context, w io.Writer, indent string
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	rows, err := o.DB.QueryContext(ctx, query, args...)
@@ -262,7 +262,7 @@ func (o CustomDataDeleter) Delete(ctx context.Context) error {
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	_, err := o.DB.ExecContext(ctx, query, args...)

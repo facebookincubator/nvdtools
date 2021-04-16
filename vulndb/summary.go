@@ -19,12 +19,12 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"io"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb/debug"
 	"github.com/facebookincubator/nvdtools/vulndb/sqlutil"
 )
@@ -51,7 +51,7 @@ func (exp SummaryExporter) SummaryRecords(ctx context.Context) ([]SummaryRecord,
 	query := summaryQuery
 
 	if debug.V(1) {
-		log.Printf("running: %q", query)
+		flog.Infof("running: %q", query)
 	}
 
 	rows, err := exp.DB.QueryContext(ctx, query)

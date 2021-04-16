@@ -19,11 +19,11 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"io"
-	"log"
 	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb/debug"
 	"github.com/facebookincubator/nvdtools/vulndb/sqlutil"
 )
@@ -73,7 +73,7 @@ func (s SnoozeCreator) Create(ctx context.Context, cve ...string) error {
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	_, err := s.DB.ExecContext(ctx, query, args...)
@@ -132,7 +132,7 @@ func (s SnoozeGetter) CSV(ctx context.Context, w io.Writer, header bool) error {
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	rows, err := s.DB.QueryContext(ctx, query, args...)
@@ -198,7 +198,7 @@ func (s SnoozeDeleter) Delete(ctx context.Context) error {
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	_, err := s.DB.ExecContext(ctx, query, args...)

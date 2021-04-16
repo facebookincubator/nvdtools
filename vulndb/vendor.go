@@ -19,12 +19,12 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"io"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/vulndb/debug"
 	"github.com/facebookincubator/nvdtools/vulndb/sqlutil"
 )
@@ -112,7 +112,7 @@ func (v VendorDataImporter) newVersion(ctx context.Context, owner, provider stri
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	res, err := v.DB.ExecContext(ctx, query, args...)
@@ -138,7 +138,7 @@ func (v VendorDataImporter) replaceVendorData(ctx context.Context, records sqlut
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(2) {
-		log.Printf("running: %q", query)
+		flog.Infof("running: %q", query)
 	}
 
 	_, err := v.DB.ExecContext(ctx, query, args...)
@@ -207,7 +207,7 @@ func (v VendorDataImporter) enableVersion(ctx context.Context, vendor *VendorRec
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	_, err := v.DB.ExecContext(ctx, query, args...)
@@ -290,7 +290,7 @@ func (v VendorDataExporter) CSV(ctx context.Context, w io.Writer, header bool) e
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	rows, err := v.DB.QueryContext(ctx, query, args...)
@@ -359,7 +359,7 @@ func (v VendorDataExporter) JSON(ctx context.Context, w io.Writer, indent string
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	rows, err := v.DB.QueryContext(ctx, query, args...)
@@ -453,7 +453,7 @@ func (v VendorDataTrimmer) deleteVendors(ctx context.Context) error {
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	_, err = v.DB.ExecContext(ctx, query, args...)
@@ -483,7 +483,7 @@ func (v VendorDataTrimmer) deleteOrphanData(ctx context.Context) error {
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	q = q.Literal("LIMIT 100")
@@ -564,7 +564,7 @@ func (v VendorDataTrimmer) selectVersions(ctx context.Context, q *sqlutil.Select
 	query, args := q.String(), q.QueryArgs()
 
 	if debug.V(1) {
-		log.Printf("running: %q / %#v", query, args)
+		flog.Infof("running: %q / %#v", query, args)
 	}
 
 	rows, err := v.DB.QueryContext(ctx, query, args...)
