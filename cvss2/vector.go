@@ -96,6 +96,18 @@ func (v *Vector) Absorb(other Vector) {
 	}
 }
 
+// AbsorbIfDefined is like Absorb but will not override vector components that
+// are not present in v.
+func (v *Vector) AbsorbIfDefined(other Vector) {
+	parseables := v.parseables()
+	old := v.definables()
+	for metric, defineable := range other.definables() {
+		if old[metric].defined() && defineable.defined() {
+			parseables[metric].parse(defineable.String())
+		}
+	}
+}
+
 // helpers
 
 var order = []string{"AV", "AC", "Au", "C", "I", "A", "E", "RL", "RC", "CDP", "TD", "CR", "IR", "AR", "ME", "MRL", "MRC"}

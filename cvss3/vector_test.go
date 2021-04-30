@@ -17,6 +17,8 @@ package cvss3
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVersionFromString(t *testing.T) {
@@ -132,12 +134,45 @@ func BenchmarkParse(b *testing.B) {
 }
 
 func TestAbsorb(t *testing.T) {
-	v1, _ := VectorFromString("CVSS:3.0/E:U/RL:W/RC:R")
-	v2, _ := VectorFromString("CVSS:3.0/E:H/RL:T")
+	for i, c := range []struct {
+		v1, v2, expected string
+	}{
+		// Should take values from v2, but only those which are defined. So RC should stay R.
+		{"CVSS:3.0/E:U/RL:W/RC:R", "CVSS:3.0/E:H/RL:T", "CVSS:3.0/E:H/RL:T/RC:R"},
+		// Absorb semantics mean that, if the component is not defined in v1 but
+		// is in v2, it will appear in the final results.
+		{"CVSS:3.0/AV:N", "CVSS:3.0/RL:U", "CVSS:3.0/AV:N/RL:U"},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			v1, err := VectorFromString(c.v1)
+			assert.NoError(t, err)
+			v2, err := VectorFromString(c.v2)
+			assert.NoError(t, err)
 
-	v1.Absorb(v2)
-	// should take values from v2, but only those which are defined. So RC should stay R
-	if v1.String() != "CVSS:3.0/E:H/RL:T/RC:R" {
-		t.Errorf("when absorbing only defined values from another vector, it shouldn't override undefined ones")
+			v1.Absorb(v2)
+			assert.Equal(t, c.expected, v1.String())
+		})
+	}
+}
+
+func TestAbsorbIfDefined(t *testing.T) {
+	for i, c := range []struct {
+		v1, v2, expected string
+	}{
+		// Should take values from v2, but only those which are defined. So RC should stay R.
+		{"CVSS:3.0/E:U/RL:W/RC:R", "CVSS:3.0/E:H/RL:T", "CVSS:3.0/E:H/RL:T/RC:R"},
+		// AbsorbIfDefined semantics mean that, if the component is not defined in v1 but
+		// is in v2, it will NOT appear in the final results.
+		{"CVSS:3.0/AV:N", "CVSS:3.0/RL:U", "CVSS:3.0/AV:N"},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			v1, err := VectorFromString(c.v1)
+			assert.NoError(t, err)
+			v2, err := VectorFromString(c.v2)
+			assert.NoError(t, err)
+
+			v1.AbsorbIfDefined(v2)
+			assert.Equal(t, c.expected, v1.String())
+		})
 	}
 }
