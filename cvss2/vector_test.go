@@ -17,6 +17,8 @@ package cvss2
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFromString(t *testing.T) {
@@ -69,12 +71,45 @@ func BenchmarkParse(b *testing.B) {
 }
 
 func TestAbsorb(t *testing.T) {
-	v1, _ := VectorFromString("(E:U/RL:OF/RC:UR)")
-	v2, _ := VectorFromString("(E:H/RL:TF)")
+	for i, c := range []struct {
+		v1, v2, expected string
+	}{
+		// Should take values from v2, but only those which are defined. So RC should stay UR.
+		{"(E:U/RL:OF/RC:UR)", "(E:H/RL:TF)", "(E:H/RL:TF/RC:UR)"},
+		// Absorb semantics mean that, if the component is not defined in v1 but
+		// is in v2, it will appear in the final results.
+		{"(AV:N)", "(RL:U)", "(AV:N/RL:U)"},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			v1, err := VectorFromString(c.v1)
+			assert.NoError(t, err)
+			v2, err := VectorFromString(c.v2)
+			assert.NoError(t, err)
 
-	v1.Absorb(v2)
-	// should take values from v2, but only those which are defined. So RC should stay R
-	if v1.String() != "(E:H/RL:TF/RC:UR)" {
-		t.Errorf("when absorbing only defined values from another vector, it shouldn't override undefined ones")
+			v1.Absorb(v2)
+			assert.Equal(t, c.expected, v1.String())
+		})
+	}
+}
+
+func TestAbsorbIfDefined(t *testing.T) {
+	for i, c := range []struct {
+		v1, v2, expected string
+	}{
+		// Should take values from v2, but only those which are defined. So RC should stay UR.
+		{"(E:U/RL:OF/RC:UR)", "(E:H/RL:TF)", "(E:H/RL:TF/RC:UR)"},
+		// Absorb semantics mean that, if the component is not defined in v1 but
+		// is in v2, it will appear in the final results.
+		{"(AV:N)", "(RL:U)", "(AV:N)"},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			v1, err := VectorFromString(c.v1)
+			assert.NoError(t, err)
+			v2, err := VectorFromString(c.v2)
+			assert.NoError(t, err)
+
+			v1.AbsorbIfDefined(v2)
+			assert.Equal(t, c.expected, v1.String())
+		})
 	}
 }
