@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.com/facebookincubator/nvdtools.svg?branch=master)](https://travis-ci.com/facebookincubator/nvdtools)
+![Tests](https://github.com/facebookincubator/nvdtools/actions/workflows/tests.yaml/badge.svg)
 
 # NVD Tools
 
