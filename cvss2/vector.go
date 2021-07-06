@@ -33,6 +33,52 @@ type Vector struct {
 	EnvironmentalMetrics
 }
 
+// For some metrics, "not defined" is equivalent to specifying another value. eg.
+// E:X is equivalent to E:H.
+var undefinedEquivalent = map[string]string{
+	// Temporal metrics
+	"E":  "H",
+	"RL": "U",
+	"RC": "C",
+	// Environmental metrics
+	"CDP": "N",
+	"TD":  "H",
+	"CR":  "M",
+	"IR":  "M",
+	"AR":  "M",
+}
+
+func equivalent(metric, value string) string {
+	if value != "ND" {
+		return value
+	}
+	e, ok := undefinedEquivalent[metric]
+	if !ok {
+		return value
+	}
+	return e
+}
+
+// Equal returns true if o represents the same vector as v.
+//
+// Note that the definition of equal here means that two vectors with different
+// string representations can still be equal. For instance TD:ND is defined as
+// the same as TD:H.
+func (v Vector) Equal(o Vector) bool {
+	vDefs := v.definables()
+	oDefs := o.definables()
+
+	for _, metric := range order {
+		a := equivalent(metric, vDefs[metric].String())
+		b := equivalent(metric, oDefs[metric].String())
+
+		if a != b {
+			return false
+		}
+	}
+	return true
+}
+
 // String returns this vectors representation as a string
 // it shouldn't depend on the order of metrics
 func (v Vector) String() string {
