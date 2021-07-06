@@ -70,6 +70,38 @@ func BenchmarkParse(b *testing.B) {
 	}
 }
 
+func TestEqual(t *testing.T) {
+	for i, c := range []struct {
+		v1, v2   string
+		expected bool
+	}{
+		// Same vectors.
+		{"(AV:N/AC:M/Au:S/C:P/I:N/A:N)", "(AV:N/AC:M/Au:S/C:P/I:N/A:N)", true},
+		// Different vectors.
+		{"(AV:N/AC:H/Au:S/C:P/I:N/A:N)", "(AV:N/AC:M/Au:S/C:P/I:N/A:N)", false},
+		// For some metrics, ND (not defined) is the same as specifying another value.
+		{"(E:ND)", "(E:H)", true},
+		{"(E:F)", "(E:H)", false},
+		{"(AC:L)", "(AC:L/E:H)", true},
+		{"(RL:ND)", "(RL:U)", true},
+		{"(RC:ND)", "(RC:C)", true},
+		{"(CDP:ND)", "(CDP:N)", true},
+		{"(TD:ND)", "(TD:H)", true},
+		{"(CR:ND)", "(CR:M)", true},
+		{"(IR:ND)", "(IR:M)", true},
+		{"(AR:ND)", "(AR:M)", true},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			v1, err := VectorFromString(c.v1)
+			assert.NoError(t, err)
+			v2, err := VectorFromString(c.v2)
+			assert.NoError(t, err)
+
+			assert.Equal(t, c.expected, v1.Equal(v2))
+		})
+	}
+}
+
 func TestAbsorb(t *testing.T) {
 	for i, c := range []struct {
 		v1, v2, expected string

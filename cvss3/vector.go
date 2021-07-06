@@ -52,6 +52,56 @@ type Vector struct {
 	EnvironmentalMetrics
 }
 
+// For some metrics, "undefined" is equivalent to specifying another value. eg.
+// E:X is equivalent to E:H.
+var undefinedEquivalent = map[string]string{
+	// Temporal metrics
+	"E":  "H",
+	"RL": "U",
+	"RC": "C",
+	// Environmental metrics
+	"CR": "M",
+	"IR": "M",
+	"AR": "M",
+}
+
+func equivalent(metric, value string) string {
+	if value != "X" {
+		return value
+	}
+	e, ok := undefinedEquivalent[metric]
+	if !ok {
+		return value
+	}
+	return e
+}
+
+// Equal returns true if o represents the same vector as v.
+//
+// Note that the definition of equal here means that two vectors with different
+// string representations can still be equal. For instance RL:X is defined as
+// the same as RL:U. From the spec:
+//
+//   Assigning this value indicates there is insufficient information to choose
+//   one of the other values, and has no impact on the overall Temporal Score,
+//   i.e., it has the same effect on scoring as assigning Unavailable.
+//
+// https://www.first.org/cvss/specification-document:
+func (v Vector) Equal(o Vector) bool {
+	vDefs := v.definables()
+	oDefs := o.definables()
+
+	for _, metric := range order {
+		a := equivalent(metric, vDefs[metric].String())
+		b := equivalent(metric, oDefs[metric].String())
+
+		if a != b {
+			return false
+		}
+	}
+	return true
+}
+
 // String returns this vectors representation as a string
 // it shouldn't depend on the order of metrics
 func (v Vector) String() string {

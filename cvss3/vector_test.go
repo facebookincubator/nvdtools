@@ -133,6 +133,38 @@ func BenchmarkParse(b *testing.B) {
 	}
 }
 
+func TestEqual(t *testing.T) {
+	for i, c := range []struct {
+		v1, v2   string
+		expected bool
+	}{
+		// Same vectors.
+		{"CVSS:3.0/AC:L/UI:N/S:U/I:H/A:H", "CVSS:3.0/AC:L/UI:N/S:U/I:H/A:H", true},
+		// Different vectors.
+		{"CVSS:3.0/AC:H/UI:N/S:U/I:H/A:H", "CVSS:3.0/AC:L/UI:N/S:U/I:H/A:H", false},
+		// For some metrics, X (undefined) is the same as specifying another value.
+		{"CVSS:3.0/E:X", "CVSS:3.0/E:H", true},
+		{"CVSS:3.0/E:F", "CVSS:3.0/E:H", false},
+		{"CVSS:3.0/AC:L", "CVSS:3.0/AC:L/E:H", true},
+		{"CVSS:3.0/RL:X", "CVSS:3.0/RL:U", true},
+		{"CVSS:3.0/RC:X", "CVSS:3.0/RC:C", true},
+		{"CVSS:3.0/CR:X", "CVSS:3.0/CR:M", true},
+		{"CVSS:3.0/IR:X", "CVSS:3.0/IR:M", true},
+		{"CVSS:3.0/AR:X", "CVSS:3.0/AR:M", true},
+		// Modified base metrics set to X (default value) means that the base metric shines through.
+		{"CVSS:3.0/AC:L/UI:N/S:U/I:H/A:H", "CVSS:3.0/AC:L/UI:N/S:U/I:H/A:H/MAC:X/MC:X", true},
+	} {
+		t.Run(fmt.Sprintf("case %2d", i+1), func(t *testing.T) {
+			v1, err := VectorFromString(c.v1)
+			assert.NoError(t, err)
+			v2, err := VectorFromString(c.v2)
+			assert.NoError(t, err)
+
+			assert.Equal(t, c.expected, v1.Equal(v2))
+		})
+	}
+}
+
 func TestAbsorb(t *testing.T) {
 	for i, c := range []struct {
 		v1, v2, expected string
