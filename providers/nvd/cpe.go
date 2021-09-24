@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/facebookincubator/flog"
+	"github.com/facebookincubator/nvdtools/providers/lib/client"
 )
 
 // CPE defines the CPE data feed for synchronization.
@@ -171,7 +172,7 @@ func (cf cpeFile) needsUpdate(ctx context.Context, targetURL, localdir string) (
 	if err != nil {
 		return false, err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Default().Do(req)
 	if err != nil {
 		return false, err
 	}
@@ -203,7 +204,7 @@ func (cf cpeFile) download(ctx context.Context, targetURL string) (string, strin
 	if err != nil {
 		return "", "", err
 	}
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+	resp, err := client.Default().Do(req.WithContext(ctx))
 	if err != nil {
 		return "", "", err
 	}
