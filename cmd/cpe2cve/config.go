@@ -166,7 +166,7 @@ func readConfigFile(file string) (config, error) {
 		// [Feeds]
 		// foo = ["foo.json"]
 		// bar = ["bar.json", "bar2.json.gz"]
-		_, err = toml.DecodeReader(f, &cfg)
+		_, err = toml.NewDecoder(f).Decode(&cfg)
 	default:
 		return cfg, fmt.Errorf("unsupported file extension: %q", ext)
 	}
