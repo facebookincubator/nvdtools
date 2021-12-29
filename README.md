@@ -10,6 +10,7 @@ The [HOWTO](HOWTO.md) provides a broader view on how to effectively use these to
 
 * [Requirements](#requirements)
 * [Installation](#installation)
+* [How build](#How-build)
 * [Command line tools](#command-line-tools)
   * [cpe2cve](#cpe2cve)
   * [csv2cpe](#cpe2cve)
@@ -49,6 +50,14 @@ go get github.com/facebookincubator/nvdtools/...
 cd "$GOPATH"/src/github.com/facebookincubator/nvdtools/cmd
 go install ./...
 ```
+## How-build
+```bash
+go mod init github.com/facebookincubator/nvdtools
+go mod tidy
+make
+cp build/bin/* ~/go/bin/
+
+```
 
 ## Command line tools
 
@@ -68,9 +77,16 @@ Input and output delimiters can be configured with `-d`, `-d2`, `-o` an `-o2` op
 
 The column to which output the CVE and matches for that CVE can be configured with `-cve` and `-matches` options correspondingly.
 
+### download data
+```bash
+curl -o- -s -k -v https://nvd.nist.gov/vuln/data-feeds >data-feeds.html
+cat data-feeds.html|grep  -Eo '(/feeds\/[^"]*\.gz)'|xargs -I % wget -c https://nvd.nist.gov%
+```
+
 #### Example 1: scan a software for vulnerabilities
 
 ```bash
+echo "cpe:/a:apache"|cpe2cve -cpe 1 -e 1 -cve 1  nvdcve-1.1-*.json.gz
 echo "cpe:/a:gnu:glibc:2.28" | cpe2cve -cpe 1 -e 1 -cve 1 nvdcve-1.0-*.json.gz
 CVE-2009-4881
 CVE-2015-8985
