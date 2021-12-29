@@ -10,7 +10,7 @@ The [HOWTO](HOWTO.md) provides a broader view on how to effectively use these to
 
 * [Requirements](#requirements)
 * [Installation](#installation)
-* [How build](#How build)
+* [How build](#How-build)
 * [Command line tools](#command-line-tools)
   * [cpe2cve](#cpe2cve)
   * [csv2cpe](#cpe2cve)
@@ -50,12 +50,13 @@ go get github.com/facebookincubator/nvdtools/...
 cd "$GOPATH"/src/github.com/facebookincubator/nvdtools/cmd
 go install ./...
 ```
-### How build
+## How-build
 ```bash
-# how build
 go mod init github.com/facebookincubator/nvdtools
 go mod tidy
 make
+ls build/bin
+
 ```
 
 ## Command line tools
