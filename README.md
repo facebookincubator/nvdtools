@@ -86,7 +86,7 @@ cat data-feeds.html|grep  -Eo '(/feeds\/[^"]*\.gz)'|xargs -I % wget -c https://n
 #### Example 1: scan a software for vulnerabilities
 
 ```bash
-echo "cpe:/a:apache"|./cpe2cve -cpe 1 -e 1 -cve 1 nvdcve-1.0-*.json.gz
+echo "cpe:/a:apache"|cpe2cve -cpe 1 -e 1 -cve 1  nvdcve-1.1-*.json.gz
 echo "cpe:/a:gnu:glibc:2.28" | cpe2cve -cpe 1 -e 1 -cve 1 nvdcve-1.0-*.json.gz
 CVE-2009-4881
 CVE-2015-8985
