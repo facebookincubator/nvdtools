@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go/v4"
 	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/snyk/schema"
@@ -73,7 +73,7 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 func (c *Client) get(ctx context.Context, endpoint string) (io.ReadCloser, error) {
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
 		Issuer:   c.consumerID,
-		IssuedAt: time.Now().Unix(),
+		IssuedAt: &jwt.Time{Time: time.Now()},
 	})
 
 	token, err := tok.SignedString([]byte(c.secret))

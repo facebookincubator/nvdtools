@@ -14,14 +14,10 @@ jobs:
         ports:
           - 3306:3306
     env:
-      # We still use GOPATH builds (vs go modules), so setup GOPATH. This means
-      # the nvdtools directory has to live in GOPATH/src/github.com/nvdtools.
-      GOPATH: ${{ github.workspace }}
-      GO111MODULE: off
       MYSQL_TEST_DSN: root@/vulndb
     defaults:
       run:
-        working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+        working-directory: ${{ github.repository }}
     strategy:
       matrix:
         go-version: [1.14.x, 1.15.x]
@@ -35,7 +31,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+          path: ${{ github.repository }}
       - name: Download dependencies
         run: go get -v -t -d ./...
       - name: Unit Tests
@@ -45,17 +41,14 @@ jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
-    env:
-      GOPATH: ${{ github.workspace }}
-      GO111MODULE: off
     defaults:
       run:
-        working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+        working-directory: ${{ github.repository }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          path: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+          path: ${{ github.repository }}
       - name: Download dependencies
         run: go get -v -t -d ./...
       - name: golangci-lint
@@ -64,5 +57,5 @@ jobs:
           # The version of golangci-lint is required and must be specified
           # without patch version: we always use the latest patch version.
           version: v1.28
-          working-directory: ${{ env.GOPATH }}/src/github.com/${{ github.repository }}
+          working-directory: ${{ github.repository }}
           args: "--disable-all -E golint -E gosimple -E govet -E ineffassign -E staticcheck -E structcheck -E varcheck -e SA5011:"
