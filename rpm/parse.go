@@ -33,6 +33,10 @@ type Label struct {
 	Release string
 }
 
+func (p *Package) String() string {
+	return fmt.Sprintf("%s-%s:%s-%s.%s", p.Name, p.Epoch, p.Version, p.Release, p.Arch)
+}
+
 // Parse returns name, version, release and architecture parsed from RPM package name
 // NEVRA: https://blog.jasonantman.com/2014/07/how-yum-and-rpm-compare-versions/
 func Parse(pkg string) (*Package, error) {
