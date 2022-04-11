@@ -43,9 +43,7 @@ func Parse(pkg string) (*Package, error) {
 	// pkg should be name-[epoch:]version-release.arch.rpm
 
 	// extension
-	if strings.HasSuffix(pkg, ".rpm") {
-		pkg = pkg[:len(pkg)-4]
-	}
+	pkg = strings.TrimSuffix(pkg, ".rpm")
 
 	var p Package
 

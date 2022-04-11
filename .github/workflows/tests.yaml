@@ -58,4 +58,4 @@ jobs:
           # without patch version: we always use the latest patch version.
           version: v1.45
           working-directory: ${{ github.repository }}
-          args: "--disable-all -E golint -E gosimple -E govet -E ineffassign -E staticcheck -E structcheck -E varcheck -e SA5011:"
+          args: "--disable-all -E revive -E gosimple -E govet -E ineffassign -E staticcheck -E structcheck -E varcheck -e SA5011: -e SA1019:"

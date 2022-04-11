@@ -70,10 +70,10 @@ type cachedCVEs struct {
 
 // updateResSize calculates the size of cached MatchResult and assigns it to cves.size
 func (cves *cachedCVEs) updateResSize(key string) {
-	cves.size = int64(int(unsafe.Sizeof(key)) + len(key))
 	if cves == nil {
 		return
 	}
+	cves.size = int64(int(unsafe.Sizeof(key)) + len(key))
 	cves.size += int64(unsafe.Sizeof(cves.res))
 	for i := range cves.res {
 		cves.size += int64(unsafe.Sizeof(cves.res[i].CVE))

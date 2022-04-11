@@ -26,7 +26,7 @@ import (
 type summary map[string][]string
 
 func feedSummary(feed packageFeed) summary {
-	var s summary = make(summary)
+	s := make(summary)
 	for pkg, cves := range feed {
 		var cveNames []string
 		for _, cve := range cves {
