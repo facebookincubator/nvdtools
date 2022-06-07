@@ -74,6 +74,7 @@ func TestBaseScores(t *testing.T) {
 		{"CVSS:3.0/AV:A/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N/E:U/RL:O/RC:C", 3.1},
 		{"CVSS:3.0/AV:A/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N/E:U/RL:O/RC:C", 4.8},
 		{"CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H/E:U/RL:T/RC:C", 6.5},
+		{"CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N", 0.0},
 	}
 
 	for i, c := range cases {
