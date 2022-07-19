@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/facebookincubator/nvdtools/wfn"
 )
 
 func TestParse(t *testing.T) {
@@ -151,5 +153,53 @@ func TestParse(t *testing.T) {
 func BenchmarkParse(t *testing.B) {
 	for i := 0; i < t.N; i++ {
 		Parse("NaMe-1.0-1.i386.rpm")
+	}
+}
+
+func TestRHELWFN(t *testing.T) {
+	cases := []struct {
+		pkgStr     string
+		rhelWfnStr string
+		fail       bool
+	}{
+		{
+			pkgStr: "name-version-release.arch.rpm",
+			fail:   true,
+		},
+		{
+			pkgStr:     "MySQL-python-1.2.5-1.el7.src.rpm",
+			rhelWfnStr: "cpe:/o:redhat:enterprise_linux:7::baseos",
+		},
+		{
+			pkgStr:     "name-e.2:ve.rsi.on-r.el7.xx.rpm",
+			rhelWfnStr: "cpe:/o:redhat:enterprise_linux:7::baseos",
+		},
+		{
+			pkgStr:     "python36-0:3.6.8-38.module_el8.5.0+895+a459eca8.x86_64.rpm",
+			rhelWfnStr: "cpe:/o:redhat:enterprise_linux:8::baseos",
+		},
+		{
+			pkgStr:     "pcs-0.10.12-6.el8_6.1.x86_64.rpm",
+			rhelWfnStr: "cpe:/o:redhat:enterprise_linux:8::baseos",
+		},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
+			_, rhel, err := ParseRPMAndRHELWFN(c.pkgStr)
+			if err != nil {
+				if !c.fail {
+					t.Fatalf("%q: unexpected failure: %v", c.pkgStr, err)
+				}
+				return
+			}
+			rhelWfn, err := wfn.UnbindURI(c.rhelWfnStr)
+			if err != nil {
+				t.Fatalf("%q: unexpected failure: %v", c.pkgStr, err)
+			}
+			if !reflect.DeepEqual(rhelWfn, rhel) {
+				t.Errorf("wrong result:\n\thave: %+v\n\twant: %+v", rhelWfn, rhel)
+			}
+		})
 	}
 }
