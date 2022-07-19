@@ -17,6 +17,9 @@ package rpm
 import (
 	"fmt"
 	"strings"
+	"unicode"
+
+	"github.com/facebookincubator/nvdtools/wfn"
 )
 
 // Package represents one RPM package
@@ -80,4 +83,38 @@ func Parse(pkg string) (*Package, error) {
 	p.Name = strings.ToLower(pkg)
 
 	return &p, nil
+}
+
+func RHELWFN(rpm *Package) (*wfn.Attributes, error) {
+	var version string
+	if start := strings.Index(rpm.Release, "el"); start >= 0 {
+		start += 2 // skip "el"
+		var end int
+		for end = start; end < len(rpm.Release) && unicode.IsDigit(rune(rpm.Release[end])); end++ {
+			continue
+		}
+		version = rpm.Release[start:end]
+	}
+	if version == "" {
+		return nil, fmt.Errorf("can't parse rhel version from package name %q", rpm)
+	}
+	attr := wfn.NewAttributesWithAny()
+	attr.Part = "o"
+	attr.Vendor = "redhat"
+	attr.Product = "enterprise_linux"
+	attr.Version = version
+	attr.Edition = "baseos"
+	return attr, nil
+}
+
+func ParseRPMAndRHELWFN(pkg string) (*Package, *wfn.Attributes, error) {
+	rpm, err := Parse(pkg)
+	if err != nil {
+		return nil, nil, err
+	}
+	d, err := RHELWFN(rpm)
+	if err != nil {
+		return nil, nil, err
+	}
+	return rpm, d, nil
 }
