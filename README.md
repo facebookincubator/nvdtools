@@ -42,6 +42,8 @@ You need a properly setup Go environment.
 
 ```bash
 go get github.com/facebookincubator/nvdtools/...
+go install github.com/facebookincubator/nvdtools/...@latest
+## This command is for users of go 1.17 and above
 ```
 
 #### Install all included command line tools:
