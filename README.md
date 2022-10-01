@@ -38,18 +38,27 @@ The [HOWTO](HOWTO.md) provides a broader view on how to effectively use these to
 
 You need a properly setup Go environment.
 
-#### Download NVD Tools:
+#### Download and install NVD Tools:
 
+For Go 1.13 - 1.14:
 ```bash
 go get github.com/facebookincubator/nvdtools/...
-```
-
-#### Install all included command line tools:
-
-```bash
 cd "$GOPATH"/src/github.com/facebookincubator/nvdtools/cmd
 go install ./...
 ```
+
+From Go 1.15 onwards, modules are not downloaded to `GOPATH`, but to `GOMODCACHE`. It is recommended to clone the repo and run run go install from there instead:
+```bash
+git clone https://github.com/facebookincubator/nvdtools
+cd nvdtools
+go install ./...
+```
+
+From Go 1.17 onwards, `go get` is deprecated. `go install` is used instead to download the module to the cache and install it:
+```bash
+go install github.com/facebookincubator/nvdtools/...@latest
+```
+
 ## How-build
 ```bash
 go mod init github.com/facebookincubator/nvdtools
