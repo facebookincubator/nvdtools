@@ -65,6 +65,28 @@ func TestCVEChecker(t *testing.T) {
 	}
 }
 
+func TestCVECheckerUppercase(t *testing.T) {
+	var cve schema.CVE
+	cveStrWithUppercasePkg := strings.ReplaceAll(cveStr, "firefox", "Firefox")
+	if err := json.NewDecoder(strings.NewReader(cveStrWithUppercasePkg)).Decode(&cve); err != nil {
+		t.Fatal(err)
+	}
+	chk, err := CVEChecker(&cve)
+	if err != nil {
+		t.Fatal(err)
+	}
+	distro := wfn.Attributes{
+		Part:    "o",
+		Vendor:  "redhat",
+		Product: "enterprise_linux",
+		Version: "7",
+	}
+	pkg, _ := rpm.Parse("Firefox-68.1.0-1.el7_0.src")
+	if got := chk.Check(pkg, &distro, "CVE-2019-11735"); !got {
+		t.Fatalf("expecting true for version 7")
+	}
+}
+
 var cveStr = `
   {
     "name": "CVE-2019-11735",

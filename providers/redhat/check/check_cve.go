@@ -17,6 +17,7 @@ package check
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/facebookincubator/nvdtools/providers/redhat/schema"
 	"github.com/facebookincubator/nvdtools/rpm"
@@ -39,7 +40,6 @@ func CVEChecker(cve *schema.CVE) (rpm.Checker, error) {
 		return nil, fmt.Errorf("can't construct checkers for package state: %v", err)
 	}
 	chks = append(chks, pschks...)
-
 
 	if len(chks) == 0 {
 		return nil, ErrCheckers
@@ -99,7 +99,7 @@ func packageStateCheckers(cve *schema.CVE) ([]rpm.Checker, error) {
 
 		var pc pkgCheck = constPkgChecker(true) // match all packages
 		if ps.PackageName != "" {
-			pc = packageStatePkgChecker(ps.PackageName)
+			pc = packageStatePkgChecker(strings.ToLower(ps.PackageName))
 		}
 
 		chks = append(chks, &singleChecker{d, pc})

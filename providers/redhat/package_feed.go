@@ -16,6 +16,7 @@ package redhat
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/redhat/schema"
@@ -70,7 +71,7 @@ func (feed *Feed) packageFeed() packageFeed {
 			if ps.PackageName == "" {
 				continue
 			}
-			pkgs = addPackage(pkgs, ps.PackageName)
+			pkgs = addPackage(pkgs, strings.ToLower(ps.PackageName))
 
 		}
 
