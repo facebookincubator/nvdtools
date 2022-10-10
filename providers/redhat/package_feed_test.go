@@ -243,6 +243,78 @@ const CVEAffectedReleaseAndPackageState = `
 }
 `
 
+const CVEAffectedReleaseAndPackageStateWithUppercaseLetters =`
+"CVE-2018-16328": {
+	"name": "CVE-2018-16328",
+	"threat_severity": "Low",
+	"public_date": "2018-07-23T00:00:00Z",
+	"bugzilla": {
+		"description": "CVE-2018-16328 ImageMagick: NULL pointer dereference in CheckEventLogging function in MagickCore/log.c",
+		"id": "1624955",
+		"url": "https://bugzilla.redhat.com/show_bug.cgi?id=1624955"
+	},
+	"CVSS3": {
+		"cvss3_base_score": "4.3",
+		"cvss3_scoring_vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+		"status": "verified"
+	},
+	"cwe": "CWE-476",
+	"details": [
+		"In ImageMagick before 7.0.8-8, a NULL pointer dereference exists in the CheckEventLogging function in MagickCore/log.c."
+	],
+	"affected_release": [
+		{
+			"product_name": "Red Hat Enterprise Linux 7",
+			"release_date": "2020-03-31T00:00:00Z",
+			"advisory": "RHSA-2020:1180",
+			"package": "autotrace-0:0.31.1-38.el7",
+			"cpe": "cpe:/o:redhat:enterprise_linux:7"
+		},
+		{
+			"product_name": "Red Hat Enterprise Linux 7",
+			"release_date": "2020-03-31T00:00:00Z",
+			"advisory": "RHSA-2020:1180",
+			"package": "emacs-1:24.3-23.el7",
+			"cpe": "cpe:/o:redhat:enterprise_linux:7"
+		},
+		{
+			"product_name": "Red Hat Enterprise Linux 7",
+			"release_date": "2020-03-31T00:00:00Z",
+			"advisory": "RHSA-2020:1180",
+			"package": "ImageMagick-0:6.9.10.68-3.el7",
+			"cpe": "cpe:/o:redhat:enterprise_linux:7"
+		},
+		{
+			"product_name": "Red Hat Enterprise Linux 7",
+			"release_date": "2020-03-31T00:00:00Z",
+			"advisory": "RHSA-2020:1180",
+			"package": "inkscape-0:0.92.2-3.el7",
+			"cpe": "cpe:/o:redhat:enterprise_linux:7"
+		}
+	],
+	"package_state": [
+		{
+			"product_name": "Red Hat Enterprise Linux 5",
+			"fix_state": "Will not fix",
+			"package_name": "ImageMagick",
+			"cpe": "cpe:/o:redhat:enterprise_linux:5"
+		},
+		{
+			"product_name": "Red Hat Enterprise Linux 6",
+			"fix_state": "Will not fix",
+			"package_name": "ImageMagick",
+			"cpe": "cpe:/o:redhat:enterprise_linux:6"
+		},
+		{
+			"product_name": "Red Hat Enterprise Linux 8",
+			"fix_state": "Not affected",
+			"package_name": "ImageMagick",
+			"cpe": "cpe:/o:redhat:enterprise_linux:8"
+		}
+	]
+}
+`
+
 func TestPackageFeed(t *testing.T) {
 	for i, test := range []struct {
 		feed     *Feed
@@ -271,6 +343,15 @@ func TestPackageFeed(t *testing.T) {
 				"thunderbird": []string{"CVE-2019-11745"},
 				"firefox":     []string{"CVE-2019-11745"},
 			},
+                },
+                {
+                        testFeed(t, CVEAffectedReleaseAndPackageStateWithUppercaseLetters),
+                        summary{
+                            "emacs": []string{"CVE-2018-16328"},
+                            "autotrace": []string{"CVE-2018-16328"},
+                            "inkscape": []string{"CVE-2018-16328"},
+                            "imagemagick": []string{"CVE-2018-16328"},
+                        },
 		},
 	} {
 		t.Run(fmt.Sprintf("case-%d", i), func(t *testing.T) {
