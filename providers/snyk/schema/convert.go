@@ -49,13 +49,13 @@ func (advisory *Advisory) Convert() (*nvd.NVDCVEFeedJSON10DefCVEItem, error) {
 		Impact: &nvd.NVDCVEFeedJSON10DefImpact{
 			BaseMetricV3: &nvd.NVDCVEFeedJSON10DefImpactBaseMetricV3{
 				CVSSV3: &nvd.CVSSV30{
-					VectorString: advisory.CVSSV3,
-					BaseScore:    advisory.CvssScore,
+					VectorString: advisory.CVSSV3Vector,
+					BaseScore:    advisory.CVSSV3BaseScore,
 				},
 			},
 		},
-		LastModifiedDate: snykTimeToNVD(advisory.ModificationTime),
-		PublishedDate:    snykTimeToNVD(advisory.PublicationTime),
+		LastModifiedDate: snykTimeToNVD(advisory.Modified),
+		PublishedDate:    snykTimeToNVD(advisory.Published),
 	}
 
 	return &nvdItem, nil
@@ -66,17 +66,17 @@ func (advisory *Advisory) ID() string {
 }
 
 func (advisory *Advisory) newProblemType() *nvd.CVEJSON40Problemtype {
-	if len(advisory.Cwes) == 0 {
+	if len(advisory.CweIDs) == 0 {
 		return nil
 	}
 	pt := &nvd.CVEJSON40Problemtype{
 		ProblemtypeData: []*nvd.CVEJSON40ProblemtypeProblemtypeData{
 			{
-				Description: make([]*nvd.CVEJSON40LangString, len(advisory.Cwes)),
+				Description: make([]*nvd.CVEJSON40LangString, len(advisory.CweIDs)),
 			},
 		},
 	}
-	for i, cwe := range advisory.Cwes {
+	for i, cwe := range advisory.CweIDs {
 		pt.ProblemtypeData[0].Description[i] = &nvd.CVEJSON40LangString{
 			Lang:  "en",
 			Value: cwe,
@@ -89,7 +89,7 @@ func (advisory *Advisory) newReferences() *nvd.CVEJSON40References {
 	if len(advisory.References) == 0 {
 		return nil
 	}
-	nrefs := 1 + len(advisory.References) + len(advisory.Cves)
+	nrefs := 1 + len(advisory.References) + len(advisory.CveIDs)
 	refs := &nvd.CVEJSON40References{
 		ReferenceData: make([]*nvd.CVEJSON40Reference, 0, nrefs),
 	}
@@ -99,13 +99,13 @@ func (advisory *Advisory) newReferences() *nvd.CVEJSON40References {
 			URL:  url,
 		})
 	}
-	if advisory.Title != "" && advisory.URL != "" {
-		addRef(advisory.Title, advisory.URL)
+	if advisory.Title != "" && advisory.SnykAdvisoryURL != "" {
+		addRef(advisory.Title, advisory.SnykAdvisoryURL)
 	}
 	for _, ref := range advisory.References {
 		addRef(ref.Title, ref.URL)
 	}
-	for _, cve := range advisory.Cves {
+	for _, cve := range advisory.CveIDs {
 		addRef(cve, "")
 	}
 	return refs
