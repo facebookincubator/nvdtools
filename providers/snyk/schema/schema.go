@@ -14,36 +14,69 @@
 
 package schema
 
-// language -> [advisories]
-type Advisories map[string][]*Advisory
-
 type Advisory struct {
-	CVSSV3             string       `json:"cvssV3"`
-	CreationTime       string       `json:"creationTime"`
-	Credit             []string     `json:"credit"`
-	Cves               []string     `json:"cves"`
-	CvssScore          float64      `json:"cvssScore"`
-	Cwes               []string     `json:"cwes"`
-	Description        string       `json:"description"`
-	DisclosureTime     string       `json:"disclosureTime"`
-	Exploit            string       `json:"exploit"`
-	Fixable            bool         `json:"fixable"`
-	HashesRange        []string     `json:"hashesRange,omitempty"`
-	SnykID             string       `json:"id"`
-	Language           string       `json:"language"`
-	ModificationTime   string       `json:"modificationTime"`
-	Package            string       `json:"package"`
-	PatchExists        bool         `json:"patchExists"`
-	PublicationTime    string       `json:"publicationTime"`
-	References         []*Reference `json:"references"`
-	Severity           string       `json:"severity"`
-	Title              string       `json:"title"`
-	URL                string       `json:"url"`
-	VulnerableHashes   []string     `json:"vulnerableHashes,omitempty"`
-	VulnerableVersions []string     `json:"vulnerableVersions"`
+	Credits                  []string               `json:"credits"`
+	CveIDs                   []string               `json:"cve_ids"`
+	CVSSDetails              []*CVSSDetails         `json:"cvss_details"`
+	CVSSV3BaseScore          float64                `json:"cvss_v3_base_score"`
+	CVSSV3Vector             string                 `json:"cvss_v3_vector"`
+	CweIDs                   []string               `json:"cwe_ids"`
+	Description              string                 `json:"description"`
+	DescriptionOverview      string                 `json:"description_overview"`
+	DescriptionRemediation   string                 `json:"description_remediation"`
+	Disclosed                string                 `json:"disclosed"`
+	Ecosystem                string                 `json:"ecosystem"`
+	ExploitCodeMaturity      string                 `json:"exploit_code_maturity"`
+	InitiallyFixedInVersions []string               `json:"initially_fixed_in_versions"`
+	IsFixable                bool                   `json:"is_fixable"`
+	IsMalicious              bool                   `json:"is_malicious"`
+	IsSocialMediaTrending    bool                   `json:"is_social_media_trending"`
+	Modified                 string                 `json:"modified"`
+	Package                  string                 `json:"package"`
+	PackageRepositoryURL     string                 `json:"package_repository_url"`
+	Published                string                 `json:"published"`
+	References               []*Reference           `json:"references"`
+	Severity                 string                 `json:"severity"`
+	SnykAdvisoryURL          string                 `json:"snyk_advisory_url"`
+	SnykID                   string                 `json:"snyk_id"`
+	Title                    string                 `json:"title"`
+	VulnerableFunctions      []*VulnerableFunctions `json:"vulnerable_functions"`
+	VulnerableHashRanges     []string               `json:"vulnerable_hash_ranges,omitempty"`
+	VulnerableHashes         []string               `json:"vulnerable_hashes,omitempty"`
+	VulnerableVersions       []string               `json:"vulnerable_versions"`
+}
+
+type VulnerableFunctions struct {
+	FunctionID struct {
+		ClassName    string `json:"class_name"`
+		FilePath     string `json:"file_path"`
+		FunctionName string `json:"function_name"`
+	} `json:"function_id"`
+	Version []string `json:"version"`
+}
+
+type CVSSDetails struct {
+	Assigner        string  `json:"assigner"`
+	CVSSV3Vector    string  `json:"cvss_v3_vector"`
+	CVSSV3BaseScore float64 `json:"cvss_v3_base_score"`
+	Severity        string  `json:"severity"`
+	Modified        string  `json:"modified"`
 }
 
 type Reference struct {
 	Title string `json:"title"`
 	URL   string `json:"url"`
+}
+
+type RestAPI struct {
+	JsonAPI struct {
+		Version string `json:"version"`
+	} `json:jsonapi`
+	Data struct {
+		Type string `json:"type"`
+		URL  string `json:"url"`
+	} `json:data`
+	Links struct {
+		Self string `json:"self"`
+	} `json:"links"`
 }

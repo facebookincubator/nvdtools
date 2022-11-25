@@ -15,6 +15,7 @@
 package api
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,7 +23,6 @@ import (
 	"net/http"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go/v4"
 	"github.com/facebookincubator/flog"
 	"github.com/facebookincubator/nvdtools/providers/lib/client"
 	"github.com/facebookincubator/nvdtools/providers/snyk/schema"
@@ -46,45 +46,52 @@ func NewClient(c client.Client, baseURL, consumerID, secret string) *Client {
 
 func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-chan *schema.Advisory, error) {
 	// since is ignored, always download all from snyk
-	content, err := c.get(ctx, "vulnerabilities.json")
+	content, err := c.get(ctx, "application_premium")
 	if err != nil {
 		return nil, fmt.Errorf("can't get vulnerabilities: %v", err)
 	}
 
+	gzipRdr, err := gzip.NewReader(content)
+	if err != nil {
+		return nil, fmt.Errorf("can't decode gzip data: %v", err)
+	}
+	jsonRdr := json.NewDecoder(gzipRdr)
+
 	output := make(chan *schema.Advisory)
 	go func() {
 		defer close(output)
+		defer gzipRdr.Close()
 		defer content.Close()
-		var advisories schema.Advisories
-		if err := json.NewDecoder(content).Decode(&advisories); err != nil {
-			flog.Errorf("can't decode content into advisories: %v", err)
-			return
-		}
-		for _, advs := range advisories {
-			for _, adv := range advs {
-				output <- adv
+		for {
+			var advisory schema.Advisory
+			if err := jsonRdr.Decode(&advisory); err != nil {
+				if err != io.EOF {
+					flog.Errorf("can't decode content into advisories: %v", err)
+					return
+				}
+				break
 			}
+			output <- &advisory
 		}
 	}()
 
 	return output, nil
 }
 
-func (c *Client) get(ctx context.Context, endpoint string) (io.ReadCloser, error) {
-	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
-		Issuer:   c.consumerID,
-		IssuedAt: &jwt.Time{Time: time.Now()},
+func (c *Client) get(ctx context.Context, feed string) (io.ReadCloser, error) {
+	url := fmt.Sprintf("%s/%s/intel_feed/%s?version=%s", c.baseURL, c.consumerID, feed, time.Now().UTC().Format("2006-01-02"))
+	resp, err := client.Get(ctx, c, url, http.Header{
+		"Accept":        {"application/vnd.api+json"},
+		"Authorization": {"Token " + c.secret},
 	})
-
-	token, err := tok.SignedString([]byte(c.secret))
-	if err != nil {
-		return nil, fmt.Errorf("cannot create jwt token: %v", err)
+	defer resp.Body.Close()
+	var jsonResp schema.RestAPI
+	if err := json.NewDecoder(resp.Body).Decode(&jsonResp); err != nil {
+		return nil, fmt.Errorf("failed to get vulnerabilities at %q: %v", url, err)
 	}
 
-	url := fmt.Sprintf("%s/%s", c.baseURL, endpoint)
-	resp, err := client.Get(ctx, c, url, http.Header{
-		"Authorization": {"Bearer" + token},
-	})
+	url = jsonResp.Data.URL
+	resp, err = client.Get(ctx, c, url, http.Header{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vulnerabilities at %q: %v", url, err)
 	}

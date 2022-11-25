@@ -66,7 +66,7 @@ func main() {
 	flag.Var(&lf, "language", "Comma separated list of languages to download/convert. If not set, then use all available")
 	r := runner.Runner{
 		Config: runner.Config{
-			BaseURL: "https://data.snyk.io/api/v4",
+			BaseURL: "https://api.snyk.io/rest/orgs",
 			ClientConfig: client.Config{
 				UserAgent: "snyk2nvd",
 			},
@@ -110,7 +110,7 @@ func (lf *languageFilter) Set(val string) error {
 }
 
 func (lf *languageFilter) accepts(adv *schema.Advisory) bool {
-	return lf == nil || len(*lf) == 0 || (*lf)[adv.Language]
+	return lf == nil || len(*lf) == 0 || (*lf)[adv.Ecosystem]
 }
 
 func (lf *languageFilter) filter(ch <-chan *schema.Advisory) <-chan runner.Convertible {
