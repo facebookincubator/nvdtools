@@ -15,6 +15,7 @@
 package api
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -50,11 +51,16 @@ func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-ch
 		return nil, fmt.Errorf("can't get vulnerabilities: %v", err)
 	}
 
-	jsonRdr := json.NewDecoder(content)
+	gzipRdr, err := gzip.NewReader(content)
+	if err != nil {
+		return nil, fmt.Errorf("can't decode gzip data: %v", err)
+	}
+	jsonRdr := json.NewDecoder(gzipRdr)
 
 	output := make(chan *schema.Advisory)
 	go func() {
 		defer close(output)
+		defer gzipRdr.Close()
 		defer content.Close()
 		for {
 			var advisory schema.Advisory
@@ -88,7 +94,9 @@ func (c *Client) get(ctx context.Context, feed string) (io.ReadCloser, error) {
 	}
 
 	url = jsonResp.Data.URL
-	resp, err = client.Get(ctx, c, url, http.Header{})
+	resp, err = client.Get(ctx, c, url, http.Header{
+		"Accept-Encoding": {"gzip"},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vulnerabilities at %q: %v", url, err)
 	}
