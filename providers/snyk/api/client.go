@@ -84,10 +84,13 @@ func (c *Client) get(ctx context.Context, feed string) (io.ReadCloser, error) {
 		"Accept":        {"application/vnd.api+json"},
 		"Authorization": {"Token " + c.secret},
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vulnerabilities at %q: %v", url, err)
+	}
 	defer resp.Body.Close()
 	var jsonResp schema.RestAPI
 	if err := json.NewDecoder(resp.Body).Decode(&jsonResp); err != nil {
-		return nil, fmt.Errorf("failed to get vulnerabilities at %q: %v", url, err)
+		return nil, fmt.Errorf("failed to decode vulnerabilities: %v", err)
 	}
 
 	url = jsonResp.Data.URL
