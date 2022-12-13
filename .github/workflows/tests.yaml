@@ -56,6 +56,6 @@ jobs:
         with:
           # The version of golangci-lint is required and must be specified
           # without patch version: we always use the latest patch version.
-          version: v1.45
+          version: v1.50
           working-directory: ${{ github.repository }}
           args: "--disable-all -E revive -E gosimple -E govet -E ineffassign -E staticcheck -E structcheck -E varcheck -e SA5011: -e SA1019:"

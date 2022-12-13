@@ -69,13 +69,13 @@ type Reference struct {
 }
 
 type RestAPI struct {
-	JsonAPI struct {
+	JSONAPI struct {
 		Version string `json:"version"`
-	} `json:jsonapi`
+	} `json:"jsonapi"`
 	Data struct {
 		Type string `json:"type"`
 		URL  string `json:"url"`
-	} `json:data`
+	} `json:"data"`
 	Links struct {
 		Self string `json:"self"`
 	} `json:"links"`
