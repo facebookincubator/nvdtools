@@ -24,6 +24,7 @@ TOOLS = \
 	nvdsync \
 	rpm2cpe \
 	rustsec2nvd \
+	snyk2nvd \
 	vulndb
 
 DOCS = \

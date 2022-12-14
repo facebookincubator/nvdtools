@@ -94,7 +94,9 @@ func (c *Client) get(ctx context.Context, feed string) (io.ReadCloser, error) {
 	}
 
 	url = jsonResp.Data.URL
-	resp, err = client.Get(ctx, c, url, http.Header{})
+	resp, err = client.Get(ctx, c, url, http.Header{
+		"Accept-Encoding": {"gzip"},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vulnerabilities at %q: %v", url, err)
 	}
