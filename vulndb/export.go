@@ -240,6 +240,10 @@ func (exp DataExporter) JSON(ctx context.Context, w io.Writer, indent string) er
 		}
 	}
 
+	if rows.Err() != nil {
+		return errors.Wrap(err, "unable to read all rows from result set")
+	}
+
 	if indent == "" {
 		return f.EncodeJSON(w)
 	}
