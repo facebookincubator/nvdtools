@@ -140,6 +140,9 @@ func VectorFromString(str string) (Vector, error) {
 
 	// extract version
 	slashIdx := strings.IndexByte(str, '/')
+	if slashIdx == -1 {
+		return v, fmt.Errorf("vector missing '/': %q", str)
+	}
 	var err error
 	if v.version, err = versionFromString(str[:slashIdx]); err != nil {
 		return v, err
