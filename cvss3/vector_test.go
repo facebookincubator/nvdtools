@@ -208,3 +208,8 @@ func TestAbsorbIfDefined(t *testing.T) {
 		})
 	}
 }
+
+func TestMalformedInputReturnsError(t *testing.T) {
+	_, err := VectorFromString("CVSS:")
+	assert.Error(t, err)
+}
