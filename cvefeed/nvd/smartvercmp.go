@@ -25,7 +25,8 @@ import (
 // but not for "2000" vs "11.7".
 // Returns -1 if v1 < v2, 1 if v1 > v2 and 0 if v1 == v2.
 func smartVerCmp(v1, v2 string) int {
-	for s1, s2 := v1, v2; len(s1) > 0 && len(s2) > 0; {
+	s1, s2 := v1, v2
+	for len(s1) > 0 && len(s2) > 0 {
 		num1, cmpTo1, skip1 := parseVerParts(s1)
 		num2, cmpTo2, skip2 := parseVerParts(s2)
 
@@ -47,10 +48,10 @@ func smartVerCmp(v1, v2 string) int {
 		s2 = s2[skip2:]
 	}
 	// everything is equal so far, the longest wins
-	if len(v1) > len(v2) {
+	if len(s1) > len(s2) {
 		return 1
 	}
-	if len(v2) > len(v1) {
+	if len(s2) > len(s1) {
 		return -1
 	}
 	return 0
