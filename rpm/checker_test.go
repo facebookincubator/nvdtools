@@ -111,7 +111,8 @@ func isAllOnes(n int) bool {
 	if n == 0 {
 		return false
 	}
-	for ; n&1 == 1; n >>= 1 {
+	for n&1 == 1 {
+		n >>= 1
 	}
 	return n == 0
 }

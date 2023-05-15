@@ -36,7 +36,7 @@ func init() {
 	rootCmd.AddCommand(fixedCVEsCmd)
 }
 
-func fixedCVEs(cmd *cobra.Command, args []string) error {
+func fixedCVEs(_ *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return errors.New("fixed-cves: missing package name(s)")
 	}

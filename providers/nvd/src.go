@@ -52,7 +52,7 @@ func NewSourceConfig() *SourceConfig {
 }
 
 // AddFlags adds SourceConfig flags to the given FlagSet.
-func (src *SourceConfig) AddFlags(fs *flag.FlagSet) {
+func (src *SourceConfig) AddFlags(_ *flag.FlagSet) {
 	flag.StringVar(&src.Scheme, "src_scheme", src.Scheme, "source scheme\nenv: NVDSYNC_SCHEME")
 	flag.StringVar(&src.Host, "src_host", src.Host, "source host\nenv: NVDSYNC_HOST")
 	flag.StringVar(&src.CVEFeedPath, "src_cve_feed_path", src.CVEFeedPath, "source path for CVE feeds\nenv: NVDSYNC_CVE_FEED_PATH")

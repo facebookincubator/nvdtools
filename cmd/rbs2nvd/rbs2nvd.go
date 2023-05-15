@@ -48,7 +48,7 @@ func Read(r io.Reader, c chan runner.Convertible) error {
 	return nil
 }
 
-func FetchSince(ctx context.Context, c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
+func FetchSince(_ context.Context, c client.Client, baseURL string, since int64) (<-chan runner.Convertible, error) {
 	clientID := os.Getenv("RBS_CLIENT_ID")
 	if clientID == "" {
 		return nil, fmt.Errorf("please set RBS_CLIENT_ID in environment")

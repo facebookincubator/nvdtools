@@ -36,7 +36,7 @@ func init() {
 	rootCmd.AddCommand(fetchCVECmd)
 }
 
-func fetchCVE(cmd *cobra.Command, args []string) error {
+func fetchCVE(_ *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return errors.New("fetch-cve: missing CVE name")
 	}
