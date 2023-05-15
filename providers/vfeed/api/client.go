@@ -41,7 +41,7 @@ func NewClient(path string) *Client {
 
 // FetchAllVulnerabilities will return all vfeed items. The "since" parameter is
 // ignored.
-func (c *Client) FetchAllVulnerabilities(since int64) (<-chan *schema.Item, error) {
+func (c *Client) FetchAllVulnerabilities(_ int64) (<-chan *schema.Item, error) {
 	items := make(chan *schema.Item)
 
 	matches, err := filepath.Glob(c.path + suffixPattern)

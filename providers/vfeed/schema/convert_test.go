@@ -59,11 +59,7 @@ func unmarshalFile(item interface{}, name string) error {
 		return err
 	}
 
-	if err := json.Unmarshal(data, item); err != nil {
-		return err
-	}
-
-	return nil
+	return json.Unmarshal(data, item)
 }
 
 func mustMarshal(item interface{}) string {

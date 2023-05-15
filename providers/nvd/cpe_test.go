@@ -55,7 +55,7 @@ func TestCPE(t *testing.T) {
 
 type cpeTestServer struct{}
 
-func (ts cpeTestServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (ts cpeTestServer) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Etag", "foobar")
 	fmt.Fprintf(w, "hello, world")
 }

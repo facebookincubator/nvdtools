@@ -60,7 +60,7 @@ type singleChecker struct {
 	pkgChecker pkgCheck
 }
 
-func (c *singleChecker) Check(pkg *rpm.Package, distro *wfn.Attributes, cve string) bool {
+func (c *singleChecker) Check(pkg *rpm.Package, distro *wfn.Attributes, _ string) bool {
 	if pkg == nil {
 		// just a sanity check, shouldn't even be called with nil
 		return false
