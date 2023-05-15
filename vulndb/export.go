@@ -186,11 +186,7 @@ func (exp DataExporter) CSV(ctx context.Context, w io.Writer, header bool) error
 		})
 	}
 
-	if rows.Err() != nil {
-		return errors.Wrap(rows.Err(), "unable to read all rows from result set")
-	}
-
-	return nil
+	return errors.Wrap(rows.Err(), "unable to read all rows from result set")
 }
 
 // JSON exports NVD CVE JSON to w.
