@@ -26,23 +26,23 @@ import (
 func xRename(oldpath, newpath string) error {
 	err := os.Rename(oldpath, newpath)
 	if _, ok := err.(*os.LinkError); ok {
-		var old, new *os.File
-		if old, err = os.Open(oldpath); err != nil {
+		var oldfile, newfile *os.File
+		if oldfile, err = os.Open(oldpath); err != nil {
 			return err
 		}
-		defer old.Close()
+		defer oldfile.Close()
 		var finfo os.FileInfo
-		if finfo, err = old.Stat(); err != nil {
+		if finfo, err = oldfile.Stat(); err != nil {
 			return err
 		}
 		if !finfo.Mode().IsRegular() {
 			return fmt.Errorf("failed to rename %q to %q: source file is not a regular file", oldpath, newpath)
 		}
-		if new, err = os.OpenFile(newpath, os.O_WRONLY|os.O_CREATE, finfo.Mode().Perm()); err != nil {
+		if newfile, err = os.OpenFile(newpath, os.O_WRONLY|os.O_CREATE, finfo.Mode().Perm()); err != nil {
 			return err
 		}
-		defer new.Close()
-		if _, err = io.Copy(new, old); err != nil {
+		defer newfile.Close()
+		if _, err = io.Copy(newfile, oldfile); err != nil {
 			return err
 		}
 		err = os.Remove(oldpath)

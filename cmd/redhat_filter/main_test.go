@@ -98,6 +98,6 @@ func TestFilter(t *testing.T) {
 // fixed packages are the ones with this name
 type testChecker string
 
-func (name testChecker) Check(pkg *rpm.Package, distro *wfn.Attributes, cve string) bool {
+func (name testChecker) Check(pkg *rpm.Package, _ *wfn.Attributes, _ string) bool {
 	return pkg.Name == string(name)
 }

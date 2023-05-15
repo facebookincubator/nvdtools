@@ -171,7 +171,8 @@ func isZero(r rune) bool {
 
 func takeWhile(s string, f func(rune) bool) (matched, rest string) {
 	var i int
-	for i = 0; i < len(s) && f(rune(s[i])); i++ {
+	for i < len(s) && f(rune(s[i])) {
+		i++
 	}
 	return s[:i], s[i:]
 }

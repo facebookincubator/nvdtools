@@ -147,9 +147,7 @@ func (item *Vulnerability) makeConfigurations() (*nvd.NVDCVEFeedJSON10DefConfigu
 					match.VersionEndExcluding = cfg.FixedByVersion
 				}
 			} else {
-				if affected.Prior {
-					// affects all versions
-				} else {
+				if !affected.Prior {
 					match.VersionStartIncluding = affected.Version
 				}
 			}

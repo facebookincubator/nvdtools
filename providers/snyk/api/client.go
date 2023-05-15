@@ -44,7 +44,7 @@ func NewClient(c client.Client, baseURL, consumerID, secret string) *Client {
 	}
 }
 
-func (c *Client) FetchAllVulnerabilities(ctx context.Context, since int64) (<-chan *schema.Advisory, error) {
+func (c *Client) FetchAllVulnerabilities(ctx context.Context, _ int64) (<-chan *schema.Advisory, error) {
 	// since is ignored, always download all from snyk
 	content, err := c.get(ctx, "application_premium")
 	if err != nil {
