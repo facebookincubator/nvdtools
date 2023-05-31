@@ -114,6 +114,11 @@ func (cm *cpeMatch) match(attr *wfn.Attributes, requireVersion bool) bool {
 		return false
 	}
 
+	// if hasVersionRanges and attr version is NA, then return false
+	if attr.Version == wfn.NA {
+		return false
+	}
+
 	// match version to ranges
 	ver := wfn.StripSlashes(attr.Version)
 
