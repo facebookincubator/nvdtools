@@ -111,7 +111,7 @@ func (cfg *config) addFlags() {
 
 func (cfg *config) validate() error {
 	if cfg.pkgs <= 0 || cfg.distro <= 0 || cfg.cve <= 0 {
-		flog.Fatalf("indexes must be postive: distro=%d pkgs=%d cve=%d", cfg.distro, cfg.pkgs, cfg.cve)
+		flog.Fatalf("indexes must be positive: distro=%d pkgs=%d cve=%d", cfg.distro, cfg.pkgs, cfg.cve)
 	}
 	return nil
 }

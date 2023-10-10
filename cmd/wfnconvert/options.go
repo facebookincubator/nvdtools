@@ -29,7 +29,7 @@ type intFields []int
 // Set is part of flag.Value interface
 func (f *intFields) Set(s string) error {
 	if f == nil {
-		return errors.New("Set called on nil reciever")
+		return errors.New("Set called on nil receiver")
 	}
 	for _, t := range strings.Split(s, ",") {
 		i, err := strconv.Atoi(t)
@@ -99,7 +99,7 @@ type options struct {
 }
 
 func (o *options) addFlags() {
-	flag.StringVar(&o.outBinding, "b", "fstr", "ouput bindings, one of\n"+
+	flag.StringVar(&o.outBinding, "b", "fstr", "output bindings, one of\n"+
 		"'uri'\te.g. cpe:/a:foo:bar:1.1)\n"+
 		"'fstr'\te.g. cpe:2.3:a:foo:bar:1.1:*:*:*:*:*:*:*)\n"+
 		"'str'\te.g. "+`wfn:[part="a",vendor="foo",product="bar", version="1\.1"])`+"\n")
