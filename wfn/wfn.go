@@ -29,7 +29,7 @@ var KnownParts = map[string]string{
 // Possible logical value of Attributes
 // empty string considered ANY when parsing and unquoted "-" is illegal in WFN attribute-value
 const (
-	Any = ""
+	Any = "*"
 	NA  = "-"
 )
 

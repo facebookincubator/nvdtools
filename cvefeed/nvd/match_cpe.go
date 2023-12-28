@@ -93,7 +93,7 @@ func (cm *cpeMatch) match(attr *wfn.Attributes, requireVersion bool) bool {
 		return false
 	}
 
-	if cm.Attributes.Version == wfn.Any {
+	if cm.Attributes.Version == wfn.Any || cm.Attributes.Version == wfn.NA {
 		if !cm.hasVersionRanges {
 			// if version is any and doesn't have version ranges, then it matches any
 			return !requireVersion
@@ -121,21 +121,38 @@ func (cm *cpeMatch) match(attr *wfn.Attributes, requireVersion bool) bool {
 
 	// match version to ranges
 	ver := wfn.StripSlashes(attr.Version)
+	return cm.compareVersions(ver)
+}
 
-	matches := true
+func (cm *cpeMatch) compareVersions(targetVersion string) bool {
+	result := cm.versionEndExcluding != "" || cm.versionEndIncluding != "" || cm.versionStartExcluding != "" || cm.versionStartIncluding != ""
 
-	if cm.versionStartIncluding != "" {
-		matches = matches && smartVerCmp(ver, cm.versionStartIncluding) >= 0
-	}
-	if cm.versionStartExcluding != "" {
-		matches = matches && smartVerCmp(ver, cm.versionStartExcluding) > 0
-	}
-	if cm.versionEndIncluding != "" {
-		matches = matches && smartVerCmp(ver, cm.versionEndIncluding) <= 0
-	}
-	if cm.versionEndExcluding != "" {
-		matches = matches && smartVerCmp(ver, cm.versionEndExcluding) < 0
+	if !result && cm.MatchOnlyVersion(&wfn.Attributes{
+		Version: targetVersion,
+	}) {
+		return true
 	}
 
-	return matches
+	target := ParseVersion(targetVersion)
+	if target == nil {
+		return false
+	}
+	if result && cm.versionEndExcluding != "" {
+		endExcluding := ParseVersion(cm.versionEndExcluding)
+		result = endExcluding.CompareTo(target) > 0
+	}
+	if result && cm.versionStartExcluding != "" {
+		startExcluding := ParseVersion(cm.versionStartExcluding)
+		result = startExcluding.CompareTo(target) < 0
+	}
+	if result && cm.versionEndIncluding != "" {
+		endIncluding := ParseVersion(cm.versionEndIncluding)
+		result = result && endIncluding.CompareTo(target) >= 0
+	}
+	if result && cm.versionStartIncluding != "" {
+		startIncluding := ParseVersion(cm.versionStartIncluding)
+		result = result && startIncluding.CompareTo(target) <= 0
+	}
+
+	return result
 }
